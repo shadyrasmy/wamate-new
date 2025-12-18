@@ -1,0 +1,49 @@
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
+
+const Contact = sequelize.define('Contact', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+    },
+    jid: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    name: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    push_name: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    profile_pic: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    is_group: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    assigned_seat_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'seats',
+            key: 'id'
+        }
+    }
+}, {
+    timestamps: true,
+    tableName: 'contacts',
+    indexes: [
+        {
+            unique: true,
+            fields: ['instance_id', 'jid']
+        }
+    ]
+});
+
+module.exports = Contact;

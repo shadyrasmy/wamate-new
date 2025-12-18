@@ -30,11 +30,27 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.*
+!.env.example
 
-# vercel
-.vercel
+# whatsapp sessions
+server/sessions/
+server/public/uploads/
+
+# keys
+*.json
+!package.json
+!tsconfig.json
+!package-lock.json
+
+# next-env
+next-env.d.ts
+.next/
+
+# env files (can opt-in for committing if needed)
+
 
 # typescript
 *.tsbuildinfo
