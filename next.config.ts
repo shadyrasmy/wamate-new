@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         source: '/public/:path*',
         destination: `http://127.0.0.1:${process.env.BACKEND_PORT || '5987'}/public/:path*`,
       },
+      {
+        source: '/socket.io/:path*',
+        destination: `http://127.0.0.1:${process.env.BACKEND_PORT || '5987'}/socket.io/:path*`,
+      },
     ];
   },
 };

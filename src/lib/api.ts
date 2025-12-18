@@ -1,5 +1,12 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-export const SOCKET_URL = API_URL.replace(/\/api\/?$/, '');
+
+// Socket URL logic:
+// 1. Use NEXT_PUBLIC_SOCKET_URL if provided
+// 2. If API_URL is absolute, use its base
+// 3. Fallback to current domain (if using proxy)
+export const SOCKET_URL =
+    process.env.NEXT_PUBLIC_SOCKET_URL ||
+    (API_URL.startsWith('http') ? API_URL.replace(/\/api\/?$/, '') : '');
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     const token = localStorage.getItem('token');
