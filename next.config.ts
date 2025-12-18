@@ -5,11 +5,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*',
+        destination: `https://apibeta.wamateai.online:${process.env.BACKEND_PORT || '5987'}/api/:path*`,
       },
       {
         source: '/public/:path*',
-        destination: 'http://localhost:3001/public/:path*',
+        destination: `https://apibeta.wamateai.online:${process.env.BACKEND_PORT || '5987'}/public/:path*`,
       },
     ];
   },

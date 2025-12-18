@@ -4,44 +4,49 @@ async function fix() {
     try {
         console.log('--- Database Fix & Verify Script ---');
 
-        // 1. Find and drop all foreign keys on messages table
-        console.log('Searching for foreign keys on `messages` table...');
+        // 1. Find and drop all foreign keys on all tables
+        console.log('Searching for all foreign keys...');
         const [constraints] = await sequelize.query(`
-            SELECT CONSTRAINT_NAME 
+            SELECT TABLE_NAME, CONSTRAINT_NAME 
             FROM information_schema.TABLE_CONSTRAINTS 
-            WHERE TABLE_NAME = 'messages' 
-            AND TABLE_SCHEMA = DATABASE()
+            WHERE TABLE_SCHEMA = DATABASE()
             AND CONSTRAINT_TYPE = 'FOREIGN KEY'
         `);
 
-        console.log(`Found ${constraints.length} constraints.`);
+        console.log(`Found ${constraints.length} total constraints.`);
 
         for (const c of constraints) {
-            console.log(`Attempting to drop constraint: ${c.CONSTRAINT_NAME}...`);
+            console.log(`Attempting to drop constraint: ${c.CONSTRAINT_NAME} from ${c.TABLE_NAME}...`);
             try {
-                await sequelize.query(`ALTER TABLE messages DROP FOREIGN KEY ${c.CONSTRAINT_NAME}`);
+                await sequelize.query(`ALTER TABLE ${c.TABLE_NAME} DROP FOREIGN KEY ${c.CONSTRAINT_NAME}`);
                 console.log(`✅ Dropped ${c.CONSTRAINT_NAME}`);
             } catch (e) {
                 console.log(`❌ Failed to drop ${c.CONSTRAINT_NAME}: ${e.message}`);
             }
         }
 
-        // 1.5 Inspect and DROP all non-primary indexes
-        console.log('\n--- Cleaning Indexes (messages) ---');
-        const [existingIndexes] = await sequelize.query(`SHOW INDEX FROM messages`);
-        console.log(`Initial index count: ${existingIndexes.length}`);
+        // 1.5 Inspect and DROP all non-primary indexes from ALL tables
+        console.log('\n--- Cleaning All Indexes ---');
+        const [tables] = await sequelize.query(`SHOW TABLES`);
+        const dbName = sequelize.config.database;
+        const tableKey = `Tables_in_${dbName}`;
 
-        // We'll collect unique names to drop (since a multi-column index appears multiple times in SHOW INDEX)
-        const indexNames = [...new Set(existingIndexes.map(idx => idx.Key_name))];
+        for (const tableRow of tables) {
+            const tableName = tableRow[tableKey];
+            console.log(`\nProcessing table: ${tableName}`);
 
-        for (const idxName of indexNames) {
-            if (idxName === 'PRIMARY') continue;
-            console.log(`Attempting to drop index: ${idxName}...`);
-            try {
-                await sequelize.query(`ALTER TABLE messages DROP INDEX ${idxName}`);
-                console.log(`✅ Dropped index ${idxName}`);
-            } catch (e) {
-                console.log(`❌ Failed to drop index ${idxName}: ${e.message}`);
+            const [existingIndexes] = await sequelize.query(`SHOW INDEX FROM ${tableName}`);
+            const indexNames = [...new Set(existingIndexes.map(idx => idx.Key_name))];
+
+            for (const idxName of indexNames) {
+                if (idxName === 'PRIMARY') continue;
+                console.log(`  Attempting to drop index: ${idxName}...`);
+                try {
+                    await sequelize.query(`ALTER TABLE ${tableName} DROP INDEX ${idxName}`);
+                    console.log(`  ✅ Dropped index ${idxName}`);
+                } catch (e) {
+                    console.log(`  ❌ Failed to drop index ${idxName}: ${e.message}`);
+                }
             }
         }
 

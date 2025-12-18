@@ -18,33 +18,41 @@ exports.protect = async (req, res, next) => {
         }
 
         // 2. Verify token
-        const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+        try {
+            const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-        // 3. Check if user still exists (User or Seat)
-        const { User, Seat } = require('../models');
+            // 3. User Lookup from JWT
+            const { User, Seat } = require('../models');
+            let user = await User.findByPk(decoded.id);
 
-        let user = await User.findByPk(decoded.id);
+            if (!user) {
+                user = await Seat.findByPk(decoded.id);
+                if (user) user.role = 'seat';
+            }
 
-        // If not a user, check if it's a Seat
-        if (!user) {
-            user = await Seat.findByPk(decoded.id);
-            if (user) user.role = 'seat';
+            if (!user) return next(new AppError('Account not found.', 401));
+
+            req.user = user;
+            return next();
+        } catch (err) {
+            // 4. Fallback to Static Access Token (UUID) for API Integrations
+            if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+                const { User } = require('../models');
+                const user = await User.findOne({ where: { access_token: token } });
+
+                if (user) {
+                    req.user = user;
+                    return next();
+                }
+            }
+
+            // If both fail, return original JWT error messages
+            if (err.name === 'JsonWebTokenError') return next(new AppError('Invalid token. Check your credentials.', 401));
+            if (err.name === 'TokenExpiredError') return next(new AppError('Token expired. Use a permanent access_token for integrations.', 401));
+
+            next(err);
         }
-
-        if (!user) {
-            return next(new AppError('The user/seat belonging to this token no longer exists.', 401));
-        }
-
-        // 4. Grant Access
-        req.user = user;
-        next();
     } catch (err) {
-        if (err.name === 'JsonWebTokenError') {
-            return next(new AppError('Invalid token. Please log in again!', 401));
-        }
-        if (err.name === 'TokenExpiredError') {
-            return next(new AppError('Your token has expired! Please log in again.', 401));
-        }
         next(err);
     }
 };

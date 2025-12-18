@@ -7,7 +7,14 @@ const setupSecurity = (app) => {
     app.use(helmet());
 
     // 2. CORS configuration
-    const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', process.env.FRONTEND_URL];
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:3002',
+        process.env.FRONTEND_URL,
+        'https://beta.wamateai.online',
+        'https://apibeta.wamateai.online'
+    ];
     const corsOptions = {
         origin: function (origin, callback) {
             // Allow requests with no origin (like mobile apps or curl requests)

@@ -61,9 +61,6 @@ const Message = sequelize.define('Message', {
         {
             unique: true,
             fields: ['instance_id', 'message_id']
-        },
-        {
-            fields: ['message_id']
         }
     ]
 });
