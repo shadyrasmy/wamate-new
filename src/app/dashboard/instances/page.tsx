@@ -7,7 +7,10 @@ import { fetchWithAuth, SOCKET_URL } from '@/lib/api';
 import { io } from 'socket.io-client';
 import { QRCodeSVG } from 'qrcode.react';
 
+import { useUI } from '@/context/UIContext';
+
 export default function InstancesPage() {
+    const { t } = useUI();
     const [instances, setInstances] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showQR, setShowQR] = useState(false);
@@ -129,7 +132,7 @@ export default function InstancesPage() {
                     className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 flex items-center gap-3"
                 >
                     <Plus size={20} weight="bold" />
-                    Provision Node
+                    {t('provision_node')}
                 </motion.button>
             </div>
 
@@ -146,9 +149,9 @@ export default function InstancesPage() {
                         {/* Card Glow */}
                         <div className={`absolute -top-24 -right-24 w-48 h-48 rounded-full blur-[80px] transition-all duration-500 ${instance.status === 'connected' ? 'bg-green-500/10 group-hover:bg-green-500/20' : 'bg-red-500/10 group-hover:bg-red-500/20'}`} />
 
-                        <div className="flex items-start justify-between relative z-10 mb-8">
-                            <div className="flex items-center gap-5">
-                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border transition-all duration-500 ${instance.status === 'connected'
+                        <div className="flex items-start justify-between relative z-10 mb-8 gap-4">
+                            <div className="flex items-center gap-5 min-w-0">
+                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border shrink-0 transition-all duration-500 ${instance.status === 'connected'
                                     ? 'bg-green-500/5 border-green-500/20 text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.1)]'
                                     : 'bg-red-500/5 border-red-500/20 text-red-500'}`}>
                                     <DeviceMobile size={32} weight="duotone" />
@@ -158,7 +161,7 @@ export default function InstancesPage() {
                                         <h3 className="font-black text-xl text-white truncate">{instance.name}</h3>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setEditingInstance(instance); setNewName(instance.name); }}
-                                            className="opacity-0 group-hover/title:opacity-100 transition-opacity p-1 hover:text-primary"
+                                            className="opacity-0 group-hover/title:opacity-100 transition-opacity p-1 hover:text-primary shrink-0"
                                         >
                                             <PencilSimple size={14} />
                                         </button>
@@ -168,11 +171,11 @@ export default function InstancesPage() {
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 shrink-0">
                                 {instance.status !== 'connected' && (
                                     <button
                                         onClick={(e) => handleReconnect(instance.instance_id, e)}
-                                        title="Reconnect"
+                                        title={t('retry')}
                                         className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-gray-400 hover:text-primary hover:bg-primary/10 transition border border-white/5"
                                     >
                                         <ArrowClockwise size={20} weight="bold" />
@@ -180,6 +183,7 @@ export default function InstancesPage() {
                                 )}
                                 <button
                                     onClick={(e) => handleDelete(instance.instance_id, e)}
+                                    title={t('delete')}
                                     className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition border border-white/5"
                                 >
                                     <Trash size={20} weight="bold" />
@@ -379,13 +383,13 @@ export default function InstancesPage() {
                                         onClick={() => setEditingInstance(null)}
                                         className="flex-1 py-4 text-gray-500 font-bold text-sm uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition"
                                     >
-                                        Abort
+                                        {t('abort')}
                                     </button>
                                     <button
                                         type="submit"
                                         className="flex-1 bg-primary text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition"
                                     >
-                                        Update
+                                        {t('update')}
                                     </button>
                                 </div>
                             </form>

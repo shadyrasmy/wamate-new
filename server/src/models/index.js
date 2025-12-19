@@ -51,6 +51,10 @@ MessageLog.belongsTo(WhatsAppInstance, { foreignKey: 'instance_id', as: 'instanc
 User.hasMany(Invoice, { foreignKey: 'user_id', as: 'invoices' });
 Invoice.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+// User -> Plan
+User.belongsTo(Plan, { foreignKey: 'id_plan', as: 'plan' });
+Plan.hasMany(User, { foreignKey: 'id_plan', as: 'users' });
+
 // Export everything
 module.exports = {
     sequelize,

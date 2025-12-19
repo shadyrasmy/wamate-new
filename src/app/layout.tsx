@@ -11,9 +11,10 @@ const outfit = Outfit({
 });
 
 const elMessiri = El_Messiri({
-  subsets: ["arabic"],
+  subsets: ["arabic", "latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-el-messiri",
+  display: 'swap',
 });
 
 import ClientLayoutWrapper from "@/components/layout/ClientLayoutWrapper";

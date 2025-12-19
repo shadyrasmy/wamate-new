@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type Theme = 'dark' | 'nova-light';
-type Language = 'en' | 'ar';
 
 interface UIContextType {
     theme: Theme;
@@ -15,76 +14,7 @@ interface UIContextType {
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
 
-const translations: Record<Language, Record<string, string>> = {
-    en: {
-        dashboard: "Overview",
-        chat_center: "Chat Center",
-        instances: "Instances",
-        team_seats: "Team Seats",
-        settings: "Settings",
-        sign_out: "Sign Out",
-        upgrade: "Upgrade Plan",
-        api_center: "API Center",
-        search: "Search...",
-        connected: "Connected",
-        disconnected: "Disconnected",
-        connecting: "Connecting",
-        traffic_pulse: "Traffic Pulse",
-        system_quota: "System Quota",
-        active_channels: "Active Channels",
-        outbound_traffic: "Outbound Traffic",
-        agent_seats: "Agent Seats",
-        theme_toggle: "Theme Mode",
-        language_toggle: "Language",
-        system_engine: "System Engine",
-        baileys_multi: "Baileys Multi",
-        socket_cluster: "Socket Cluster",
-        queue_manager: "Queue Manager",
-        optimal: "Optimal",
-        standby: "Standby",
-        outbound_msg_vol: "Real-time outbound message volume.",
-        need_more_credits: "Need more message credits?",
-        view_logs: "VIEW FULL LOGS",
-        live_system: "Live System",
-        local_identity: "Local Identity",
-        enterprise_admin: "Enterprise Admin",
-        free_tier: "Free Tier"
-    },
-    ar: {
-        dashboard: "نظرة عامة",
-        chat_center: "مركز الدردشة",
-        instances: "القنوات",
-        team_seats: "مقاعد الفريق",
-        settings: "الإعدادات",
-        sign_out: "تسجيل الخروج",
-        upgrade: "ترقية الباقة",
-        api_center: "مركز API",
-        search: "بحث...",
-        connected: "متصل",
-        disconnected: "غير متصل",
-        connecting: "جاري الاتصال",
-        traffic_pulse: "نبض الرسائل",
-        system_quota: "حصة النظام",
-        active_channels: "القنوات النشطة",
-        outbound_traffic: "الرسائل الصادرة",
-        agent_seats: "مقاعد الوكلاء",
-        theme_toggle: "المظهر",
-        language_toggle: "اللغة",
-        system_engine: "محرك النظام",
-        baileys_multi: "بيليز المتعدد",
-        socket_cluster: "عنقود السوكت",
-        queue_manager: "مدير الطابور",
-        optimal: "مثالي",
-        standby: "استعداد",
-        outbound_msg_vol: "حجم الرسائل الصادرة في الوقت الفعلي.",
-        need_more_credits: "هل تحتاج إلى المزيد من الرصيد؟",
-        view_logs: "عرض السجلات الكاملة",
-        live_system: "النظام حي",
-        local_identity: "الهوية المحلية",
-        enterprise_admin: "مسؤول المؤسسة",
-        free_tier: "الفئة المجانية"
-    }
-};
+import { translations, Language } from '@/translations';
 
 export function UIProvider({ children }: { children: React.ReactNode }) {
     const [theme, setThemeState] = useState<Theme>('dark');
@@ -105,8 +35,10 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
     const setLanguage = (newLang: Language) => {
         setLanguageState(newLang);
         localStorage.setItem('language', newLang);
-        document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
-        document.documentElement.lang = newLang;
+        if (typeof document !== 'undefined') {
+            document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.lang = newLang;
+        }
     };
 
     const t = (key: string) => {

@@ -33,9 +33,13 @@ const User = sequelize.define('User', {
         type: DataTypes.ENUM('admin', 'user'),
         defaultValue: 'user'
     },
-    plan: {
-        type: DataTypes.ENUM('free', 'pro', 'enterprise'),
-        defaultValue: 'free'
+    id_plan: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'plans',
+            key: 'id'
+        }
     },
     max_instances: {
         type: DataTypes.INTEGER,
