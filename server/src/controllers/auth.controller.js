@@ -25,7 +25,8 @@ exports.register = async (req, res, next) => {
             name,
             email,
             password: hashedPassword,
-            phone_number
+            phone_number,
+            access_token: uuidv4()
         });
 
         // 5. Send Token

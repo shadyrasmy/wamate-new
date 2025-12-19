@@ -25,8 +25,8 @@ const User = sequelize.define('User', {
         allowNull: false
     },
     access_token: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
+        type: DataTypes.STRING,
+        allowNull: false,
         unique: true
     },
     role: {

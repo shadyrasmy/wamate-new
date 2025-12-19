@@ -38,7 +38,7 @@ const WhatsAppInstance = sequelize.define('WhatsAppInstance', {
     },
     chat_enabled: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        defaultValue: true
     }
 }, {
     timestamps: true,

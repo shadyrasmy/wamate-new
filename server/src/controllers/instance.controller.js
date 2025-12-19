@@ -46,7 +46,7 @@ exports.getInstances = async (req, res, next) => {
     try {
         const instances = await WhatsAppInstance.findAll({
             where: { user_id: req.user.id },
-            attributes: ['instance_id', 'name', 'phone_number', 'status', 'qr_code']
+            attributes: ['instance_id', 'name', 'phone_number', 'status', 'qr_code', 'chat_enabled']
         });
 
         res.status(200).json({
