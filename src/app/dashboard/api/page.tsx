@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Copy, Check, Code, PaperPlaneRight, Spinner, TerminalWindow, Books } from '@phosphor-icons/react';
 import { fetchWithAuth, API_URL } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 import ApiDocs from '@/components/ApiDocs';
 
@@ -183,19 +184,16 @@ export default function ApiPage() {
                         </h2>
 
                         <div className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Edge Node</label>
-                                <select
-                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
-                                    value={selectedInstance}
-                                    onChange={(e) => setSelectedInstance(e.target.value)}
-                                >
-                                    <option value="" disabled className="bg-carbon">SELECT CHANNEL</option>
-                                    {instances.map(inst => (
-                                        <option key={inst.instance_id} value={inst.instance_id} className="bg-carbon">{inst.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            <CustomSelect
+                                label="Edge Node"
+                                value={selectedInstance}
+                                onChange={(val) => setSelectedInstance(val)}
+                                placeholder="SELECT CHANNEL"
+                                options={instances.map(inst => ({
+                                    value: inst.instance_id,
+                                    label: inst.name
+                                }))}
+                            />
 
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Destination Identity</label>
@@ -208,17 +206,15 @@ export default function ApiPage() {
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Payload Format</label>
-                                <select
-                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
-                                    value={testType}
-                                    onChange={(e) => setTestType(e.target.value)}
-                                >
-                                    <option value="text" className="bg-carbon">STRING_TEXT</option>
-                                    <option value="image" className="bg-carbon">MEDIA_IMAGE_URI</option>
-                                </select>
-                            </div>
+                            <CustomSelect
+                                label="Payload Format"
+                                value={testType}
+                                onChange={(val) => setTestType(val)}
+                                options={[
+                                    { value: 'text', label: 'STRING_TEXT' },
+                                    { value: 'image', label: 'MEDIA_IMAGE_URI' }
+                                ]}
+                            />
 
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Message Content</label>

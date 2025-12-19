@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Outfit, El_Messiri } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
+import { UIProvider, useUI } from "@/context/UIContext";
 import HeaderScripts from "@/components/layout/HeaderScripts";
 import "./globals.css";
 
@@ -9,10 +10,13 @@ const outfit = Outfit({
   variable: "--font-outfit",
 });
 
-export const metadata: Metadata = {
-  title: "WaMate - All WhatsApp in One Place",
-  description: "The ultimate WhatsApp CRM for high-performance teams.",
-};
+const elMessiri = El_Messiri({
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-el-messiri",
+});
+
+import ClientLayoutWrapper from "@/components/layout/ClientLayoutWrapper";
 
 export default function RootLayout({
   children,
@@ -20,16 +24,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        suppressHydrationWarning={true}
-        className={`${outfit.variable} font-sans antialiased bg-[#0d0a1a] text-white`}
-      >
-        <AuthProvider>
-          <HeaderScripts />
-          {children}
-        </AuthProvider>
-      </body>
-    </html>
+    <AuthProvider>
+      <UIProvider>
+        <html lang="en">
+          <body
+            suppressHydrationWarning={true}
+            className={`${outfit.variable} ${elMessiri.variable} font-sans antialiased`}
+          >
+            <ClientLayoutWrapper>
+              <HeaderScripts />
+              {children}
+            </ClientLayoutWrapper>
+          </body>
+        </html>
+      </UIProvider>
+    </AuthProvider>
   );
 }

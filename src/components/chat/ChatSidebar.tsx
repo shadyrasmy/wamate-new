@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { MagnifyingGlass, UserCircle, Funnel, Plus, CaretDown, Spinner, WhatsappLogo, Circle, ChatCircleDots } from '@phosphor-icons/react';
+import CustomSelect from '@/components/ui/CustomSelect';
 import { fetchWithAuth, SOCKET_URL } from '@/lib/api';
 import { io } from 'socket.io-client';
 
@@ -153,19 +154,19 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
                             <WhatsappLogo size={18} weight="fill" className="text-primary" />
                         </div>
-                        <div className="relative group">
-                            <select
-                                className="appearance-none bg-transparent font-bold text-white text-sm pr-6 focus:outline-none cursor-pointer"
+                        <div className="relative group min-w-[140px]">
+                            <CustomSelect
                                 value={selectedInstanceId || ''}
-                                onChange={(e) => onSelectInstance(e.target.value)}
-                            >
-                                <option value="" disabled className="bg-carbon">Select Instance</option>
-                                <option value="all" className="bg-carbon">All Active Chats</option>
-                                {instances.map(inst => (
-                                    <option key={inst.instance_id} value={inst.instance_id} className="bg-carbon">{inst.name}</option>
-                                ))}
-                            </select>
-                            <CaretDown size={12} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" />
+                                onChange={(val) => onSelectInstance(val)}
+                                placeholder="Select Instance"
+                                options={[
+                                    { value: 'all', label: 'ALL ACTIVE CHATS' },
+                                    ...instances.map(inst => ({
+                                        value: inst.instance_id,
+                                        label: inst.name
+                                    }))
+                                ]}
+                            />
                         </div>
                     </div>
                     <div className="flex gap-2">

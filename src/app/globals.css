@@ -1,22 +1,50 @@
 @import "tailwindcss";
 
 :root {
-  /* Carbon & Purple Palette */
+  /* Default Dark (Carbon) */
   --primary: #8b5cf6;
   --primary-glow: rgba(139, 92, 246, 0.4);
   --secondary: #ec4899;
-  --dark-bg: #0d0a1a;
-  --carbon: #12101b;
-  --carbon-light: #1a1726;
+  --accent: #f97316;
+  /* Orange */
 
-  /* NextJS Theme Mapping */
   --background: #0d0a1a;
   --foreground: #ffffff;
   --surface: #12101b;
   --surface-hover: #1a1726;
   --border: rgba(255, 255, 255, 0.05);
+  --text-muted: #6b7280;
+
+  --carbon: #12101b;
+  --carbon-light: #1a1726;
 
   --font-sans: var(--font-outfit), Arial, sans-serif;
+  --font-arabic: var(--font-el-messiri), sans-serif;
+}
+
+[lang='ar'] {
+  --font-sans: var(--font-arabic) !important;
+}
+
+[data-theme='nova-light'] {
+  --primary: #7c3aed;
+  /* Deeper Purple */
+  --primary-glow: rgba(124, 58, 237, 0.2);
+  --secondary: #db2777;
+  --accent: #ea580c;
+  /* Deeper Orange */
+
+  --background: #f5f3ff;
+  /* Faint Purple White */
+  --foreground: #1e1b4b;
+  /* Deep Indigo for text */
+  --surface: #ffffff;
+  --surface-hover: #ede9fe;
+  --border: rgba(124, 58, 237, 0.1);
+  --text-muted: #6b7280;
+
+  --carbon: #ffffff;
+  --carbon-light: #f3f4f6;
 }
 
 @theme inline {
@@ -31,6 +59,7 @@
   --color-primary: var(--primary);
   --color-primary-glow: var(--primary-glow);
   --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
 
   --font-sans: var(--font-outfit);
 }
@@ -40,6 +69,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Redesign Utilities */

@@ -7,6 +7,7 @@ import {
     Shield, Plus, PencilSimple, X, Spinner,
     ChatCircleDots, DeviceMobile, UsersThree, Trash
 } from '@phosphor-icons/react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AdminPlansPage() {
     const [plans, setPlans] = useState<any[]>([]);
@@ -211,19 +212,17 @@ export default function AdminPlansPage() {
                                             className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Temporal Cycle (Billing)</label>
-                                        <select
-                                            value={editingPlan.billing_cycle || 'monthly'}
-                                            onChange={e => setEditingPlan({ ...editingPlan, billing_cycle: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
-                                        >
-                                            <option value="monthly" className="bg-carbon">MONTHLY</option>
-                                            <option value="quarterly" className="bg-carbon">QUARTERLY</option>
-                                            <option value="yearly" className="bg-carbon">YEARLY</option>
-                                            <option value="lifetime" className="bg-carbon">LIFETIME</option>
-                                        </select>
-                                    </div>
+                                    <CustomSelect
+                                        label="Temporal Cycle (Billing)"
+                                        value={editingPlan.billing_cycle || 'monthly'}
+                                        onChange={val => setEditingPlan({ ...editingPlan, billing_cycle: val })}
+                                        options={[
+                                            { value: 'monthly', label: 'MONTHLY' },
+                                            { value: 'quarterly', label: 'QUARTERLY' },
+                                            { value: 'yearly', label: 'YEARLY' },
+                                            { value: 'lifetime', label: 'LIFETIME' }
+                                        ]}
+                                    />
                                 </div>
 
                                 <div className="pt-10 flex gap-4">

@@ -9,6 +9,7 @@ import {
     CaretDown, CaretUp, WhatsappLogo, PaperPlaneRight,
     Shield
 } from '@phosphor-icons/react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<any[]>([]);
@@ -132,18 +133,18 @@ export default function AdminUsersPage() {
                             className="bg-transparent border-none focus:outline-none px-4 py-2 text-sm text-white font-medium w-64"
                         />
                     </div>
-                    <select
+                    <CustomSelect
                         value={dateRange}
-                        onChange={(e) => setDateRange(e.target.value)}
-                        className="bg-white/5 border border-white/10 p-3 rounded-2xl text-xs font-black uppercase tracking-widest text-white focus:outline-none"
-                    >
-                        <option value="all" className="bg-carbon">All Time</option>
-                        <option value="today" className="bg-carbon">Today</option>
-                        <option value="yesterday" className="bg-carbon">Yesterday</option>
-                        <option value="last7days" className="bg-carbon">Last 7 Days</option>
-                        <option value="thisMonth" className="bg-carbon">This Month</option>
-                        <option value="lastMonth" className="bg-carbon">Last Month</option>
-                    </select>
+                        onChange={(val) => setDateRange(val)}
+                        options={[
+                            { value: 'all', label: 'ALL TIME' },
+                            { value: 'today', label: 'TODAY' },
+                            { value: 'yesterday', label: 'YESTERDAY' },
+                            { value: 'last7days', label: 'LAST 7 DAYS' },
+                            { value: 'thisMonth', label: 'THIS MONTH' },
+                            { value: 'lastMonth', label: 'LAST MONTH' }
+                        ]}
+                    />
                 </div>
             </div>
 
@@ -359,18 +360,16 @@ export default function AdminUsersPage() {
                                             className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Service Tier</label>
-                                        <select
-                                            value={editingUser.plan}
-                                            onChange={e => setEditingUser({ ...editingUser, plan: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
-                                        >
-                                            <option value="free" className="bg-carbon text-white">FREE NODE</option>
-                                            <option value="pro" className="bg-carbon text-white">PRO NODE</option>
-                                            <option value="enterprise" className="bg-carbon text-white">ENTERPRISE CLUSTER</option>
-                                        </select>
-                                    </div>
+                                    <CustomSelect
+                                        label="Service Tier"
+                                        value={editingUser.plan}
+                                        onChange={val => setEditingUser({ ...editingUser, plan: val })}
+                                        options={[
+                                            { value: 'free', label: 'FREE NODE' },
+                                            { value: 'pro', label: 'PRO NODE' },
+                                            { value: 'enterprise', label: 'ENTERPRISE CLUSTER' }
+                                        ]}
+                                    />
 
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Broadcast Quota</label>

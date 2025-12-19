@@ -13,8 +13,10 @@ import {
     Circle,
     Spinner
 } from '@phosphor-icons/react';
+import { useUI } from '@/context/UIContext';
 
 export default function DashboardHome() {
+    const { t, theme } = useUI();
     const [stats, setStats] = useState({
         messagesSent: 0,
         messageLimit: 0,
@@ -66,10 +68,10 @@ export default function DashboardHome() {
     }
 
     const cards = [
-        { label: 'Outbound Traffic', value: stats.messagesSent.toLocaleString(), icon: ChatCircleDots, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-        { label: 'Active Channels', value: stats.instanceCount, icon: DeviceMobile, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
-        { label: 'Agent Seats', value: stats.seatCount, icon: UsersThree, color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
-        { label: 'System Quota', value: `${stats.quotaUsed}%`, icon: Lightning, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+        { label: t('outbound_traffic'), value: stats.messagesSent.toLocaleString(), icon: ChatCircleDots, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+        { label: t('active_channels'), value: stats.instanceCount, icon: DeviceMobile, color: 'text-pink-500', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
+        { label: t('agent_seats'), value: stats.seatCount, icon: UsersThree, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/20' },
+        { label: t('system_quota'), value: `${stats.quotaUsed}%`, icon: Lightning, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
     ];
 
     return (
@@ -83,16 +85,16 @@ export default function DashboardHome() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        className={`carbon-card p-8 rounded-3xl border ${card.border} group relative overflow-hidden`}
+                        className={`bg-surface p-8 rounded-3xl border ${card.border} group relative overflow-hidden shadow-sm`}
                     >
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
+                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition">
                             <card.icon size={80} weight="fill" />
                         </div>
                         <div className={`w-12 h-12 ${card.bg} rounded-xl flex items-center justify-center ${card.color} mb-6`}>
                             <card.icon size={24} weight="bold" />
                         </div>
-                        <div className="text-gray-500 text-xs font-black uppercase tracking-widest mb-1">{card.label}</div>
-                        <div className="text-3xl font-black">{card.value}</div>
+                        <div className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">{card.label}</div>
+                        <div className="text-3xl font-black text-foreground">{card.value}</div>
                     </motion.div>
                 ))}
             </div>
@@ -102,15 +104,15 @@ export default function DashboardHome() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="lg:col-span-2 carbon-card rounded-[2.5rem] p-10 border-white/5 shadow-2xl overflow-hidden relative"
+                    className="lg:col-span-2 bg-surface rounded-[2.5rem] p-10 border border-border shadow-sm overflow-hidden relative"
                 >
                     <div className="flex justify-between items-center mb-10">
                         <div>
-                            <h3 className="text-2xl font-bold">Traffic Pulse</h3>
-                            <p className="text-gray-500 font-medium">Real-time outbound message volume.</p>
+                            <h3 className="text-2xl font-black text-foreground">{t('traffic_pulse')}</h3>
+                            <p className="text-gray-500 font-medium">{t('outbound_msg_vol')}</p>
                         </div>
-                        <button className="flex items-center gap-2 px-5 py-2 glass-card rounded-xl text-xs font-bold border-white/10 hover:border-primary/50 transition">
-                            VIEW FULL LOGS <CaretRight weight="bold" />
+                        <button className="flex items-center gap-2 px-5 py-2 glass-card rounded-xl text-[10px] font-black border-border hover:border-primary/50 transition uppercase tracking-widest">
+                            {t('view_logs')} <CaretRight weight="bold" />
                         </button>
                     </div>
 
@@ -143,22 +145,22 @@ export default function DashboardHome() {
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="carbon-card rounded-3xl p-8 border-white/5"
+                        className="bg-surface rounded-3xl p-8 border border-border shadow-sm"
                     >
                         <div className="flex justify-between items-center mb-8">
-                            <h4 className="font-bold text-gray-400 text-xs uppercase tracking-widest">System Engine</h4>
+                            <h4 className="font-black text-gray-500 text-[10px] uppercase tracking-widest">{t('system_engine')}</h4>
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#22c55e]"></div>
                         </div>
                         <div className="space-y-6">
                             {[
-                                { name: 'Baileys Multi', status: 'Optimal', color: 'text-green-500' },
-                                { name: 'Socket Cluster', status: 'Optimal', color: 'text-green-500' },
-                                { name: 'Queue Manager', status: 'Standby', color: 'text-blue-400' },
+                                { name: t('baileys_multi'), status: t('optimal'), color: 'text-green-500' },
+                                { name: t('socket_cluster'), status: t('optimal'), color: 'text-green-500' },
+                                { name: t('queue_manager'), status: t('standby'), color: 'text-blue-500' },
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center justify-between group cursor-default">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-1.5 h-1.5 bg-white/10 rounded-full group-hover:bg-primary transition"></div>
-                                        <span className="text-sm font-medium">{item.name}</span>
+                                        <div className="w-1.5 h-1.5 bg-border rounded-full group-hover:bg-primary transition"></div>
+                                        <span className="text-sm font-bold text-foreground">{item.name}</span>
                                     </div>
                                     <span className={`text-[10px] font-black uppercase ${item.color}`}>{item.status}</span>
                                 </div>
@@ -170,12 +172,12 @@ export default function DashboardHome() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="carbon-card rounded-3xl p-8 border-white/5 relative overflow-hidden group cursor-pointer"
+                        className="bg-surface rounded-3xl p-8 border border-border shadow-sm relative overflow-hidden group cursor-pointer"
                     >
                         <div className="relative z-10 flex justify-between items-center">
                             <div>
-                                <h4 className="text-xl font-bold mb-1">Upgrade Plan</h4>
-                                <p className="text-gray-500 text-sm">Need more message credits?</p>
+                                <h4 className="text-xl font-black mb-1 text-foreground">{t('upgrade')}</h4>
+                                <p className="text-gray-500 text-sm font-medium">{t('need_more_credits')}</p>
                             </div>
                             <ArrowUpRight size={24} weight="bold" className="text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition" />
                         </div>
