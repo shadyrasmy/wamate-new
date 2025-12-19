@@ -10,5 +10,6 @@ router.get('/', instanceController.getInstances);
 router.patch('/:instanceId', instanceController.updateInstance);
 router.post('/:instanceId/reconnect', instanceController.reconnectInstance);
 router.delete('/:instanceId', instanceController.deleteInstance);
+router.patch('/:instanceId/toggle-chat', instanceController.toggleChatLogging);
 
 module.exports = router;

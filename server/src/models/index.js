@@ -1,5 +1,6 @@
 const User = require('./User');
 const WhatsAppInstance = require('./WhatsAppInstance');
+const SiteConfig = require('./SiteConfig');
 const Seat = require('./Seat');
 const Contact = require('./Contact');
 const { Message, MessageLog } = require('./Message');
@@ -27,6 +28,13 @@ Contact.belongsTo(WhatsAppInstance, { foreignKey: 'instance_id', as: 'instance' 
 WhatsAppInstance.hasMany(Message, { foreignKey: 'instance_id', as: 'messages' });
 Message.belongsTo(WhatsAppInstance, { foreignKey: 'instance_id', as: 'instance' });
 
+// User -> Messages/Contacts (Persistence)
+User.hasMany(Message, { foreignKey: 'user_id', as: 'all_messages' });
+Message.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+User.hasMany(Contact, { foreignKey: 'user_id', as: 'all_contacts' });
+Contact.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 // Message -> Quoted Message (Self reference for replies)
 // We must target 'message_id' because 'quoted_message_id' contains the Baileys stanzaId (String)
 // We use constraints: false because 'message_id' is not a primary key, avoiding index requirements in some DB engines
@@ -53,5 +61,6 @@ module.exports = {
     Message,
     MessageLog,
     Plan,
-    Invoice
+    Invoice,
+    SiteConfig
 };

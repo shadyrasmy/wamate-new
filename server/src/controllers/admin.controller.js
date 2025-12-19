@@ -193,3 +193,113 @@ exports.getAllInvoices = async (req, res, next) => {
         next(err);
     }
 };
+
+// USER CONTROL
+exports.deleteUser = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findByPk(userId);
+        if (!user) return next(new AppError('User not found', 404));
+
+        await user.destroy();
+        res.status(200).json({ status: 'success', message: 'User deleted from grid.' });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.banUser = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { active } = req.body; // true = active, false = banned
+
+        const user = await User.findByPk(userId);
+        if (!user) return next(new AppError('User not found', 404));
+
+        user.is_active = !!active;
+        await user.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: `User access ${user.is_active ? 'RESTORED' : 'RESTRICTED'}.`
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.extendSubscription = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { days } = req.body;
+
+        const user = await User.findByPk(userId);
+        if (!user) return next(new AppError('User not found', 404));
+
+        const currentEnd = user.subscription_end_date ? new Date(user.subscription_end_date) : new Date();
+        currentEnd.setDate(currentEnd.getDate() + parseInt(days));
+
+        user.subscription_end_date = currentEnd;
+        await user.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Temporal sequence extended.',
+            data: { end_date: user.subscription_end_date }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// SITE CONFIG (CMS & TRACKING)
+const { SiteConfig } = require('../models');
+
+exports.getSiteConfig = async (req, res, next) => {
+    try {
+        let config = await SiteConfig.findOne();
+        if (!config) {
+            config = await SiteConfig.create({});
+        }
+        res.status(200).json({ status: 'success', data: { config } });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.updateSiteConfig = async (req, res, next) => {
+    try {
+        let config = await SiteConfig.findOne();
+        if (!config) {
+            config = await SiteConfig.create(req.body);
+        } else {
+            await config.update(req.body);
+        }
+        res.status(200).json({ status: 'success', data: { config } });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.getPublicSiteConfig = async (req, res, next) => {
+    try {
+        let config = await SiteConfig.findOne();
+        if (!config) {
+            config = await SiteConfig.create({});
+        }
+
+        // Return only the non-sensitive public configuration
+        const publicConfig = {
+            cms_visibility: config.cms_visibility,
+            fb_pixel_id: config.fb_pixel_id,
+            header_scripts: config.header_scripts
+        };
+
+        res.status(200).json({
+            status: 'success',
+            data: { config: publicConfig }
+        });
+    } catch (err) {
+        next(err);
+    }
+};

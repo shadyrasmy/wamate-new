@@ -65,6 +65,10 @@ const User = sequelize.define('User', {
     is_active: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
+    },
+    phone_number: {
+        type: DataTypes.STRING,
+        allowNull: true // Optional for existing users, mandatory for new
     }
 }, {
     timestamps: true,

@@ -1,17 +1,63 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Gear, User, Lock, Bell, CaretRight, ShieldCheck, ShootingStar } from '@phosphor-icons/react';
+import { User, Lock, Bell, CaretRight, ShieldCheck, ShootingStar, Spinner, CheckCircle } from '@phosphor-icons/react';
+import { fetchWithAuth } from '@/lib/api';
 
 export default function SettingsPage() {
     const [activeSection, setActiveSection] = useState('Account');
+    const [user, setUser] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [updating, setUpdating] = useState(false);
+    const [newName, setNewName] = useState('');
+    const [saveSuccess, setSaveSuccess] = useState(false);
+
+    useEffect(() => {
+        loadProfile();
+    }, []);
+
+    const loadProfile = async () => {
+        try {
+            const data = await fetchWithAuth('/user/profile');
+            setUser(data.data.user);
+            setNewName(data.data.user.name);
+        } catch (error) {
+            console.error('Failed to load profile', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateName = async () => {
+        setUpdating(true);
+        setSaveSuccess(false);
+        try {
+            await fetchWithAuth('/user/profile', {
+                method: 'PATCH',
+                body: JSON.stringify({ name: newName })
+            });
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
+            loadProfile();
+        } catch (error) {
+            console.error('Update failed', error);
+        } finally {
+            setUpdating(false);
+        }
+    };
 
     const menuItems = [
         { id: 'Account', icon: User, label: 'Account Hub' },
         { id: 'Security', icon: Lock, label: 'Access & Shield' },
         { id: 'Notifications', icon: Bell, label: 'Pulse Alerts' }
     ];
+
+    if (loading) return (
+        <div className="flex h-[60vh] items-center justify-center">
+            <Spinner size={40} className="animate-spin text-primary" weight="bold" />
+        </div>
+    );
 
     return (
         <div className="space-y-10 pb-20">
@@ -58,29 +104,37 @@ export default function SettingsPage() {
                                     Identity Profile
                                 </h2>
 
-                                <div className="grid md:grid-cols-2 gap-8">
-                                    <div className="space-y-2">
+                                <div className="grid md:grid-cols-2 gap-8 relative z-10">
+                                    <div className="space-y-3">
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Current Name</label>
                                         <input
                                             type="text"
                                             className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
-                                            defaultValue="Operational Unit 01"
+                                            value={newName}
+                                            onChange={(e) => setNewName(e.target.value)}
                                         />
                                     </div>
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Neural Email</label>
                                         <input
                                             type="email"
                                             className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-white focus:outline-none opacity-50 cursor-not-allowed font-bold"
-                                            defaultValue="node@wamate.io"
+                                            defaultValue={user?.email}
                                             disabled
                                         />
                                     </div>
                                 </div>
 
-                                <div className="mt-12 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                                <div className="mt-12 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
                                     <p className="text-gray-500 text-sm font-medium">Any changes to identity requires re-verification of node status.</p>
-                                    <button className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition">Update Parameters</button>
+                                    <button
+                                        onClick={handleUpdateName}
+                                        disabled={updating}
+                                        className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {updating ? <Spinner className="animate-spin" /> : (saveSuccess ? <CheckCircle size={18} weight="bold" /> : null)}
+                                        {saveSuccess ? 'Parameters Updated' : 'Update Parameters'}
+                                    </button>
                                 </div>
                             </div>
 
@@ -89,15 +143,21 @@ export default function SettingsPage() {
                                     <div className="w-12 h-12 bg-pink-500/10 rounded-2xl flex items-center justify-center border border-pink-500/20 text-pink-500 mb-6">
                                         <ShootingStar size={24} weight="bold" />
                                     </div>
-                                    <h3 className="text-lg font-black mb-2 text-white">Advanced Tier</h3>
-                                    <p className="text-gray-500 text-sm font-medium">Currently operating on a Pro Level cluster.</p>
+                                    <h3 className="text-lg font-black mb-2 text-white">{user?.plan?.name || 'Standard Cluster'}</h3>
+                                    <p className="text-gray-500 text-sm font-medium">
+                                        Active tier. Node capacity: {user?.max_instances} instances.
+                                        Monthly limit: {user?.monthly_message_limit} signals.
+                                    </p>
                                 </div>
                                 <div className="carbon-card p-8 rounded-[2rem] border-white/5">
                                     <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20 text-purple-500 mb-6">
                                         <ShieldCheck size={24} weight="bold" />
                                     </div>
                                     <h3 className="text-lg font-black mb-2 text-white">Trust Score</h3>
-                                    <p className="text-gray-500 text-sm font-medium">Node reputation is verified and stable.</p>
+                                    <p className="text-gray-500 text-sm font-medium">
+                                        Sent: {user?.messages_sent_current_period} messages.
+                                        Node reputation is verified and stable.
+                                    </p>
                                 </div>
                             </div>
                         </motion.div>
@@ -107,29 +167,36 @@ export default function SettingsPage() {
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="carbon-card p-10 lg:p-12 rounded-[2.5rem] border-white/5"
+                            className="space-y-8"
                         >
-                            <h2 className="text-2xl font-black mb-10 flex items-center gap-4">
-                                <div className="w-12 h-12 bg-red-500/10 rounded-2xl flex items-center justify-center border border-red-500/20 text-red-500">
-                                    <Lock size={24} weight="bold" />
-                                </div>
-                                Access Control
-                            </h2>
-                            <div className="space-y-10">
-                                <div className="flex items-center justify-between py-6 border-b border-white/5">
-                                    <div>
-                                        <h4 className="font-bold text-white mb-1">Encrypted Password</h4>
-                                        <p className="text-gray-500 text-sm font-medium">Last updated: 32 days ago</p>
+                            <div className="carbon-card p-10 lg:p-12 rounded-[2.5rem] border-white/5">
+                                <h2 className="text-2xl font-black mb-10 flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-red-500/10 rounded-2xl flex items-center justify-center border border-red-500/20 text-red-500">
+                                        <Lock size={24} weight="bold" />
                                     </div>
-                                    <button className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/5 transition">Change Key</button>
-                                </div>
-                                <div className="flex items-center justify-between py-6">
-                                    <div>
-                                        <h4 className="font-bold text-white mb-1">Two-Factor Shield</h4>
-                                        <p className="text-gray-500 text-sm font-medium">Enhanced biometric verification layer.</p>
-                                    </div>
-                                    <div className="w-14 h-7 bg-primary rounded-full relative shadow-lg shadow-primary/20">
-                                        <div className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full"></div>
+                                    Access Control
+                                </h2>
+                                <div className="space-y-10">
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Universal Access Token</label>
+                                        <div className="flex gap-4">
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                className="flex-1 bg-white/5 border border-white/10 p-5 rounded-2xl text-white font-mono text-sm opacity-60"
+                                                value={user?.access_token}
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(user?.access_token);
+                                                    alert('Token copied to neural link.');
+                                                }}
+                                                className="px-6 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl text-xs font-black uppercase tracking-widest border border-white/5 transition"
+                                            >
+                                                Copy
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-gray-500 font-medium">Use this token for headless API integrations and one-line sending.</p>
                                     </div>
                                 </div>
                             </div>

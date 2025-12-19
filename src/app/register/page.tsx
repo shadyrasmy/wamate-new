@@ -13,13 +13,12 @@ import {
     Spinner,
     WarningCircle,
     WhatsappLogo,
-    Circle,
     ShieldCheck
 } from '@phosphor-icons/react';
 
 export default function RegisterPage() {
     const router = useRouter();
-    const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', phone_number: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -72,8 +71,8 @@ export default function RegisterPage() {
                                 <ShieldCheck size={32} weight="fill" className="text-primary" />
                             </motion.div>
                             <div>
-                                <h2 className="text-3xl font-black text-white tracking-tight">Initialize Identity</h2>
-                                <p className="text-gray-500 font-medium text-sm">Create your credentials for the grid.</p>
+                                <h2 className="text-3xl font-black text-white tracking-tight">Create Account</h2>
+                                <p className="text-gray-500 font-medium text-sm">Join the next-gen messaging platform.</p>
                             </div>
                         </div>
                     </div>
@@ -94,13 +93,13 @@ export default function RegisterPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Display Alias</label>
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Full Name</label>
                             <div className="relative group">
                                 <User className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
                                 <input
                                     type="text"
                                     required
-                                    placeholder="Full operational name"
+                                    placeholder="Enter your name"
                                     className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -109,13 +108,13 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Identity Hub</label>
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Email Address</label>
                             <div className="relative group">
                                 <EnvelopeSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
                                 <input
                                     type="email"
                                     required
-                                    placeholder="Verification email"
+                                    placeholder="your@email.com"
                                     className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -124,24 +123,33 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Secure Cipher</label>
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Phone Number</label>
+                            <div className="relative group">
+                                <WhatsappLogo className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="+1 234 567 890"
+                                    className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                    value={formData.phone_number}
+                                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Secure Password</label>
                             <div className="relative group">
                                 <LockSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
                                 <input
                                     type="password"
                                     required
-                                    placeholder="Complex cipher string"
+                                    placeholder="Enter your password"
                                     className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 />
                             </div>
-                        </div>
-
-                        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-                            <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
-                                By initializing identity, you agree to the <span className="text-primary cursor-pointer hover:underline">Grid Protocols</span> and <span className="text-primary cursor-pointer hover:underline">Privacy Logic</span>.
-                            </p>
                         </div>
 
                         <motion.button
@@ -154,11 +162,11 @@ export default function RegisterPage() {
                             {loading ? (
                                 <>
                                     <Spinner size={20} className="animate-spin" />
-                                    Synchronizing...
+                                    Creating Account...
                                 </>
                             ) : (
                                 <>
-                                    Deploy Identity
+                                    Create My Account
                                     <ArrowRight size={18} weight="bold" />
                                 </>
                             )}
@@ -166,15 +174,10 @@ export default function RegisterPage() {
                     </form>
 
                     <div className="mt-12 flex flex-col items-center gap-6">
-                        <div className="flex items-center gap-4 w-full opacity-20">
-                            <div className="h-[1px] flex-1 bg-white" />
-                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                            <div className="h-[1px] flex-1 bg-white" />
-                        </div>
                         <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest text-center">
-                            Identity already active? {' '}
+                            Already have an account? {' '}
                             <Link href="/login" className="text-primary font-black hover:text-white transition">
-                                Access Link
+                                Login Here
                             </Link>
                         </p>
                     </div>

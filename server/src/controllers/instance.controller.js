@@ -75,7 +75,7 @@ exports.deleteInstance = async (req, res, next) => {
         // Remove from DB
         await instance.destroy();
 
-        res.status(204).json({ status: 'success', data: null });
+        res.status(200).json({ status: 'success', message: 'Instance terminated successfully' });
     } catch (err) {
         next(err);
     }
@@ -110,10 +110,40 @@ exports.reconnectInstance = async (req, res, next) => {
 
         if (!instance) return next(new AppError('Instance not found', 404));
 
+        // FORCE CLEANUP: delete session folder to ensure a fresh QR
+        const sessionPath = require('path').join(__dirname, '../../sessions', instanceId);
+        if (require('fs').existsSync(sessionPath)) {
+            require('fs').rmSync(sessionPath, { recursive: true, force: true });
+        }
+
         // Re-init session
         await whatsappService.initializeInstance(instanceId);
 
-        res.status(200).json({ status: 'success', message: 'Re-initialization started' });
+        res.status(200).json({ status: 'success', message: 'Re-initialization started. A fresh QR code will be generated.' });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.toggleChatLogging = async (req, res, next) => {
+    try {
+        const { instanceId } = req.params;
+        const { enabled } = req.body;
+
+        const instance = await WhatsAppInstance.findOne({
+            where: { instance_id: instanceId, user_id: req.user.id }
+        });
+
+        if (!instance) return next(new AppError('Instance not found', 404));
+
+        instance.chat_enabled = !!enabled;
+        await instance.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: `Chat logging is now ${instance.chat_enabled ? 'ENABLED' : 'DISABLED'} for this instance.`,
+            data: { chat_enabled: instance.chat_enabled }
+        });
     } catch (err) {
         next(err);
     }

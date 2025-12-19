@@ -28,10 +28,11 @@ const errorHandler = (err, req, res, next) => {
         });
     } else {
         // Production
-        if (err.isOperational) {
+        // Force 4xx errors to be operational if they aren't explicitly marked
+        if (err.isOperational || (err.statusCode >= 400 && err.statusCode < 500)) {
             // Trusted error: send message to client
             res.status(err.statusCode).json({
-                status: err.status,
+                status: err.status || 'fail',
                 message: err.message
             });
         } else {

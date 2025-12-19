@@ -55,6 +55,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/plans', require('./routes/plan.routes'));
 app.use('/api/seats', require('./routes/seat.routes'));
+app.use('/api/user', require('./routes/user.routes'));
 
 
 // 404 Handler

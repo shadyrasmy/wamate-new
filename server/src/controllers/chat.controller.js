@@ -25,11 +25,13 @@ exports.getRecentChats = async (req, res, next) => {
         // 2. Fetch latest messages, grouped by JID is hard in standard Sequelize without raw query.
         // We will fetch all messages (lite attributes) and process in JS for now (not efficient for huge DBs but fine for this scale).
         // Optimally: Use a separate 'Chat' model or raw SQL 'GROUP BY'.
+        // 2. Fetch latest messages, grouped by JID
         const messages = await Message.findAll({
-            where: { instance_id: instanceIds },
+            where: instanceId && instanceId !== 'all'
+                ? { instance_id: instanceIds }
+                : { user_id: req.user.id },
             attributes: ['jid', 'content', 'timestamp', 'from_me'],
             order: [['timestamp', 'DESC']],
-            // limit: 5000 // Safety limit
         });
 
         // 3. Group and unique
@@ -44,19 +46,19 @@ exports.getRecentChats = async (req, res, next) => {
                     jid: remoteJid,
                     lastMessage: msg.content,
                     time: msg.timestamp,
-                    unread: 0, // TODO: Real unread count
-                    name: remoteJid.replace('@s.whatsapp.net', '') // Default to number
+                    unread: 0,
+                    name: remoteJid.replace('@s.whatsapp.net', '')
                 });
             }
         }
 
-        // 4. Enrich with Contact Names
+        // 4. Enrich with Contact Names - Look for ANY contact owned by user for this JID
         const uniqueJids = Array.from(chatsMap.keys());
         if (uniqueJids.length > 0) {
             const contacts = await Contact.findAll({
                 where: {
                     jid: uniqueJids,
-                    // If we had a user_id on contacts, we'd limit here. Assuming shared or linked to instances. 
+                    user_id: req.user.id
                 }
             });
 
@@ -92,9 +94,8 @@ exports.getMessages = async (req, res, next) => {
             if (!instance) return next(new AppError('Instance not found', 404));
             whereClause.instance_id = instance.id;
         } else {
-            // If searching all, we accept messages from any instance owned by user for this JID
-            const instances = await WhatsAppInstance.findAll({ where: { user_id: req.user.id } });
-            whereClause.instance_id = instances.map(i => i.id);
+            // If searching all, we show everything for this JID that belongs to the user
+            whereClause.user_id = req.user.id;
         }
 
         const messages = await Message.findAll({

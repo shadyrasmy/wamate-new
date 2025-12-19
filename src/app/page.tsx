@@ -1,25 +1,45 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { API_URL } from '@/lib/api';
 import HeroSection from '@/components/landing/HeroSection';
 import WhyUsSection from '@/components/landing/WhyUsSection';
 import BenefitsSection from '@/components/landing/BenefitsSection';
 import NumbersSection from '@/components/landing/NumbersSection';
 import HowEasySection from '@/components/landing/HowEasySection';
+import Footer from '@/components/layout/Footer';
 
 export default function Home() {
-  return (
-    <main className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <HeroSection />
-      <NumbersSection />
-      <WhyUsSection />
-      <BenefitsSection />
-      <HowEasySection />
+  const [config, setConfig] = useState<any>(null);
 
-      {/* Simple Footer */}
-      <footer className="py-12 bg-surface border-t border-border">
-        <div className="container mx-auto px-4 text-center text-foreground/50">
-          <h4 className="text-2xl font-bold text-blood-red mb-4">WaMate</h4>
-          <p>© {new Date().getFullYear()} WaMate. All rights reserved.</p>
-        </div>
-      </footer>
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const res = await fetch(`${API_URL}/admin/config/public`);
+        if (res.ok) {
+          const data = await res.json();
+          setConfig(data.data.config);
+        }
+      } catch (error) {
+        console.error('Failed to load public config', error);
+      }
+    };
+    loadConfig();
+  }, []);
+
+  const show = (section: string) => {
+    if (!config || !config.cms_visibility) return true; // Default to showing if not loaded
+    return config.cms_visibility[section] !== false;
+  };
+
+  return (
+    <main className="min-h-screen bg-background text-white overflow-x-hidden">
+      {show('hero') && <HeroSection />}
+      {show('numbers') && <NumbersSection />}
+      {show('whyUs') && <WhyUsSection />}
+      {show('benefits') && <BenefitsSection />}
+      {show('howEasy') && <HowEasySection />}
+      <Footer />
     </main>
   );
 }

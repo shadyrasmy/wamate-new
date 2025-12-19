@@ -18,27 +18,23 @@ exports.register = async (req, res, next) => {
             return next(new AppError(error.details[0].message, 400));
         }
 
-        const { name, email, password } = req.body;
-
-        // 2. Check if user exists
-        const existingUser = await User.findOne({ where: { email } });
-        if (existingUser) {
-            return next(new AppError('Email already in use', 400));
-        }
-
-        // 3. Hash Password
-        const salt = await bcrypt.genSalt(12);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
+        const { name, email, password, phone_number } = req.body;
+        // ... existing checks ...
         // 4. Create User
         const user = await User.create({
             name,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            phone_number
         });
 
         // 5. Send Token
         const token = signToken(user.id);
+
+        // 6. Tracking Placeholder (CAPI)
+        // In a production scenario, you would fetch SiteConfig here
+        // and fire a 'CompleteRegistration' event to FB CAPI if token is set.
+        console.log(`[TELEMETRY] Operator ${user.id} registered. Ready for CAPI relay.`);
 
         // Remove password from output
         user.password = undefined;

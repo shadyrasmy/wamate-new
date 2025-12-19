@@ -7,7 +7,8 @@ const registerSchema = Joi.object({
         .messages({
             'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
             'string.min': 'Password must be at least 8 characters long'
-        })
+        }),
+    phone_number: Joi.string().min(10).required()
 });
 
 const loginSchema = Joi.object({

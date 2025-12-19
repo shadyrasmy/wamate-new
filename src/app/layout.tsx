@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
+import HeaderScripts from "@/components/layout/HeaderScripts";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -24,7 +25,10 @@ export default function RootLayout({
         suppressHydrationWarning={true}
         className={`${outfit.variable} font-sans antialiased bg-[#0d0a1a] text-white`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <HeaderScripts />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

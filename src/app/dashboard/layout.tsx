@@ -28,6 +28,8 @@ const menuItems = [
     { icon: Crown, label: 'Manage Nodes', href: '/dashboard/admin/users', isAdmin: true },
     { icon: Receipt, label: 'Network Invoices', href: '/dashboard/admin/invoices', isAdmin: true },
     { icon: Shield, label: 'Service Plans', href: '/dashboard/admin/plans', isAdmin: true },
+    { icon: Gear, label: 'Command Center', href: '/dashboard/admin/settings', isAdmin: true },
+    { icon: Crown, label: 'Subscription Plan', href: '/dashboard/plans' }, // For normal users
     { icon: Code, label: 'API Center', href: '/dashboard/api' },
 ];
 

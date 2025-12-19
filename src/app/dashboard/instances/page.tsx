@@ -189,6 +189,33 @@ export default function InstancesPage() {
 
                         <div className="space-y-6 relative z-10">
                             <div className="flex items-center justify-between">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Chat Logging</span>
+                                    <p className="text-[9px] text-gray-600 font-medium">Save traffic to database</p>
+                                </div>
+                                <button
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+                                        try {
+                                            await fetchWithAuth(`/instances/${instance.instance_id}/toggle-chat`, {
+                                                method: 'PATCH',
+                                                body: JSON.stringify({ enabled: !instance.chat_enabled })
+                                            });
+                                            loadInstances();
+                                        } catch (error) {
+                                            alert('Toggle operation failed.');
+                                        }
+                                    }}
+                                    className={`w-12 h-6 rounded-full relative transition-colors duration-500 ${instance.chat_enabled ? 'bg-primary shadow-[0_0_10px_rgba(255,255,255,0.1)]' : 'bg-white/10 border border-white/5'}`}
+                                >
+                                    <motion.div
+                                        animate={{ x: instance.chat_enabled ? 26 : 4 }}
+                                        className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg"
+                                    />
+                                </button>
+                            </div>
+
+                            <div className="flex items-center justify-between border-t border-white/5 pt-6">
                                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Phone Record</span>
                                 <span className="text-sm font-mono text-white/80">{instance.phone_number || 'PENDING_LINK'}</span>
                             </div>

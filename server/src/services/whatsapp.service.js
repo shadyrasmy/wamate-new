@@ -199,14 +199,37 @@ class WhatsAppService {
             const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId } });
             if (!instance) return;
 
+            // NEW: Chat ON/OFF Toggle
+            // If chat logging is disabled, we skip saving to DB entirely
+            if (!instance.chat_enabled) {
+                console.log(`[WA] Chat logging is DISABLED for instance ${instanceId}. skipping save.`);
+
+                // Still emit for real-time UI (ephemeral)
+                const ephemeralMsg = {
+                    id: msg.key.id,
+                    content: textContent,
+                    isMe: fromMe,
+                    type: messageType,
+                    mediaUrl: mediaUrl,
+                    senderName: fromMe ? 'Me' : (msg.pushName || null),
+                    senderJid: participant || (fromMe ? 'me' : jid),
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    status: 'sent'
+                };
+                this.emitToRoom(instanceId, 'new_message', ephemeralMsg);
+                return;
+            }
+
             // UPSERT CONTACT(S)
             try {
                 // 1. Group/Main Chat Contact
-                const existingContact = await Contact.findOne({ where: { instance_id: instance.id, jid: jid } });
+                const existingContact = await Contact.findOne({
+                    where: { user_id: instance.user_id, jid: jid }
+                });
 
                 await Contact.upsert({
                     jid: jid,
-                    instance_id: instance.id,
+                    user_id: instance.user_id,
                     name: isGroup ? (existingContact?.name || jid.split('@')[0]) : (msg.pushName || jid.split('@')[0]),
                     push_name: isGroup ? null : msg.pushName,
                     is_group: isGroup,
@@ -217,7 +240,7 @@ class WhatsAppService {
                 if (isGroup && participant) {
                     await Contact.upsert({
                         jid: participant,
-                        instance_id: instance.id,
+                        user_id: instance.user_id,
                         name: msg.pushName || participant.split('@')[0],
                         push_name: msg.pushName,
                         is_group: false,
@@ -231,6 +254,7 @@ class WhatsAppService {
             // Save Message
             const [savedMsg, created] = await Message.upsert({
                 instance_id: instance.id,
+                user_id: instance.user_id,
                 message_id: msg.key.id,
                 jid,
                 from_me: fromMe,

@@ -4,7 +4,10 @@ const adminController = require('../controllers/admin.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { requireAdmin } = require('../middlewares/admin.middleware');
 
-// Protect all routes
+// Public route FIRST to avoid middleware collision
+router.get('/config/public', adminController.getPublicSiteConfig);
+
+// Protected routes
 router.use(protect);
 router.use(requireAdmin);
 
@@ -20,5 +23,14 @@ router.delete('/plans/:planId', adminController.deletePlan);
 
 // Invoices
 router.get('/invoices', adminController.getAllInvoices);
+
+// User Controls
+router.delete('/users/:userId', adminController.deleteUser);
+router.patch('/users/:userId/status', adminController.banUser);
+router.post('/users/:userId/extend', adminController.extendSubscription);
+
+// Site Config
+router.get('/config', adminController.getSiteConfig);
+router.patch('/config', adminController.updateSiteConfig);
 
 module.exports = router;

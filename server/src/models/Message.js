@@ -50,6 +50,10 @@ const Message = sequelize.define('Message', {
     quoted_message_id: {
         type: DataTypes.STRING,
         allowNull: true
+    },
+    user_id: {
+        type: DataTypes.UUID,
+        allowNull: true // Optional for now during transition
     }
 }, {
     timestamps: true,
