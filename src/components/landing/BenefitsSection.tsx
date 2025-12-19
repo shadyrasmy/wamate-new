@@ -2,7 +2,20 @@
 
 import { motion } from 'framer-motion';
 
-export default function BenefitsSection() {
+export default function BenefitsSection({ content }: { content?: any }) {
+    const defaultContent = {
+        title: "Data that drives Conversions.",
+        subtitle: "Our advanced routing engine doesn't just send messages—it tracks every interaction. See exactly which agent is closing deals and which campaigns are performing.",
+        stat1_title: "99.9%",
+        stat1_label: "Delivery Rate",
+        stat2_title: "< 2s",
+        stat2_label: "Avg Response",
+        mission_title: "Why We Exist.",
+        mission_text: "In the age of scattered attention, WhatsApp is the only place left where people actually listen. We built WaMate to turn this personal connection into a scalable enterprise asset."
+    };
+
+    const c = content || defaultContent;
+
     return (
         <section className="py-24 relative overflow-hidden">
             <div className="container mx-auto px-6">
@@ -53,18 +66,18 @@ export default function BenefitsSection() {
                         viewport={{ once: true }}
                     >
                         <h5 className="text-primary font-bold tracking-widest uppercase text-sm mb-4">Intelligence</h5>
-                        <h2 className="text-4xl lg:text-5xl font-bold mb-8 text-white">Data that drives <br /> <span className="text-secondary">Conversions.</span></h2>
+                        <h2 className="text-4xl lg:text-5xl font-bold mb-8 text-white">{c.title}</h2>
                         <p className="text-gray-400 text-lg leading-relaxed mb-10">
-                            Our advanced routing engine doesn't just send messages—it tracks every interaction. See exactly which agent is closing deals and which campaigns are performing.
+                            {c.subtitle}
                         </p>
                         <div className="grid grid-cols-2 gap-8">
                             <div>
-                                <div className="text-3xl font-bold mb-1 text-white">99.9%</div>
-                                <div className="text-xs text-gray-500 uppercase font-black">Delivery Rate</div>
+                                <div className="text-3xl font-bold mb-1 text-white">{c.stat1_title}</div>
+                                <div className="text-xs text-gray-500 uppercase font-black">{c.stat1_label}</div>
                             </div>
                             <div>
-                                <div className="text-3xl font-bold mb-1 text-white">&lt; 2s</div>
-                                <div className="text-xs text-gray-500 uppercase font-black">Avg Response</div>
+                                <div className="text-3xl font-bold mb-1 text-white">{c.stat2_title}</div>
+                                <div className="text-xs text-gray-500 uppercase font-black">{c.stat2_label}</div>
                             </div>
                         </div>
                     </motion.div>
@@ -79,10 +92,10 @@ export default function BenefitsSection() {
                             viewport={{ once: true }}
                         >
                             <h2 className="text-4xl lg:text-7xl font-black mb-12 text-white">
-                                Why We <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent italic">Exist.</span>
+                                {c.mission_title}
                             </h2>
                             <p className="text-2xl text-gray-400 leading-relaxed font-light italic">
-                                "In the age of scattered attention, WhatsApp is the only place left where people actually listen. We built WaMate to turn this personal connection into a scalable enterprise asset."
+                                "{c.mission_text}"
                             </p>
                             <div className="mt-12 flex items-center justify-center gap-4">
                                 <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-bold italic">WM</div>

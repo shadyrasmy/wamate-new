@@ -291,7 +291,7 @@ exports.resolveChat = async (req, res, next) => {
         const { jid } = req.body;
         const { Contact } = require('../models');
 
-        let whereClause = { jid };
+        const whereClause = { jid, user_id: req.user.id };
         if (req.user.role === 'seat') {
             whereClause.assigned_seat_id = req.user.id;
         }

@@ -291,6 +291,7 @@ exports.getPublicSiteConfig = async (req, res, next) => {
         // Return only the non-sensitive public configuration
         const publicConfig = {
             cms_visibility: config.cms_visibility,
+            landing_content: config.landing_content,
             fb_pixel_id: config.fb_pixel_id,
             header_scripts: config.header_scripts
         };

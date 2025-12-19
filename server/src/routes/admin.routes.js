@@ -5,6 +5,10 @@ const { protect } = require('../middlewares/auth.middleware');
 const { requireAdmin } = require('../middlewares/admin.middleware');
 
 // Public route FIRST to avoid middleware collision
+const adminValidator = require('../validators/admin.validator');
+const { validate } = require('../middlewares/validate.middleware');
+
+// Public route FIRST to avoid middleware collision
 router.get('/config/public', adminController.getPublicSiteConfig);
 
 // Protected routes
@@ -13,12 +17,12 @@ router.use(requireAdmin);
 
 router.get('/users', adminController.getAllUsers);
 router.get('/users/:userId', adminController.getUserDetails);
-router.patch('/users/:userId', adminController.updateUserPlan);
+router.patch('/users/:userId', validate(adminValidator.updateUserPlanSchema), adminController.updateUserPlan);
 
 // Plans
 router.get('/plans', adminController.getPlans);
-router.post('/plans', adminController.createPlan);
-router.patch('/plans/:planId', adminController.updatePlan);
+router.post('/plans', validate(adminValidator.createPlanSchema), adminController.createPlan);
+router.patch('/plans/:planId', validate(adminValidator.createPlanSchema), adminController.updatePlan);
 router.delete('/plans/:planId', adminController.deletePlan);
 
 // Invoices
@@ -26,11 +30,11 @@ router.get('/invoices', adminController.getAllInvoices);
 
 // User Controls
 router.delete('/users/:userId', adminController.deleteUser);
-router.patch('/users/:userId/status', adminController.banUser);
-router.post('/users/:userId/extend', adminController.extendSubscription);
+router.patch('/users/:userId/status', validate(adminValidator.banUserSchema), adminController.banUser);
+router.post('/users/:userId/extend', validate(adminValidator.extendSubscriptionSchema), adminController.extendSubscription);
 
 // Site Config
 router.get('/config', adminController.getSiteConfig);
-router.patch('/config', adminController.updateSiteConfig);
+router.patch('/config', validate(adminValidator.updateSiteConfigSchema), adminController.updateSiteConfig);
 
 module.exports = router;

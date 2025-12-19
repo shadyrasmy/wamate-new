@@ -148,3 +148,24 @@ exports.toggleChatLogging = async (req, res, next) => {
         next(err);
     }
 };
+exports.getPairingCode = async (req, res, next) => {
+    try {
+        const { instanceId } = req.params;
+        const { phoneNumber } = req.body;
+
+        const instance = await WhatsAppInstance.findOne({
+            where: { instance_id: instanceId, user_id: req.user.id }
+        });
+
+        if (!instance) return next(new AppError('Instance not found', 404));
+
+        const code = await whatsappService.requestPairingCode(instanceId, phoneNumber);
+
+        res.status(200).json({
+            status: 'success',
+            data: { code }
+        });
+    } catch (err) {
+        next(err);
+    }
+};

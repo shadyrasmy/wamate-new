@@ -3,55 +3,44 @@
 import { motion } from 'framer-motion';
 import { Stack, UserSquare, Repeat, ShieldCheck, ChatCircleDots, HardDrives } from '@phosphor-icons/react';
 
-export default function WhyUsSection() {
+export default function WhyUsSection({ content }: { content?: any }) {
+    const defaultContent = {
+        title: "Engineered for Resilience.",
+        subtitle: "Our architecture is built on top of the latest edge-computing standards, ensuring your messages always reach their destination.",
+        card1_title: "Global Edge Network",
+        card1_desc: "Distributed nodes across 12+ regions for 0ms latency.",
+        card2_title: "Enterprise Encryption",
+        card2_desc: "End-to-end security protocols for every transmission.",
+        card3_title: "Smart Automations",
+        card3_desc: "Build complex workflows with our visual logic engine."
+    };
+
+    const c = content || defaultContent;
+
     const features = [
         {
             icon: Stack,
-            title: "Multi-Instance",
-            desc: "Connect and manage unlimited WhatsApp numbers in a single dashboard.",
+            title: c.card1_title,
+            desc: c.card1_desc,
             color: "text-purple-400",
             bg: "bg-purple-600/10",
             border: "hover:border-purple-500/50"
         },
         {
-            icon: UserSquare,
-            title: "Agent Seats",
-            desc: "Create dedicated seats for your support agents. Manage permissions easily.",
-            color: "text-pink-400",
-            bg: "bg-pink-600/10",
-            border: "hover:border-pink-500/50"
-        },
-        {
-            icon: Repeat,
-            title: "Round-Robin",
-            desc: "Automatically distribute incoming leads among your active agents.",
-            color: "text-green-400",
-            bg: "bg-green-600/10",
-            border: "hover:border-green-500/50"
-        },
-        {
             icon: ShieldCheck,
-            title: "Sticky Assignments",
-            desc: "Customers always talk to the same agent, maintaining consistency.",
+            title: c.card2_title,
+            desc: c.card2_desc,
             color: "text-blue-400",
             bg: "bg-blue-600/10",
             border: "hover:border-blue-500/50"
         },
         {
-            icon: ChatCircleDots,
-            title: "Auto-Replies",
-            desc: "Set up smart welcome messages or away replies for offline hours.",
-            color: "text-yellow-400",
-            bg: "bg-yellow-600/10",
-            border: "hover:border-yellow-500/50"
-        },
-        {
-            icon: HardDrives,
-            title: "Persistence",
-            desc: "All chats are stored in a central database. No data loss ever.",
-            color: "text-red-400",
-            bg: "bg-red-600/10",
-            border: "hover:border-red-500/50"
+            icon: Repeat,
+            title: c.card3_title,
+            desc: c.card3_desc,
+            color: "text-green-400",
+            bg: "bg-green-600/10",
+            border: "hover:border-green-500/50"
         }
     ];
 
@@ -67,7 +56,7 @@ export default function WhyUsSection() {
                     >
                         <h5 className="text-primary font-bold tracking-widest uppercase text-sm mb-4">Core Features</h5>
                         <h2 className="text-4xl lg:text-6xl font-bold font-sans text-white">
-                            Unleash the full power of <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">WhatsApp.</span>
+                            {c.title}
                         </h2>
                     </motion.div>
                     <motion.p
@@ -76,7 +65,7 @@ export default function WhyUsSection() {
                         viewport={{ once: true }}
                         className="text-gray-400 max-w-sm mt-6 md:mt-0"
                     >
-                        Stop struggling with a single phone. Empower your team with tools built for scale.
+                        {c.subtitle}
                     </motion.p>
                 </div>
 

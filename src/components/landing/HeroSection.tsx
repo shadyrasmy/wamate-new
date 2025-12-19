@@ -4,7 +4,16 @@ import { motion } from 'framer-motion';
 import { ArrowRight, PlayCircle, WhatsappLogo, Lightning, ChartLineUp } from '@phosphor-icons/react';
 import Link from 'next/link';
 
-export default function HeroSection() {
+export default function HeroSection({ content }: { content?: any }) {
+    const defaultContent = {
+        title: "Scale Your Impact with AI WhatsApp Automation.",
+        subtitle: "The ultimate edge-computing platform for high-performance messaging, automated workflows, and global connectivity.",
+        cta_primary: "Claim Your Node",
+        cta_secondary: "Watch Transmission"
+    };
+
+    const c = content || defaultContent;
+
     return (
         <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden bg-background">
             {/* Background Glows */}
@@ -35,19 +44,18 @@ export default function HeroSection() {
                         Ultimate WhatsApp CRM
                     </div>
                     <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6">
-                        All <span className="text-green-400">WhatsApp</span> <br />
-                        in <span className="bg-gradient-to-r from-[#a78bfa] to-[#ec4899] bg-clip-text text-transparent">One Place.</span>
+                        {c.title}
                     </h1>
                     <p className="text-lg text-gray-400 mb-8 max-w-xl mx-auto lg:mx-0">
-                        Connect multiple numbers, automate chat assignments, and manage your entire sales & support team from a single, beautiful dashboard.
+                        {c.subtitle}
                     </p>
                     <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                         <Link href="/register" className="px-8 py-4 bg-white text-black rounded-full font-bold hover:bg-gray-100 transition flex items-center gap-2 shadow-xl shadow-white/10">
-                            Start Free Trial <ArrowRight weight="bold" />
+                            {c.cta_primary} <ArrowRight weight="bold" />
                         </Link>
                         <button className="px-8 py-4 carbon-card rounded-full font-bold hover:bg-white/5 transition flex items-center gap-2 border border-white/5 group">
                             <PlayCircle size={24} weight="fill" className="text-primary group-hover:scale-110 transition" />
-                            Watch Demo
+                            {c.cta_secondary}
                         </button>
                     </div>
                 </motion.div>

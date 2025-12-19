@@ -34,11 +34,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background text-white overflow-x-hidden">
-      {show('hero') && <HeroSection />}
-      {show('numbers') && <NumbersSection />}
-      {show('whyUs') && <WhyUsSection />}
-      {show('benefits') && <BenefitsSection />}
-      {show('howEasy') && <HowEasySection />}
+      {show('hero') && <HeroSection content={config?.landing_content?.hero} />}
+      {show('numbers') && <NumbersSection content={config?.landing_content?.numbers} />}
+      {show('whyUs') && <WhyUsSection content={config?.landing_content?.whyUs} />}
+      {show('benefits') && <BenefitsSection content={config?.landing_content?.benefits} />}
+      {show('howEasy') && <HowEasySection content={config?.landing_content?.howEasy} />}
       <Footer />
     </main>
   );

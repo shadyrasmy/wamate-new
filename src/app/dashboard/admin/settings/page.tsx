@@ -81,7 +81,8 @@ export default function AdminSettingsPage() {
 
             <div className="flex gap-4 p-1.5 bg-white/5 rounded-2xl w-fit">
                 {[
-                    { id: 'cms', label: 'CMS Control', icon: Eye },
+                    { id: 'cms', label: 'Visibility', icon: Eye },
+                    { id: 'landing', label: 'Landing CMS', icon: Gear },
                     { id: 'scripts', label: 'Script Lab', icon: Code },
                     { id: 'facebook', label: 'Tracking', icon: FacebookLogo }
                 ].map(tab => (
@@ -118,6 +119,258 @@ export default function AdminSettingsPage() {
                                     </button>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'landing' && (
+                    <div className="space-y-12">
+                        {/* HERO SECTION */}
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">Hero Section</h3>
+                            <div className="grid gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Hero Title</label>
+                                    <input
+                                        type="text"
+                                        value={config.landing_content.hero.title}
+                                        onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, hero: { ...config.landing_content.hero, title: e.target.value } } })}
+                                        className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Hero Subtitle</label>
+                                    <textarea
+                                        value={config.landing_content.hero.subtitle}
+                                        onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, hero: { ...config.landing_content.hero, subtitle: e.target.value } } })}
+                                        className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition h-24"
+                                    />
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Primary CTA</label>
+                                        <input
+                                            type="text"
+                                            value={config.landing_content.hero.cta_primary}
+                                            onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, hero: { ...config.landing_content.hero, cta_primary: e.target.value } } })}
+                                            className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Secondary CTA</label>
+                                        <input
+                                            type="text"
+                                            value={config.landing_content.hero.cta_secondary}
+                                            onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, hero: { ...config.landing_content.hero, cta_secondary: e.target.value } } })}
+                                            className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* NUMBERS SECTION */}
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">Numbers Section</h3>
+                            <div className="space-y-2 mb-6">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Background Label</label>
+                                <input
+                                    type="text"
+                                    value={config.landing_content.numbers.title}
+                                    onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, numbers: { ...config.landing_content.numbers, title: e.target.value } } })}
+                                    className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition text-sm uppercase tracking-widest"
+                                />
+                            </div>
+                            <div className="grid md:grid-cols-3 gap-6">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="space-y-4 p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Stat {i} Title</label>
+                                            <input
+                                                type="text"
+                                                value={config.landing_content.numbers[`stat${i}_title`]}
+                                                onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, numbers: { ...config.landing_content.numbers, [`stat${i}_title`]: e.target.value } } })}
+                                                className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Stat {i} Label</label>
+                                            <input
+                                                type="text"
+                                                value={config.landing_content.numbers[`stat${i}_label`]}
+                                                onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, numbers: { ...config.landing_content.numbers, [`stat${i}_label`]: e.target.value } } })}
+                                                className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-white font-medium text-xs focus:outline-none focus:border-primary/50 transition"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* WHY US SECTION */}
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">Why Us Section</h3>
+                            <div className="grid gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Section Title</label>
+                                    <input
+                                        type="text"
+                                        value={config.landing_content.whyUs.title}
+                                        onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, whyUs: { ...config.landing_content.whyUs, title: e.target.value } } })}
+                                        className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Section Subtitle</label>
+                                    <input
+                                        type="text"
+                                        value={config.landing_content.whyUs.subtitle}
+                                        onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, whyUs: { ...config.landing_content.whyUs, subtitle: e.target.value } } })}
+                                        className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                    />
+                                </div>
+                                <div className="grid md:grid-cols-3 gap-6">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="space-y-4 p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Card {i} Title</label>
+                                                <input
+                                                    type="text"
+                                                    value={config.landing_content.whyUs[`card${i}_title`]}
+                                                    onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, whyUs: { ...config.landing_content.whyUs, [`card${i}_title`]: e.target.value } } })}
+                                                    className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Card {i} Description</label>
+                                                <textarea
+                                                    value={config.landing_content.whyUs[`card${i}_desc`]}
+                                                    onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, whyUs: { ...config.landing_content.whyUs, [`card${i}_desc`]: e.target.value } } })}
+                                                    className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-white font-medium text-xs focus:outline-none focus:border-primary/50 transition h-20"
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* BENEFITS SECTION */}
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">Benefits Section</h3>
+                            <div className="grid gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Analytics Title</label>
+                                    <input
+                                        type="text"
+                                        value={config.landing_content.benefits.title}
+                                        onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, title: e.target.value } } })}
+                                        className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Analytics Description</label>
+                                    <textarea
+                                        value={config.landing_content.benefits.subtitle}
+                                        onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, subtitle: e.target.value } } })}
+                                        className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition h-24"
+                                    />
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Stat 1 (e.g. 99.9%)</label>
+                                        <input
+                                            type="text"
+                                            value={config.landing_content.benefits.stat1_title}
+                                            onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, stat1_title: e.target.value } } })}
+                                            className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Stat 1 Label</label>
+                                        <input
+                                            type="text"
+                                            value={config.landing_content.benefits.stat1_label}
+                                            onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, stat1_label: e.target.value } } })}
+                                            className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="border-t border-white/5 pt-6 mt-4">
+                                    <div className="space-y-2 mb-6">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Mission Title</label>
+                                        <input
+                                            type="text"
+                                            value={config.landing_content.benefits.mission_title}
+                                            onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, mission_title: e.target.value } } })}
+                                            className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition italic"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Mission Quote</label>
+                                        <textarea
+                                            value={config.landing_content.benefits.mission_text}
+                                            onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, mission_text: e.target.value } } })}
+                                            className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition h-32 italic"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* CASE STUDIES SECTION */}
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">Case Studies</h3>
+                            <div className="space-y-2 mb-6">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Section Title</label>
+                                <input
+                                    type="text"
+                                    value={config.landing_content.howEasy.title}
+                                    onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, title: e.target.value } } })}
+                                    className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                />
+                            </div>
+                            <div className="grid md:grid-cols-2 gap-8">
+                                {[1, 2].map(i => (
+                                    <div key={i} className="space-y-4 p-8 bg-white/[0.02] border border-white/5 rounded-[2rem]">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Brand</label>
+                                            <input
+                                                type="text"
+                                                value={config.landing_content.howEasy[`case${i}_brand`]}
+                                                onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, [`case${i}_brand`]: e.target.value } } })}
+                                                className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-white font-black italic focus:outline-none focus:border-primary/50 transition uppercase tracking-tighter text-lg"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Stat Badge</label>
+                                            <input
+                                                type="text"
+                                                value={config.landing_content.howEasy[`case${i}_stat`]}
+                                                onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, [`case${i}_stat`]: e.target.value } } })}
+                                                className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-green-400 font-bold focus:outline-none focus:border-primary/50 transition text-xs"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Quote</label>
+                                            <textarea
+                                                value={config.landing_content.howEasy[`case${i}_text`]}
+                                                onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, [`case${i}_text`]: e.target.value } } })}
+                                                className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-gray-300 font-medium text-sm focus:outline-none focus:border-primary/50 transition h-24"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Footer Label</label>
+                                            <input
+                                                type="text"
+                                                value={config.landing_content.howEasy[`case${i}_footer`]}
+                                                onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, [`case${i}_footer`]: e.target.value } } })}
+                                                className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-gray-500 font-bold focus:outline-none focus:border-primary/50 transition text-[10px] uppercase"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}

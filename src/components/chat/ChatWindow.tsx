@@ -39,7 +39,10 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
             // Check if it's for current JID (we need to know JID if parsedMsg doesn't have it)
             // Actually, parsedMsg should probably have JID now.
             setMessages(prev => {
-                if (prev.find(m => m.id === parsedMsg.id)) return prev;
+                // If message already exists (by ID), don't add duplicate
+                if (prev.some(m => m.id === parsedMsg.id)) return prev;
+                // If it's a message we sent optimistically, it might have a temp ID (timestamp)
+                // We should check if content and isMe match if ID doesn't
                 return [...prev, parsedMsg];
             });
             scrollToBottom();
@@ -114,7 +117,7 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
         scrollToBottom();
 
         try {
-            await fetchWithAuth('/chat/send', {
+            const res = await fetchWithAuth('/chat/send', {
                 method: 'POST',
                 body: JSON.stringify({
                     instanceId,
@@ -123,6 +126,11 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
                     quotedMessageId
                 })
             });
+
+            if (res.status === 'success' && res.data?.key?.id) {
+                // Replace temp ID with real ID from server to prevent double entries when socket arrives
+                setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.data.key.id } : m));
+            }
         } catch (error) {
             console.error('Failed to send', error);
         }

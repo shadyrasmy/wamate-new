@@ -16,9 +16,13 @@ export default function InstancesPage() {
     const [showQR, setShowQR] = useState(false);
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [socket, setSocket] = useState<any>(null);
-    const [newInstanceId, setNewInstanceId] = useState<string | null>(null);
     const [editingInstance, setEditingInstance] = useState<any>(null);
     const [newName, setNewName] = useState('');
+    const [connectionMethod, setConnectionMethod] = useState<'qr' | 'pairing'>('qr');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [pairingCode, setPairingCode] = useState<string | null>(null);
+    const [pairingLoading, setPairingLoading] = useState(false);
+    const [newInstanceId, setNewInstanceId] = useState<string | null>(null);
 
     // Initialize Socket
     useEffect(() => {
@@ -57,8 +61,10 @@ export default function InstancesPage() {
             setNewInstanceId(instanceId);
 
             socket.emit('join_instance', instanceId);
-            socket.on('qr', ({ qr }: { qr: string }) => setQrCode(qr));
-            socket.on('connection_update', ({ status }: { status: string }) => {
+            socket.on('qr', ({ qr }: { qr: string }) => {
+                if (connectionMethod === 'qr') setQrCode(qr);
+            });
+            socket.on('connection_update', ({ status, name: updatedName }: { status: string, name?: string }) => {
                 if (status === 'connected') {
                     setShowQR(false);
                     loadInstances();
@@ -88,12 +94,31 @@ export default function InstancesPage() {
         e.stopPropagation();
         setNewInstanceId(id);
         setQrCode(null);
+        setPairingCode(null);
+        setConnectionMethod('qr');
         setShowQR(true);
         try {
             await fetchWithAuth(`/instances/${id}/reconnect`, { method: 'POST' });
             socket.emit('join_instance', id);
         } catch (error) {
             console.error('Reconnect failed', error);
+        }
+    };
+
+    const handleRequestPairingCode = async () => {
+        if (!phoneNumber || !newInstanceId) return;
+        setPairingLoading(true);
+        try {
+            const res = await fetchWithAuth(`/instances/${newInstanceId}/pairing-code`, {
+                method: 'POST',
+                body: JSON.stringify({ phoneNumber })
+            });
+            setPairingCode(res.data.code);
+        } catch (error) {
+            console.error('Pairing code request failed', error);
+            alert('Failed to generate pairing code. Ensure the instance is ready.');
+        } finally {
+            setPairingLoading(false);
         }
     };
 
@@ -285,59 +310,125 @@ export default function InstancesPage() {
 
                             <div className="flex flex-col items-center mb-10 relative z-10">
                                 <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 mb-6 font-black text-primary">
-                                    <QrCode size={32} weight="bold" />
+                                    {connectionMethod === 'qr' ? <QrCode size={32} weight="bold" /> : <DeviceMobile size={32} weight="bold" />}
                                 </div>
                                 <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Sync Node</h2>
                                 <p className="text-gray-500 font-medium text-sm text-center">Establish a low-latency link between your device and the edge network.</p>
                             </div>
 
-                            <div className="relative group mb-10">
-                                <div className="w-full aspect-square bg-white p-6 rounded-[3rem] shadow-2xl flex items-center justify-center relative overflow-hidden border-[12px] border-[#0d0b1a]">
-                                    {qrCode ? (
-                                        <div className="relative w-full h-full">
-                                            <QRCodeSVG value={qrCode} size={280} className="w-full h-full" bgColor="#ffffff" fgColor="#0d0b1a" />
-                                            {/* Corner Markers */}
-                                            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-xl" />
-                                            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-xl" />
-                                            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-xl" />
-                                            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-xl" />
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center">
-                                            <Spinner size={48} className="animate-spin text-primary mb-6" weight="bold" />
-                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest animate-pulse">Awaiting Signal...</p>
-                                        </div>
-                                    )}
+                            {/* Method Selection */}
+                            <div className="flex bg-white/5 p-1.5 rounded-2xl mb-10 border border-white/5">
+                                <button
+                                    onClick={() => { setConnectionMethod('qr'); setPairingCode(null); }}
+                                    className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition ${connectionMethod === 'qr' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:bg-white/5'}`}
+                                >
+                                    Normal QR
+                                </button>
+                                <button
+                                    onClick={() => setConnectionMethod('pairing')}
+                                    className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition ${connectionMethod === 'pairing' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:bg-white/5'}`}
+                                >
+                                    With Number
+                                </button>
+                            </div>
 
-                                    {/* Laser Scan Effect */}
-                                    <AnimatePresence>
-                                        {qrCode && (
-                                            <motion.div
-                                                animate={{ top: ['5%', '95%', '5%'] }}
-                                                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                                                className="absolute left-[5%] right-[5%] h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-80 blur-[1px] pointer-events-none z-20 shadow-[0_0_15px_rgba(255,255,255,0.8)]"
-                                            />
+                            <div className="relative group mb-10">
+                                {connectionMethod === 'qr' ? (
+                                    <div className="w-full aspect-square bg-white p-6 rounded-[3rem] shadow-2xl flex items-center justify-center relative overflow-hidden border-[12px] border-[#0d0b1a]">
+                                        {qrCode ? (
+                                            <div className="relative w-full h-full">
+                                                <QRCodeSVG value={qrCode} size={280} className="w-full h-full" bgColor="#ffffff" fgColor="#0d0b1a" />
+                                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-xl" />
+                                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-xl" />
+                                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-xl" />
+                                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-xl" />
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center">
+                                                <Spinner size={48} className="animate-spin text-primary mb-6" weight="bold" />
+                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest animate-pulse">Awaiting Signal...</p>
+                                            </div>
                                         )}
-                                    </AnimatePresence>
-                                </div>
+                                        <AnimatePresence>
+                                            {qrCode && (
+                                                <motion.div
+                                                    animate={{ top: ['5%', '95%', '5%'] }}
+                                                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                                                    className="absolute left-[5%] right-[5%] h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-80 blur-[1px] pointer-events-none z-20 shadow-[0_0_15px_rgba(255,255,255,0.8)]"
+                                                />
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                ) : (
+                                    <div className="w-full space-y-6">
+                                        {!pairingCode ? (
+                                            <div className="space-y-4">
+                                                <div className="relative group">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Phone Number (e.g. 2012345678)"
+                                                        className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary transition"
+                                                        value={phoneNumber}
+                                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={handleRequestPairingCode}
+                                                    disabled={pairingLoading || !phoneNumber}
+                                                    className="w-full py-5 bg-primary rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 disabled:opacity-50 flex items-center justify-center gap-3"
+                                                >
+                                                    {pairingLoading ? <Spinner className="animate-spin" size={20} /> : 'Generate Pairing Code'}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-6 py-6 card-glass rounded-[2rem] border border-white/5 bg-white/[0.02]">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Your Pairing Code</p>
+                                                <div className="flex gap-2">
+                                                    {pairingCode.split('').map((char, i) => (
+                                                        <div key={i} className="w-10 h-14 bg-white/10 rounded-xl flex items-center justify-center text-2xl font-black text-primary border border-white/10 shadow-xl">
+                                                            {char}
+                                                            {i === 3 && <div className="absolute right-[-6px] w-1 h-1 bg-gray-500 rounded-full" />}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <p className="text-[9px] text-gray-600 font-medium max-w-[200px] text-center">Type this code on your WhatsApp mobile app to authorize.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 <div className="absolute -inset-4 bg-primary/20 rounded-[4rem] blur-3xl -z-10 opacity-50" />
                             </div>
 
                             <div className="grid grid-cols-1 gap-3">
-                                {[
-                                    { step: 1, text: "Open WhatsApp on your mobile device" },
-                                    { step: 2, text: "Tap Menu or Settings > Linked Devices" },
-                                    { step: 3, text: "Tap Link a Device and point to this screen" }
-                                ].map((step) => (
-                                    <div key={step.step} className="flex items-center gap-4 bg-white/[0.03] p-4 rounded-2xl border border-white/5 group/step hover:bg-white/[0.05] transition-colors">
-                                        <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center font-black text-xs text-primary border border-white/5 group-hover/step:border-primary/30 transition-colors">
-                                            {step.step}
+                                {connectionMethod === 'qr' ? (
+                                    [
+                                        { step: 1, text: "Open WhatsApp > Linked Devices" },
+                                        { step: 2, text: "Tap Link a Device and point to this screen" }
+                                    ].map((step) => (
+                                        <div key={step.step} className="flex items-center gap-4 bg-white/[0.03] p-4 rounded-2xl border border-white/5 group/step hover:bg-white/[0.05] transition-colors">
+                                            <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center font-black text-xs text-primary border border-white/5 group-hover/step:border-primary/30 transition-colors">
+                                                {step.step}
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover/step:text-gray-300 transition-colors">
+                                                {step.text}
+                                            </span>
                                         </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover/step:text-gray-300 transition-colors">
-                                            {step.text}
-                                        </span>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    [
+                                        { step: 1, text: "Link a Device > Link with phone number instead" },
+                                        { step: 2, text: "Enter the pairing code shown above" }
+                                    ].map((step) => (
+                                        <div key={step.step} className="flex items-center gap-4 bg-white/[0.03] p-4 rounded-2xl border border-white/5 group/step hover:bg-white/[0.05] transition-colors">
+                                            <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center font-black text-xs text-primary border border-white/5 group-hover/step:border-primary/30 transition-colors">
+                                                {step.step}
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover/step:text-gray-300 transition-colors">
+                                                {step.text}
+                                            </span>
+                                        </div>
+                                    ))
+                                )}
                             </div>
 
                             {!qrCode && (
