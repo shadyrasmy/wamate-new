@@ -3,10 +3,30 @@ const { AppError } = require('../middlewares/error.middleware');
 
 exports.getProfile = async (req, res, next) => {
     try {
-        const user = await User.findByPk(req.user.id, {
-            attributes: ['id', 'name', 'email', 'access_token', 'max_instances', 'monthly_message_limit', 'messages_sent_current_period', 'role'],
-            include: [{ model: Plan, as: 'plan', attributes: ['name', 'price'] }]
-        });
+        // If it's a SEAT user, handle differently
+        if (req.user.role === 'seat') {
+            const { Seat, User } = require('../models');
+            const seat = await Seat.findByPk(req.user.id, {
+                include: [{ model: User, as: 'manager', attributes: ['name', 'email'] }]
+            });
+            if (!seat) return next(new AppError('Seat not found', 404));
+            return res.status(200).json({ status: 'success', data: { user: seat } });
+        }
+
+        // Standard User Profile
+        let user;
+        try {
+            user = await User.findByPk(req.user.id, {
+                attributes: ['id', 'name', 'email', 'access_token', 'max_instances', 'monthly_message_limit', 'messages_sent_current_period', 'role'],
+                include: [{ model: Plan, as: 'plan', attributes: ['name', 'price'] }]
+            });
+        } catch (queryErr) {
+            console.error('[CRITICAL] Profile Fetch Failed with Association. Falling back to basic fetch.', queryErr.message);
+            // Fallback: This handles cases where 'id_plan' or the Plan table is missing in an outdated DB schema
+            user = await User.findByPk(req.user.id, {
+                attributes: ['id', 'name', 'email', 'access_token', 'max_instances', 'monthly_message_limit', 'messages_sent_current_period', 'role']
+            });
+        }
 
         if (!user) return next(new AppError('User not found', 404));
 

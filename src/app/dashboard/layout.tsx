@@ -37,9 +37,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { icon: HardDrives, label: t('instances'), href: '/dashboard/instances' },
         { icon: UsersThree, label: t('team_seats'), href: '/dashboard/seats' },
         { icon: Crown, label: 'Manage Nodes', href: '/dashboard/admin/users', isAdmin: true },
+        { icon: Gear, label: 'Landing CMS', href: '/dashboard/admin/settings?tab=landing', isAdmin: true },
         { icon: Receipt, label: 'Network Invoices', href: '/dashboard/admin/invoices', isAdmin: true },
         { icon: Shield, label: 'Service Plans', href: '/dashboard/admin/plans', isAdmin: true },
-        { icon: Gear, label: 'Command Center', href: '/dashboard/admin/settings', isAdmin: true },
+        { icon: Gear, label: 'System Protocols', href: '/dashboard/admin/settings', isAdmin: true },
         { icon: Crown, label: t('upgrade'), href: '/dashboard/plans' },
         { icon: Code, label: t('api_center'), href: '/dashboard/api' },
     ];

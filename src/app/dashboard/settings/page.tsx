@@ -20,8 +20,10 @@ export default function SettingsPage() {
     const loadProfile = async () => {
         try {
             const data = await fetchWithAuth('/user/profile');
-            setUser(data.data.user);
-            setNewName(data.data.user.name);
+            if (data?.data?.user) {
+                setUser(data.data.user);
+                setNewName(data.data.user.name || '');
+            }
         } catch (error) {
             console.error('Failed to load profile', error);
         } finally {

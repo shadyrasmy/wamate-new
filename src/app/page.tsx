@@ -27,13 +27,29 @@ export default function Home() {
     loadConfig();
   }, []);
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user?.role === 'admin') setIsAdmin(true);
+  }, []);
+
   const show = (section: string) => {
     if (!config || !config.cms_visibility) return true; // Default to showing if not loaded
     return config.cms_visibility[section] !== false;
   };
 
   return (
-    <main className="min-h-screen bg-background text-white overflow-x-hidden">
+    <main className="min-h-screen bg-background text-white overflow-x-hidden relative">
+      {isAdmin && (
+        <a
+          href="/dashboard/admin/settings?tab=landing"
+          className="fixed bottom-10 right-10 z-[100] bg-primary text-white p-4 rounded-2xl shadow-2xl shadow-primary/40 font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-110 active:scale-95 transition"
+        >
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+          Edit Landing Content
+        </a>
+      )}
       {show('hero') && <HeroSection content={config?.landing_content?.hero} />}
       {show('numbers') && <NumbersSection content={config?.landing_content?.numbers} />}
       {show('whyUs') && <WhyUsSection content={config?.landing_content?.whyUs} />}

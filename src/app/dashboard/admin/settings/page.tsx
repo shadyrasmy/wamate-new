@@ -8,11 +8,14 @@ import {
     Spinner, Check, WarningCircle, ToggleLeft, ToggleRight
 } from '@phosphor-icons/react';
 
+import { useSearchParams } from 'next/navigation';
+
 export default function AdminSettingsPage() {
+    const searchParams = useSearchParams();
     const [config, setConfig] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState('cms');
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'cms');
 
     useEffect(() => {
         loadConfig();

@@ -36,13 +36,24 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
         s.emit('join_instance', instanceId);
 
         s.on('new_message', (parsedMsg: any) => {
-            // Check if it's for current JID (we need to know JID if parsedMsg doesn't have it)
-            // Actually, parsedMsg should probably have JID now.
             setMessages(prev => {
-                // If message already exists (by ID), don't add duplicate
+                // 1. Check if ID exists (exact match)
                 if (prev.some(m => m.id === parsedMsg.id)) return prev;
-                // If it's a message we sent optimistically, it might have a temp ID (timestamp)
-                // We should check if content and isMe match if ID doesn't
+
+                // 2. If it's from me, check for a matching optimistic message (temp ID)
+                // We match by content and a very close timestamp (within 5 seconds)
+                if (parsedMsg.isMe) {
+                    const optimisticMsg = prev.find(m =>
+                        m.isMe &&
+                        m.content === parsedMsg.content &&
+                        m.id.length > 20 // optimistic IDs are usually short timestamps, real IDs are long
+                    );
+                    if (optimisticMsg) {
+                        // Replace the temp message with the real one
+                        return prev.map(m => m.id === optimisticMsg.id ? parsedMsg : m);
+                    }
+                }
+
                 return [...prev, parsedMsg];
             });
             scrollToBottom();
@@ -128,8 +139,16 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
             });
 
             if (res.status === 'success' && res.data?.key?.id) {
-                // Replace temp ID with real ID from server to prevent double entries when socket arrives
-                setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: res.data.key.id } : m));
+                const realId = res.data.key.id;
+                setMessages(prev => {
+                    // If the socket already arrived and added/replaced this message, do nothing
+                    if (prev.some(m => m.id === realId)) {
+                        // But we still need to remove the temp one if it's still there
+                        return prev.filter(m => m.id !== tempId);
+                    }
+                    // Otherwise, upgrade the temp message to real
+                    return prev.map(m => m.id === tempId ? { ...m, id: realId, status: 'read' } : m);
+                });
             }
         } catch (error) {
             console.error('Failed to send', error);
