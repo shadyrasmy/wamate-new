@@ -315,20 +315,9 @@ exports.resolveChat = async (req, res, next) => {
 
 exports.getContacts = async (req, res, next) => {
     try {
-        const { instanceId } = req.query;
-        const whereClause = {};
-
-        if (instanceId && instanceId !== 'all') {
-            const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId, user_id: req.user.id } });
-            if (!instance) return next(new AppError('Instance not found', 404));
-            whereClause.instance_id = instance.id;
-        } else {
-            const instances = await WhatsAppInstance.findAll({ where: { user_id: req.user.id } });
-            whereClause.instance_id = instances.map(i => i.id);
-        }
-
+        // Contact model uses user_id, not instance_id
         const contacts = await Contact.findAll({
-            where: whereClause,
+            where: { user_id: req.user.id },
             order: [['name', 'ASC']]
         });
 

@@ -12,6 +12,7 @@ export default function PlansPage() {
     const [plans, setPlans] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
+    const [upgradingPlanId, setUpgradingPlanId] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -33,9 +34,26 @@ export default function PlansPage() {
         }
     };
 
-    const handleUpgrade = (planId: string) => {
-        // In a real app, this would redirect to checkout
-        alert('Internal redirection to checkout for plan: ' + planId + '. This feature is being finalized with our payment partner.');
+    const handleUpgrade = async (planId: string) => {
+        setUpgradingPlanId(planId);
+        try {
+            const data = await fetchWithAuth('/payment/create-invoice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan_id: planId })
+            });
+
+            if (data.data?.invoice_url) {
+                window.location.href = data.data.invoice_url;
+            } else {
+                alert('Failed to create payment invoice. Please try again.');
+            }
+        } catch (error: any) {
+            console.error('Upgrade failed:', error);
+            alert(error.message || 'Failed to initiate payment. Please try again.');
+        } finally {
+            setUpgradingPlanId(null);
+        }
     };
 
     return (
@@ -52,7 +70,8 @@ export default function PlansPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                     {plans.map((plan, i) => {
-                        const isCurrent = user?.plan?.id === plan.id;
+                        const isCurrent = user?.plan?.id === plan.id || user?.id_plan === plan.id;
+                        const isUpgrading = upgradingPlanId === plan.id;
                         return (
                             <motion.div
                                 key={plan.id}
@@ -98,11 +117,17 @@ export default function PlansPage() {
 
                                 <button
                                     onClick={() => handleUpgrade(plan.id)}
-                                    disabled={isCurrent}
-                                    className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3 ${isCurrent ? 'bg-white/5 text-gray-500 cursor-not-allowed border border-white/5' : 'bg-primary text-white shadow-primary/20 hover:scale-[1.02] active:scale-95'}`}
+                                    disabled={isCurrent || isUpgrading}
+                                    className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3 ${isCurrent ? 'bg-white/5 text-gray-500 cursor-not-allowed border border-white/5' : isUpgrading ? 'bg-primary/50 text-white cursor-wait' : 'bg-primary text-white shadow-primary/20 hover:scale-[1.02] active:scale-95'}`}
                                 >
-                                    {isCurrent ? <Check size={18} weight="bold" /> : <ShootingStar size={18} weight="bold" />}
-                                    {isCurrent ? 'Protocol Verified' : 'Synchronize Magnitude'}
+                                    {isUpgrading ? (
+                                        <Spinner size={18} className="animate-spin" />
+                                    ) : isCurrent ? (
+                                        <Check size={18} weight="bold" />
+                                    ) : (
+                                        <ShootingStar size={18} weight="bold" />
+                                    )}
+                                    {isCurrent ? 'Protocol Verified' : isUpgrading ? 'Processing...' : 'Upgrade'}
                                 </button>
                             </motion.div>
                         );

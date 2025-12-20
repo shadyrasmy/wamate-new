@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { fetchWithAuth } from '@/lib/api';
-import { Crown, CheckCircle, XCircle, TrendUp } from '@phosphor-icons/react';
+import { Crown, CheckCircle, Spinner } from '@phosphor-icons/react';
 
 export default function SubscriptionPage() {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-
     const [plans, setPlans] = useState<any[]>([]);
+    const [upgradingPlanId, setUpgradingPlanId] = useState<string | null>(null);
 
     useEffect(() => {
         loadUser();
@@ -35,9 +35,35 @@ export default function SubscriptionPage() {
         }
     };
 
+    const handleUpgrade = async (planId: string) => {
+        setUpgradingPlanId(planId);
+        try {
+            const data = await fetchWithAuth('/payment/create-invoice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan_id: planId })
+            });
+
+            if (data.data?.invoice_url) {
+                // Redirect to Fawaterak payment page
+                window.location.href = data.data.invoice_url;
+            } else {
+                alert('Failed to create payment invoice. Please try again.');
+            }
+        } catch (error: any) {
+            console.error('Upgrade failed:', error);
+            alert(error.message || 'Failed to initiate payment. Please try again.');
+        } finally {
+            setUpgradingPlanId(null);
+        }
+    };
+
     if (loading) return <div className="p-8 text-center text-gray-500">Loading subscription details...</div>;
 
     const usagePercent = user ? Math.round((user.messages_sent_current_period / user.monthly_message_limit) * 100) : 0;
+
+    // Get current plan name from user's plan relationship
+    const currentPlanName = user?.plan?.name?.toLowerCase() || '';
 
     return (
         <div className="flex-1 p-8 bg-background min-h-screen">
@@ -53,8 +79,8 @@ export default function SubscriptionPage() {
 
                     <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Current Plan</h2>
                     <div className="text-4xl font-bold text-gray-900 capitalize mb-4 flex items-center gap-2">
-                        {user?.plan} Plan
-                        {user?.plan === 'pro' && <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full border border-yellow-200">PRO</span>}
+                        {user?.plan?.name || 'Free'} Plan
+                        {currentPlanName === 'pro' && <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full border border-yellow-200">PRO</span>}
                     </div>
 
                     <div className="space-y-4">
@@ -64,8 +90,11 @@ export default function SubscriptionPage() {
                         </div>
                         <div className="flex justify-between text-sm text-gray-600">
                             <span>Renews On</span>
-                            <span className="font-medium">{(new Date()).toLocaleDateString()}</span>
-                            {/* TODO: Add real next_billing_date to Model */}
+                            <span className="font-medium">
+                                {user?.subscription_end_date
+                                    ? new Date(user.subscription_end_date).toLocaleDateString()
+                                    : 'N/A'}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -107,6 +136,7 @@ export default function SubscriptionPage() {
                 {plans.map((plan: any) => (
                     <PlanCard
                         key={plan.id}
+                        planId={plan.id}
                         name={plan.name}
                         price={`$${plan.price}/mo`}
                         features={[
@@ -115,8 +145,10 @@ export default function SubscriptionPage() {
                             `${plan.max_seats} Team Seat${plan.max_seats > 1 ? 's' : ''}`,
                             plan.description
                         ].filter(Boolean)}
-                        current={user?.plan === plan.name.toLowerCase()}
+                        current={user?.id_plan === plan.id}
                         recommended={plan.name.toLowerCase() === 'pro'}
+                        onUpgrade={handleUpgrade}
+                        isUpgrading={upgradingPlanId === plan.id}
                     />
                 ))}
 
@@ -130,7 +162,7 @@ export default function SubscriptionPage() {
     );
 }
 
-function PlanCard({ name, price, features, current, recommended }: any) {
+function PlanCard({ planId, name, price, features, current, recommended, onUpgrade, isUpgrading }: any) {
     return (
         <div className={`p-6 rounded-2xl border transition-all relative ${current ? 'bg-gray-50 border-wa-green ring-1 ring-wa-green' : 'bg-white border-gray-200 hover:shadow-lg'}`}>
             {recommended && (
@@ -152,13 +184,17 @@ function PlanCard({ name, price, features, current, recommended }: any) {
             </ul>
 
             <button
-                disabled={current}
-                className={`w-full py-2.5 rounded-lg font-medium transition-colors ${current
+                disabled={current || isUpgrading}
+                onClick={() => !current && !isUpgrading && onUpgrade(planId)}
+                className={`w-full py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${current
                     ? 'bg-gray-200 text-gray-500 cursor-default'
-                    : 'bg-black text-white hover:bg-gray-800'
+                    : isUpgrading
+                        ? 'bg-gray-300 text-gray-600 cursor-wait'
+                        : 'bg-black text-white hover:bg-gray-800'
                     }`}
             >
-                {current ? 'Current Plan' : 'Upgrade'}
+                {isUpgrading && <Spinner size={18} className="animate-spin" />}
+                {current ? 'Current Plan' : isUpgrading ? 'Processing...' : 'Upgrade'}
             </button>
         </div>
     );

@@ -173,8 +173,15 @@ exports.getAllInvoices = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
+        const { status } = req.query;
+
+        const whereClause = {};
+        if (status && ['pending', 'paid', 'failed', 'cancelled'].includes(status)) {
+            whereClause.status = status;
+        }
 
         const { count, rows } = await Invoice.findAndCountAll({
+            where: whereClause,
             include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }],
             limit,
             offset,
@@ -189,6 +196,75 @@ exports.getAllInvoices = async (req, res, next) => {
                 page,
                 totalPages: Math.ceil(count / limit)
             }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Payment approval imports
+const { upgradeUserPlan } = require('./payment.controller');
+
+exports.approvePayment = async (req, res, next) => {
+    try {
+        const { invoiceId } = req.params;
+
+        const invoice = await Invoice.findByPk(invoiceId, {
+            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }]
+        });
+
+        if (!invoice) return next(new AppError('Invoice not found', 404));
+
+        if (invoice.status === 'paid') {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Invoice already paid'
+            });
+        }
+
+        if (!invoice.plan_id) {
+            return next(new AppError('Invoice has no associated plan', 400));
+        }
+
+        // Upgrade user plan
+        await upgradeUserPlan(invoice.user_id, invoice.plan_id);
+
+        // Update invoice status
+        await invoice.update({
+            status: 'paid',
+            paid_at: new Date()
+        });
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Payment approved and user plan upgraded',
+            data: { invoice }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.rejectPayment = async (req, res, next) => {
+    try {
+        const { invoiceId } = req.params;
+
+        const invoice = await Invoice.findByPk(invoiceId);
+        if (!invoice) return next(new AppError('Invoice not found', 404));
+
+        if (invoice.status === 'paid') {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Cannot reject a paid invoice'
+            });
+        }
+
+        await invoice.update({ status: 'cancelled' });
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Payment rejected',
+            data: { invoice }
         });
     } catch (err) {
         next(err);

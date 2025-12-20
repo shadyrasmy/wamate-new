@@ -80,7 +80,7 @@ export default function MessageBubble({
                     {type === 'image' && (
                         <div className="mb-3 rounded-2xl overflow-hidden border border-white/10 group cursor-zoom-in bg-black/20 min-w-[200px]">
                             {mediaUrl ? (
-                                <img src={mediaUrl.replace('localhost:3001', 'localhost:3000')} alt="Payload" className="w-full h-auto object-cover max-h-72 group-hover:scale-105 transition duration-700 ease-out" />
+                                <img src={mediaUrl} alt="Payload" className="w-full h-auto object-cover max-h-72 group-hover:scale-105 transition duration-700 ease-out" />
                             ) : (
                                 <div className="w-full h-48 flex flex-col items-center justify-center text-gray-500 gap-3">
                                     <Spinner className="animate-spin" size={20} />
@@ -93,7 +93,7 @@ export default function MessageBubble({
                     {type === 'video' && (
                         <div className="mb-3 rounded-2xl overflow-hidden border border-white/10 bg-black/40 min-w-[200px]">
                             {mediaUrl ? (
-                                <video src={mediaUrl.replace('localhost:3001', 'localhost:3000')} controls className="w-full h-auto max-h-72" />
+                                <video src={mediaUrl} controls className="w-full h-auto max-h-72" />
                             ) : (
                                 <div className="w-full h-48 flex flex-col items-center justify-center text-gray-500 gap-3">
                                     <PlayCircle size={32} weight="duotone" className="opacity-20" />
@@ -110,7 +110,7 @@ export default function MessageBubble({
                             </div>
                             <div className="flex-1">
                                 {mediaUrl ? (
-                                    <audio src={mediaUrl.replace('localhost:3001', 'localhost:3000')} controls className="w-full h-8 invert opacity-70" />
+                                    <audio src={mediaUrl} controls className="w-full h-8" style={{ filter: 'invert(1) hue-rotate(180deg)' }} />
                                 ) : (
                                     <span className="text-[10px] font-bold text-gray-500 italic uppercase">Processing Voice...</span>
                                 )}
@@ -122,7 +122,7 @@ export default function MessageBubble({
                         <div className={`mb-3 p-4 rounded-2xl flex items-center gap-4 border border-white/10 ${isMe ? 'bg-white/10' : 'bg-white/5'}`}>
                             <FileText size={32} weight="duotone" className="text-primary" />
                             <div className="flex-1 min-w-0 text-white">
-                                <a href={mediaUrl?.replace('localhost:3001', 'localhost:3000')} target="_blank" rel="noopener noreferrer">
+                                <a href={mediaUrl} target="_blank" rel="noopener noreferrer">
                                     <div className="text-xs font-bold truncate">Application/File</div>
                                     <div className="text-[9px] opacity-50 uppercase font-black">Download Asset</div>
                                 </a>

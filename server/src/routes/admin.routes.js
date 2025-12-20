@@ -27,6 +27,8 @@ router.delete('/plans/:planId', adminController.deletePlan);
 
 // Invoices
 router.get('/invoices', adminController.getAllInvoices);
+router.post('/invoices/:invoiceId/approve', adminController.approvePayment);
+router.post('/invoices/:invoiceId/reject', adminController.rejectPayment);
 
 // User Controls
 router.delete('/users/:userId', adminController.deleteUser);
