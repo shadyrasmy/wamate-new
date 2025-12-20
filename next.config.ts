@@ -5,15 +5,15 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: `http://127.0.0.1:${process.env.BACKEND_PORT || '5987'}/api/:path*`,
+        destination: `http://localhost:${process.env.BACKEND_PORT || '3001'}/api/:path*`,
       },
       {
         source: '/public/:path*',
-        destination: `http://127.0.0.1:${process.env.BACKEND_PORT || '5987'}/public/:path*`,
+        destination: `http://localhost:${process.env.BACKEND_PORT || '3001'}/public/:path*`,
       },
       {
         source: '/socket.io/:path*',
-        destination: `http://127.0.0.1:${process.env.BACKEND_PORT || '5987'}/socket.io/:path*`,
+        destination: `http://localhost:${process.env.BACKEND_PORT || '3001'}/socket.io/:path*`,
       },
     ];
   },

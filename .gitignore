@@ -50,6 +50,7 @@ server/public/uploads/
 # next-env
 next-env.d.ts
 .next/
+next.config.ts
 
 # env files (can opt-in for committing if needed)
 

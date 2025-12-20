@@ -10,7 +10,7 @@ const sequelize = new Sequelize(
         dialect: 'mysql',
         logging: false,
         pool: {
-            max: 2, // Reduced to prevent hitting 'max_user_connections' limits in dev/shared hosting
+            max: 20, // Reduced to prevent hitting 'max_user_connections' limits in dev/shared hosting
             min: 0,
             acquire: 30000,
             idle: 10000
@@ -19,6 +19,12 @@ const sequelize = new Sequelize(
 );
 
 const connectDB = async () => {
+    // Skip DB entirely if SKIP_DB is set (useful when connection limits are reached)
+    if (process.env.SKIP_DB === 'true') {
+        console.log('⏭️  Skipping database connection (SKIP_DB=true)');
+        return;
+    }
+
     try {
         await sequelize.authenticate();
         console.log('✅ Database connected successfully');
@@ -26,9 +32,14 @@ const connectDB = async () => {
         // Ensure models are loaded before sync
         require('../models');
 
-        // Sync models (in development, alter: true is fine)
-        await sequelize.sync({ alter: true });
-        console.log('✅ Models synced');
+        // Only sync models if explicitly enabled (to avoid excessive DB connections)
+        // Set SYNC_DB=true when you need to update schema
+        if (process.env.SYNC_DB === 'true') {
+            await sequelize.sync({ alter: true });
+            console.log('✅ Models synced');
+        } else {
+            console.log('⏭️  Skipping model sync (set SYNC_DB=true to enable)');
+        }
 
         // Seed default plans if empty
         const Plan = require('../models/Plan');

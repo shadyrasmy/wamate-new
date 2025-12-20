@@ -34,7 +34,7 @@ const User = sequelize.define('User', {
         defaultValue: 'user'
     },
     id_plan: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: true,
         references: {
             model: 'plans',

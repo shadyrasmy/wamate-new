@@ -293,13 +293,13 @@ export default function InstancesPage() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setShowQR(false)}
-                            className="absolute inset-0 bg-[#0d0b1a]/95 backdrop-blur-xl"
+                            className="absolute inset-0 bg-carbon/95 backdrop-blur-xl"
                         />
                         <motion.div
                             initial={{ scale: 0.9, y: 30, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
                             exit={{ scale: 0.9, y: 30, opacity: 0 }}
-                            className="carbon-card rounded-[3rem] p-12 max-w-md w-full shadow-3xl relative overflow-hidden border-white/10"
+                            className="carbon-card rounded-[3rem] p-8 md:p-12 max-w-4xl w-full shadow-3xl relative overflow-hidden border-white/10 max-h-[90vh] overflow-y-auto"
                         >
                             <button
                                 onClick={() => setShowQR(false)}
@@ -308,139 +308,145 @@ export default function InstancesPage() {
                                 <X size={24} weight="bold" />
                             </button>
 
-                            <div className="flex flex-col items-center mb-10 relative z-10">
-                                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 mb-6 font-black text-primary">
-                                    {connectionMethod === 'qr' ? <QrCode size={32} weight="bold" /> : <DeviceMobile size={32} weight="bold" />}
+                            <div className="flex flex-col items-center mb-8 relative z-10">
+                                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 mb-4 font-black text-primary">
+                                    {connectionMethod === 'qr' ? <QrCode size={28} weight="bold" /> : <DeviceMobile size={28} weight="bold" />}
                                 </div>
-                                <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Sync Node</h2>
-                                <p className="text-gray-500 font-medium text-sm text-center">Establish a low-latency link between your device and the edge network.</p>
+                                <h2 className="text-2xl font-black text-white mb-1 tracking-tight">Integration Portal</h2>
+                                <p className="text-gray-500 font-medium text-xs text-center">Establish a link via QR or pairing code.</p>
                             </div>
 
                             {/* Method Selection */}
-                            <div className="flex bg-white/5 p-1.5 rounded-2xl mb-10 border border-white/5">
+                            <div className="flex bg-white/5 p-1.5 rounded-2xl mb-8 border border-white/5">
                                 <button
                                     onClick={() => { setConnectionMethod('qr'); setPairingCode(null); }}
                                     className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition ${connectionMethod === 'qr' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:bg-white/5'}`}
                                 >
-                                    Normal QR
+                                    Traditional QR Sync
                                 </button>
                                 <button
                                     onClick={() => setConnectionMethod('pairing')}
                                     className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition ${connectionMethod === 'pairing' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:bg-white/5'}`}
                                 >
-                                    With Number
+                                    8-Digit Pairing Code
                                 </button>
                             </div>
 
-                            <div className="relative group mb-10">
-                                {connectionMethod === 'qr' ? (
-                                    <div className="w-full aspect-square bg-white p-6 rounded-[3rem] shadow-2xl flex items-center justify-center relative overflow-hidden border-[12px] border-[#0d0b1a]">
-                                        {qrCode ? (
-                                            <div className="relative w-full h-full">
-                                                <QRCodeSVG value={qrCode} size={280} className="w-full h-full" bgColor="#ffffff" fgColor="#0d0b1a" />
-                                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-xl" />
-                                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-xl" />
-                                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-xl" />
-                                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-xl" />
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center">
-                                                <Spinner size={48} className="animate-spin text-primary mb-6" weight="bold" />
-                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest animate-pulse">Awaiting Signal...</p>
-                                            </div>
-                                        )}
-                                        <AnimatePresence>
-                                            {qrCode && (
-                                                <motion.div
-                                                    animate={{ top: ['5%', '95%', '5%'] }}
-                                                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                                                    className="absolute left-[5%] right-[5%] h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-80 blur-[1px] pointer-events-none z-20 shadow-[0_0_15px_rgba(255,255,255,0.8)]"
-                                                />
+                            {/* Side-by-side layout for QR and instructions */}
+                            <div className="flex flex-col md:flex-row gap-8">
+                                {/* Left side: QR or Pairing */}
+                                <div className="relative group flex-1 min-w-0">
+                                    {connectionMethod === 'qr' ? (
+                                        <div className="w-full max-w-[280px] mx-auto aspect-square bg-white p-4 rounded-[2rem] shadow-2xl flex items-center justify-center relative overflow-hidden border-[8px] border-carbon">
+                                            {qrCode ? (
+                                                <div className="relative w-full h-full">
+                                                    <QRCodeSVG value={qrCode} size={220} className="w-full h-full" bgColor="#ffffff" fgColor="#0d0b1a" />
+                                                    <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl-lg" />
+                                                    <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-primary rounded-tr-lg" />
+                                                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-primary rounded-bl-lg" />
+                                                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br-lg" />
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <Spinner size={40} className="animate-spin text-primary mb-4" weight="bold" />
+                                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest animate-pulse">Awaiting Signal...</p>
+                                                </div>
                                             )}
-                                        </AnimatePresence>
-                                    </div>
-                                ) : (
-                                    <div className="w-full space-y-6">
-                                        {!pairingCode ? (
-                                            <div className="space-y-4">
-                                                <div className="relative group">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Phone Number (e.g. 2012345678)"
-                                                        className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary transition"
-                                                        value={phoneNumber}
-                                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                            <AnimatePresence>
+                                                {qrCode && (
+                                                    <motion.div
+                                                        animate={{ top: ['5%', '95%', '5%'] }}
+                                                        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                                                        className="absolute left-[5%] right-[5%] h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-80 blur-[1px] pointer-events-none z-20 shadow-[0_0_15px_rgba(255,255,255,0.8)]"
                                                     />
-                                                </div>
-                                                <button
-                                                    onClick={handleRequestPairingCode}
-                                                    disabled={pairingLoading || !phoneNumber}
-                                                    className="w-full py-5 bg-primary rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 disabled:opacity-50 flex items-center justify-center gap-3"
-                                                >
-                                                    {pairingLoading ? <Spinner className="animate-spin" size={20} /> : 'Generate Pairing Code'}
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-6 py-6 card-glass rounded-[2rem] border border-white/5 bg-white/[0.02]">
-                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Your Pairing Code</p>
-                                                <div className="flex gap-2">
-                                                    {pairingCode.split('').map((char, i) => (
-                                                        <div key={i} className="w-10 h-14 bg-white/10 rounded-xl flex items-center justify-center text-2xl font-black text-primary border border-white/10 shadow-xl">
-                                                            {char}
-                                                            {i === 3 && <div className="absolute right-[-6px] w-1 h-1 bg-gray-500 rounded-full" />}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <p className="text-[9px] text-gray-600 font-medium max-w-[200px] text-center">Type this code on your WhatsApp mobile app to authorize.</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                <div className="absolute -inset-4 bg-primary/20 rounded-[4rem] blur-3xl -z-10 opacity-50" />
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-3">
-                                {connectionMethod === 'qr' ? (
-                                    [
-                                        { step: 1, text: "Open WhatsApp > Linked Devices" },
-                                        { step: 2, text: "Tap Link a Device and point to this screen" }
-                                    ].map((step) => (
-                                        <div key={step.step} className="flex items-center gap-4 bg-white/[0.03] p-4 rounded-2xl border border-white/5 group/step hover:bg-white/[0.05] transition-colors">
-                                            <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center font-black text-xs text-primary border border-white/5 group-hover/step:border-primary/30 transition-colors">
-                                                {step.step}
-                                            </div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover/step:text-gray-300 transition-colors">
-                                                {step.text}
-                                            </span>
+                                                )}
+                                            </AnimatePresence>
                                         </div>
-                                    ))
-                                ) : (
-                                    [
-                                        { step: 1, text: "Link a Device > Link with phone number instead" },
-                                        { step: 2, text: "Enter the pairing code shown above" }
-                                    ].map((step) => (
-                                        <div key={step.step} className="flex items-center gap-4 bg-white/[0.03] p-4 rounded-2xl border border-white/5 group/step hover:bg-white/[0.05] transition-colors">
-                                            <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center font-black text-xs text-primary border border-white/5 group-hover/step:border-primary/30 transition-colors">
-                                                {step.step}
-                                            </div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover/step:text-gray-300 transition-colors">
-                                                {step.text}
-                                            </span>
+                                    ) : (
+                                        <div className="w-full space-y-4">
+                                            {!pairingCode ? (
+                                                <div className="space-y-4">
+                                                    <div className="relative group">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Phone Number (e.g. 2012345678)"
+                                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold focus:outline-none focus:border-primary transition"
+                                                            value={phoneNumber}
+                                                            onChange={(e) => setPhoneNumber(e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        onClick={handleRequestPairingCode}
+                                                        disabled={pairingLoading || !phoneNumber}
+                                                        className="w-full py-4 bg-primary rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 disabled:opacity-50 flex items-center justify-center gap-3"
+                                                    >
+                                                        {pairingLoading ? <Spinner className="animate-spin" size={20} /> : 'Generate Pairing Code'}
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-4 py-6 card-glass rounded-[2rem] border border-white/5 bg-white/[0.02]">
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Your Pairing Code</p>
+                                                    <div className="flex gap-2">
+                                                        {pairingCode.split('').map((char, i) => (
+                                                            <div key={i} className="w-10 h-14 bg-white/10 rounded-xl flex items-center justify-center text-2xl font-black text-primary border border-white/10 shadow-xl">
+                                                                {char}
+                                                                {i === 3 && <div className="absolute right-[-6px] w-1 h-1 bg-gray-500 rounded-full" />}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <p className="text-[9px] text-gray-600 font-medium max-w-[200px] text-center">Type this code on your WhatsApp mobile app.</p>
+                                                </div>
+                                            )}
                                         </div>
-                                    ))
-                                )}
-                            </div>
-
-                            {!qrCode && (
-                                <div className="mt-8">
-                                    <button
-                                        onClick={handleCreateInstance}
-                                        className="w-full py-4 bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-white/10 hover:text-white transition-all border border-white/5"
-                                    >
-                                        Force Re-Provision Signal
-                                    </button>
+                                    )}
+                                    <div className="absolute -inset-4 bg-primary/20 rounded-[4rem] blur-3xl -z-10 opacity-30 hidden md:block" />
                                 </div>
-                            )}
+
+                                {/* Right side: Instructions */}
+                                <div className="flex-1 flex flex-col justify-center space-y-3">
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">How to Connect</h3>
+                                    {connectionMethod === 'qr' ? (
+                                        [
+                                            { step: 1, text: "Open WhatsApp > Linked Devices" },
+                                            { step: 2, text: "Tap 'Link a Device'" },
+                                            { step: 3, text: "Point your phone camera at this QR code" }
+                                        ].map((step) => (
+                                            <div key={step.step} className="flex items-center gap-3 bg-white/[0.03] p-3 rounded-xl border border-white/5 group/step hover:bg-white/[0.05] transition-colors">
+                                                <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center font-black text-xs text-primary border border-white/5 group-hover/step:border-primary/30 transition-colors shrink-0">
+                                                    {step.step}
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover/step:text-gray-300 transition-colors">
+                                                    {step.text}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        [
+                                            { step: 1, text: "Open WhatsApp > Linked Devices" },
+                                            { step: 2, text: "Tap 'Link with phone number instead'" },
+                                            { step: 3, text: "Enter the pairing code shown" }
+                                        ].map((step) => (
+                                            <div key={step.step} className="flex items-center gap-3 bg-white/[0.03] p-3 rounded-xl border border-white/5 group/step hover:bg-white/[0.05] transition-colors">
+                                                <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center font-black text-xs text-primary border border-white/5 group-hover/step:border-primary/30 transition-colors shrink-0">
+                                                    {step.step}
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover/step:text-gray-300 transition-colors">
+                                                    {step.text}
+                                                </span>
+                                            </div>
+                                        ))
+                                    )}
+
+                                    {!qrCode && connectionMethod === 'qr' && (
+                                        <button
+                                            onClick={handleCreateInstance}
+                                            className="w-full py-3 mt-4 bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                                        >
+                                            Force Re-Provision Signal
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
                         </motion.div>
                     </div>
                 )}
@@ -448,7 +454,7 @@ export default function InstancesPage() {
             {/* Rename Modal */}
             <AnimatePresence>
                 {editingInstance && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-[#0b0914]/80 backdrop-blur-xl">
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-background/80 backdrop-blur-xl">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}

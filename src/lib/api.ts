@@ -3,7 +3,7 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 // Socket URL logic:
 // 1. Use NEXT_PUBLIC_SOCKET_URL if provided
 // 2. If API_URL is absolute, use its base
-// 3. Fallback to current domain (if using proxy)
+// 3. Fallback to empty string (will use same origin via proxy)
 export const SOCKET_URL =
     process.env.NEXT_PUBLIC_SOCKET_URL ||
     (API_URL.startsWith('http') ? API_URL.replace(/\/api\/?$/, '') : '');

@@ -1,6 +1,6 @@
 export default function FeaturesPage() {
     return (
-        <div className="min-h-screen bg-[#0b0914] flex items-center justify-center text-white p-10">
+        <div className="min-h-screen bg-background flex items-center justify-center text-foreground p-10">
             <div className="max-w-2xl text-center space-y-6">
                 <h1 className="text-5xl font-black italic tracking-tighter">CORE ENGINE.</h1>
                 <p className="text-gray-500 font-medium">Zero latency. Infinite scale. Direct WhatsApp integration with high-speed neural processing. Discover why we lead the edge-computing race.</p>

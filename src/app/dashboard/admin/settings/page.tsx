@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { fetchWithAuth } from '@/lib/api';
 import {
@@ -10,7 +10,7 @@ import {
 
 import { useSearchParams } from 'next/navigation';
 
-export default function AdminSettingsPage() {
+function SettingsContent() {
     const searchParams = useSearchParams();
     const [config, setConfig] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -48,6 +48,7 @@ export default function AdminSettingsPage() {
     };
 
     const toggleCMS = (key: string) => {
+        if (!config || !config.cms_visibility) return;
         setConfig({
             ...config,
             cms_visibility: {
@@ -57,7 +58,7 @@ export default function AdminSettingsPage() {
         });
     };
 
-    if (loading) return (
+    if (loading || !config) return (
         <div className="flex justify-center items-center h-96">
             <Spinner size={32} className="animate-spin text-primary" />
         </div>
@@ -108,7 +109,7 @@ export default function AdminSettingsPage() {
                             <p className="text-gray-500 text-sm">Toggle front-end landing page sections on/off instantly.</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {Object.entries(config.cms_visibility).map(([key, val]: [string, any]) => (
+                            {config?.cms_visibility && Object.entries(config.cms_visibility).map(([key, val]: [string, any]) => (
                                 <div key={key} className="flex justify-between items-center p-6 bg-white/[0.03] border border-white/5 rounded-2xl">
                                     <div className="capitalize font-bold text-gray-300">
                                         {key.replace(/([A-Z])/g, ' $1')} Section
@@ -136,7 +137,7 @@ export default function AdminSettingsPage() {
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Hero Title</label>
                                     <input
                                         type="text"
-                                        value={config.landing_content.hero.title}
+                                        value={config?.landing_content?.hero?.title || ''}
                                         onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, hero: { ...config.landing_content.hero, title: e.target.value } } })}
                                         className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                     />
@@ -144,7 +145,7 @@ export default function AdminSettingsPage() {
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Hero Subtitle</label>
                                     <textarea
-                                        value={config.landing_content.hero.subtitle}
+                                        value={config?.landing_content?.hero?.subtitle || ''}
                                         onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, hero: { ...config.landing_content.hero, subtitle: e.target.value } } })}
                                         className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition h-24"
                                     />
@@ -154,7 +155,7 @@ export default function AdminSettingsPage() {
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Primary CTA</label>
                                         <input
                                             type="text"
-                                            value={config.landing_content.hero.cta_primary}
+                                            value={config?.landing_content?.hero?.cta_primary || ''}
                                             onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, hero: { ...config.landing_content.hero, cta_primary: e.target.value } } })}
                                             className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                         />
@@ -163,7 +164,7 @@ export default function AdminSettingsPage() {
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Secondary CTA</label>
                                         <input
                                             type="text"
-                                            value={config.landing_content.hero.cta_secondary}
+                                            value={config?.landing_content?.hero?.cta_secondary || ''}
                                             onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, hero: { ...config.landing_content.hero, cta_secondary: e.target.value } } })}
                                             className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                         />
@@ -179,7 +180,7 @@ export default function AdminSettingsPage() {
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Background Label</label>
                                 <input
                                     type="text"
-                                    value={config.landing_content.numbers.title}
+                                    value={config?.landing_content?.numbers?.title || ''}
                                     onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, numbers: { ...config.landing_content.numbers, title: e.target.value } } })}
                                     className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition text-sm uppercase tracking-widest"
                                 />
@@ -191,7 +192,7 @@ export default function AdminSettingsPage() {
                                             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Stat {i} Title</label>
                                             <input
                                                 type="text"
-                                                value={config.landing_content.numbers[`stat${i}_title`]}
+                                                value={config?.landing_content?.numbers?.[`stat${i}_title`] || ''}
                                                 onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, numbers: { ...config.landing_content.numbers, [`stat${i}_title`]: e.target.value } } })}
                                                 className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                             />
@@ -200,7 +201,7 @@ export default function AdminSettingsPage() {
                                             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Stat {i} Label</label>
                                             <input
                                                 type="text"
-                                                value={config.landing_content.numbers[`stat${i}_label`]}
+                                                value={config?.landing_content?.numbers?.[`stat${i}_label`] || ''}
                                                 onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, numbers: { ...config.landing_content.numbers, [`stat${i}_label`]: e.target.value } } })}
                                                 className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-white font-medium text-xs focus:outline-none focus:border-primary/50 transition"
                                             />
@@ -218,7 +219,7 @@ export default function AdminSettingsPage() {
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Section Title</label>
                                     <input
                                         type="text"
-                                        value={config.landing_content.whyUs.title}
+                                        value={config?.landing_content?.whyUs?.title || ''}
                                         onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, whyUs: { ...config.landing_content.whyUs, title: e.target.value } } })}
                                         className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                     />
@@ -227,7 +228,7 @@ export default function AdminSettingsPage() {
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Section Subtitle</label>
                                     <input
                                         type="text"
-                                        value={config.landing_content.whyUs.subtitle}
+                                        value={config?.landing_content?.whyUs?.subtitle || ''}
                                         onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, whyUs: { ...config.landing_content.whyUs, subtitle: e.target.value } } })}
                                         className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                     />
@@ -239,7 +240,7 @@ export default function AdminSettingsPage() {
                                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Card {i} Title</label>
                                                 <input
                                                     type="text"
-                                                    value={config.landing_content.whyUs[`card${i}_title`]}
+                                                    value={config?.landing_content?.whyUs?.[`card${i}_title`] || ''}
                                                     onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, whyUs: { ...config.landing_content.whyUs, [`card${i}_title`]: e.target.value } } })}
                                                     className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                                 />
@@ -247,7 +248,7 @@ export default function AdminSettingsPage() {
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Card {i} Description</label>
                                                 <textarea
-                                                    value={config.landing_content.whyUs[`card${i}_desc`]}
+                                                    value={config?.landing_content?.whyUs?.[`card${i}_desc`] || ''}
                                                     onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, whyUs: { ...config.landing_content.whyUs, [`card${i}_desc`]: e.target.value } } })}
                                                     className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-white font-medium text-xs focus:outline-none focus:border-primary/50 transition h-20"
                                                 />
@@ -266,7 +267,7 @@ export default function AdminSettingsPage() {
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Analytics Title</label>
                                     <input
                                         type="text"
-                                        value={config.landing_content.benefits.title}
+                                        value={config?.landing_content?.benefits?.title || ''}
                                         onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, title: e.target.value } } })}
                                         className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                     />
@@ -274,7 +275,7 @@ export default function AdminSettingsPage() {
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Analytics Description</label>
                                     <textarea
-                                        value={config.landing_content.benefits.subtitle}
+                                        value={config?.landing_content?.benefits?.subtitle || ''}
                                         onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, subtitle: e.target.value } } })}
                                         className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition h-24"
                                     />
@@ -284,7 +285,7 @@ export default function AdminSettingsPage() {
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Stat 1 (e.g. 99.9%)</label>
                                         <input
                                             type="text"
-                                            value={config.landing_content.benefits.stat1_title}
+                                            value={config?.landing_content?.benefits?.stat1_title || ''}
                                             onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, stat1_title: e.target.value } } })}
                                             className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                         />
@@ -293,7 +294,7 @@ export default function AdminSettingsPage() {
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Stat 1 Label</label>
                                         <input
                                             type="text"
-                                            value={config.landing_content.benefits.stat1_label}
+                                            value={config?.landing_content?.benefits?.stat1_label || ''}
                                             onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, stat1_label: e.target.value } } })}
                                             className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                         />
@@ -304,7 +305,7 @@ export default function AdminSettingsPage() {
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Mission Title</label>
                                         <input
                                             type="text"
-                                            value={config.landing_content.benefits.mission_title}
+                                            value={config?.landing_content?.benefits?.mission_title || ''}
                                             onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, mission_title: e.target.value } } })}
                                             className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition italic"
                                         />
@@ -312,7 +313,7 @@ export default function AdminSettingsPage() {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Mission Quote</label>
                                         <textarea
-                                            value={config.landing_content.benefits.mission_text}
+                                            value={config?.landing_content?.benefits?.mission_text || ''}
                                             onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, mission_text: e.target.value } } })}
                                             className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition h-32 italic"
                                         />
@@ -328,7 +329,7 @@ export default function AdminSettingsPage() {
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Section Title</label>
                                 <input
                                     type="text"
-                                    value={config.landing_content.howEasy.title}
+                                    value={config?.landing_content?.howEasy?.title || ''}
                                     onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, title: e.target.value } } })}
                                     className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                 />
@@ -340,7 +341,7 @@ export default function AdminSettingsPage() {
                                             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Brand</label>
                                             <input
                                                 type="text"
-                                                value={config.landing_content.howEasy[`case${i}_brand`]}
+                                                value={config?.landing_content?.howEasy?.[`case${i}_brand`] || ''}
                                                 onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, [`case${i}_brand`]: e.target.value } } })}
                                                 className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-white font-black italic focus:outline-none focus:border-primary/50 transition uppercase tracking-tighter text-lg"
                                             />
@@ -349,7 +350,7 @@ export default function AdminSettingsPage() {
                                             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Stat Badge</label>
                                             <input
                                                 type="text"
-                                                value={config.landing_content.howEasy[`case${i}_stat`]}
+                                                value={config?.landing_content?.howEasy?.[`case${i}_stat`] || ''}
                                                 onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, [`case${i}_stat`]: e.target.value } } })}
                                                 className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-green-400 font-bold focus:outline-none focus:border-primary/50 transition text-xs"
                                             />
@@ -357,7 +358,7 @@ export default function AdminSettingsPage() {
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Quote</label>
                                             <textarea
-                                                value={config.landing_content.howEasy[`case${i}_text`]}
+                                                value={config?.landing_content?.howEasy?.[`case${i}_text`] || ''}
                                                 onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, [`case${i}_text`]: e.target.value } } })}
                                                 className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-gray-300 font-medium text-sm focus:outline-none focus:border-primary/50 transition h-24"
                                             />
@@ -366,7 +367,7 @@ export default function AdminSettingsPage() {
                                             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Footer Label</label>
                                             <input
                                                 type="text"
-                                                value={config.landing_content.howEasy[`case${i}_footer`]}
+                                                value={config?.landing_content?.howEasy?.[`case${i}_footer`] || ''}
                                                 onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, [`case${i}_footer`]: e.target.value } } })}
                                                 className="w-full bg-white/[0.03] border border-white/5 p-3 rounded-xl text-gray-500 font-bold focus:outline-none focus:border-primary/50 transition text-[10px] uppercase"
                                             />
@@ -434,5 +435,13 @@ export default function AdminSettingsPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function AdminSettingsPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-96"><Spinner size={32} className="animate-spin text-primary" /></div>}>
+            <SettingsContent />
+        </Suspense>
     );
 }

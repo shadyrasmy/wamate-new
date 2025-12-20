@@ -66,6 +66,22 @@ app.use((req, res, next) => {
 // 5. Global Error Handler
 app.use(errorHandler);
 
+// Global crash handlers
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION! 💥 Shutting down gracefully...');
+    console.error(err.name, err.message, err.stack);
+    // process.exit(1); // Keep it running if possible, or restart. For now, let's log and keep running if it's not critical. 
+    // In production, you typically want to restart.
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('UNHANDLED REJECTION! 💥');
+    console.error(err.name, err.message, err.stack);
+    // server.close(() => {
+    //     process.exit(1);
+    // });
+});
+
 // Start Server
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {

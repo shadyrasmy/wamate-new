@@ -9,7 +9,7 @@ export default function ChatPage() {
     const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
     return (
-        <div className="flex h-full items-center justify-center p-4 lg:p-8 bg-[#0b0914]">
+        <div className="flex h-full items-center justify-center p-4 lg:p-8 bg-background">
             <div className="flex w-full max-w-[1400px] h-[90vh] carbon-card rounded-[3rem] overflow-hidden border border-white/5 shadow-3xl">
                 <ChatSidebar
                     onSelectContact={setSelectedChat}

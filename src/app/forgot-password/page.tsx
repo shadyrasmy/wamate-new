@@ -1,6 +1,6 @@
 export default function ForgotPasswordPage() {
     return (
-        <div className="min-h-screen bg-[#0b0914] flex items-center justify-center text-white p-10">
+        <div className="min-h-screen bg-background flex items-center justify-center text-foreground p-10">
             <div className="max-w-md w-full text-center space-y-8">
                 <h1 className="text-4xl font-black tracking-tighter uppercase italic">Identity Recovery</h1>
                 <p className="text-gray-500 font-medium">Enter your transmission ID to receive a bypass cipher. This protocol requires a verified backup frequency.</p>

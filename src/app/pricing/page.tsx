@@ -1,6 +1,6 @@
 export default function PricingPage() {
     return (
-        <div className="min-h-screen bg-[#0b0914] flex items-center justify-center text-white p-10">
+        <div className="min-h-screen bg-background flex items-center justify-center text-foreground p-10">
             <div className="max-w-2xl text-center space-y-6">
                 <h1 className="text-5xl font-black italic tracking-tighter">LIQUID CAPACITY.</h1>
                 <p className="text-gray-500 font-medium">Our pricing model is engineered for infinite scalability. Contact our architects for a custom cluster quote or start with our Pro Node today.</p>

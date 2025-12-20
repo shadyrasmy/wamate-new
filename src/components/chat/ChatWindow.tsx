@@ -209,7 +209,7 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
 
     if (!chat) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center bg-[#0b0914] relative overflow-hidden">
+            <div className="flex-1 flex flex-col items-center justify-center bg-background relative overflow-hidden">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] invert"></div>
                 <div className="text-center z-10 px-8">
                     <div className="w-32 h-32 bg-primary/10 rounded-[3rem] mx-auto mb-10 flex items-center justify-center border border-primary/20 shadow-2xl">
@@ -223,11 +223,11 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
     }
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-[#0b0914] relative">
+        <div className="flex-1 flex flex-col h-full bg-background relative">
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] invert" />
 
             {/* Header */}
-            <div className="h-16 lg:h-20 px-8 bg-[#0d0b1a]/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center z-20 sticky top-0">
+            <div className="h-16 lg:h-20 px-8 bg-carbon/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center z-20 sticky top-0">
                 <div className="flex items-center gap-5">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-secondary p-[1px]">
                         <div className="w-full h-full bg-carbon rounded-2xl flex items-center justify-center text-white font-black text-xl overflow-hidden">

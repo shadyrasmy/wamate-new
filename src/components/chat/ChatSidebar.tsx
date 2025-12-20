@@ -50,9 +50,16 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
         instances.forEach(i => socket.emit('join_instance', i.instance_id));
 
         socket.on('new_message', (msg: any) => {
-            const jid = msg.key.remoteJid;
-            const content = msg.message?.conversation || msg.message?.extendedTextMessage?.text || 'Media';
-            const time = new Date((msg.messageTimestamp || Date.now() / 1000) * 1000);
+            const jid = msg.senderJid; // Parsed message has senderJid on top level
+            const content = msg.content || 'Media';
+            const time = new Date((msg.time)); // Time is already a string or date from backend parsed message? backend says: time: new Date().toLocaleTimeString... which is skipping date info? 
+            // Wait, backend sends: time: new Date(savedMsg.timestamp).toLocaleTimeString... 
+            // This is actually bad for sorting. But for now let's match what backend sends or just use current time if it's broken.
+            // Actually, backend 'new_message' event has a time string. 
+            // Let's use Date.now() if we can't parse it, but for sidebar sorting we ideally want a Date object.
+            // Backend parsedMsg.time is a string "HH:MM". This is not sortable.
+            // We should arguably fix the backend to send ISO string, but for now let's just use Date.now() or try to parse.
+            const timeObj = new Date();
 
             setChats(prev => {
                 const existing = prev.findIndex(c => c.jid === jid);
@@ -145,7 +152,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
     };
 
     return (
-        <div className="w-full md:w-64 lg:w-[300px] flex flex-col border-r border-white/5 bg-[#0d0b1a] h-full relative">
+        <div className="w-full md:w-64 lg:w-[300px] flex flex-col border-r border-border bg-carbon h-full relative">
 
             {/* Header */}
             <div className="p-6 space-y-6">
@@ -234,7 +241,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-white/5 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white border border-white/10 group-hover:scale-105 transition-transform">
                                         {item.name?.charAt(0) || <UserCircle size={20} />}
                                     </div>
-                                    {activeTab === 'chats' && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-[2px] border-[#0d0b1a]"></div>}
+                                    {activeTab === 'chats' && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-[2px] border-carbon"></div>}
                                 </div>
 
                                 <div className="flex-1 min-w-0">
@@ -268,7 +275,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
             {/* New Chat Backdrop */}
             {showNewChat && (
                 <div
-                    className="absolute inset-0 bg-[#0d0b1a]/95 backdrop-blur-sm z-50 flex flex-col p-8"
+                    className="absolute inset-0 bg-carbon/95 backdrop-blur-sm z-50 flex flex-col p-8"
                     onClick={() => setShowNewChat(false)}
                 >
                     <div

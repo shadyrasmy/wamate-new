@@ -18,7 +18,7 @@ export default function HowEasySection({ content }: { content?: any }) {
     const c = content || defaultContent;
 
     return (
-        <section className="py-24 relative overflow-hidden bg-[#0d0a1a]">
+        <section className="py-24 relative overflow-hidden bg-background">
             {/* Success Stories */}
             <div className="container mx-auto px-6 mb-32">
                 <div className="text-center mb-20">

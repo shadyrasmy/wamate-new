@@ -3,7 +3,7 @@ import { WhatsappLogo } from '@phosphor-icons/react/dist/ssr';
 
 export default function Footer() {
     return (
-        <footer className="bg-[#0b0914] border-t border-white/5 pt-20 pb-10 overflow-hidden relative">
+        <footer className="bg-background border-t border-border pt-20 pb-10 overflow-hidden relative">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-primary/5 blur-[120px] rounded-full -translate-y-1/2 pointer-events-none" />
 
             <div className="container mx-auto px-6 relative z-10">

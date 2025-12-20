@@ -2,7 +2,7 @@ import Footer from '@/components/layout/Footer';
 
 export default function CookiesPage() {
     return (
-        <div className="min-h-screen bg-[#0b0914] text-white selection:bg-primary/30">
+        <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
             <div className="container mx-auto px-6 py-32 max-w-4xl">
                 <h1 className="text-5xl font-black mb-12 tracking-tight">Cookie Parameters</h1>
 
