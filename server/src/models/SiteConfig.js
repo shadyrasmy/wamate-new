@@ -38,14 +38,6 @@ const SiteConfig = sequelize.define('SiteConfig', {
                 cta_primary: "Claim Your Node",
                 cta_secondary: "Watch Transmission"
             },
-            numbers: {
-                title1: "15M+",
-                label1: "Packets Routed",
-                title2: "99.9%",
-                label2: "System Uptime",
-                title3: "128k+",
-                label3: "Active Segments"
-            },
             whyUs: {
                 title: "Engineered for Resilience.",
                 subtitle: "Our architecture is built on top of the latest edge-computing standards, ensuring your messages always reach their destination.",

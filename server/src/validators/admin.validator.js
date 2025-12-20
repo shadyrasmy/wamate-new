@@ -24,11 +24,12 @@ const extendSubscriptionSchema = Joi.object({
 
 const updateSiteConfigSchema = Joi.object({
     cms_visibility: Joi.object().optional(),
-    facebook_capi_token: Joi.string().allow('', null).optional(),
-    facebook_pixel_id: Joi.string().allow('', null).optional(),
+    fb_capi_token: Joi.string().allow('', null).optional(),
+    fb_pixel_id: Joi.string().allow('', null).optional(),
     header_scripts: Joi.string().allow('', null).optional(),
-    landing_content: Joi.object().optional()
-});
+    landing_content: Joi.object().optional(),
+    smtp_settings: Joi.object().allow(null).optional()
+}).unknown(true);
 
 module.exports = {
     createPlanSchema,

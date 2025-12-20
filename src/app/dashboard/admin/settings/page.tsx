@@ -143,13 +143,18 @@ function SettingsContent() {
     const handleSave = async () => {
         setSaving(true);
         try {
+            // Strip metadata fields that the backend validator rejects
+            const { id, createdAt, updatedAt, ...cleanConfig } = config;
+
             await fetchWithAuth('/admin/config', {
                 method: 'PATCH',
-                body: JSON.stringify(config)
+                body: JSON.stringify(cleanConfig)
             });
             alert('Site configuration synchronized successfully.');
+            loadConfig(); // Reload to get fresh data
         } catch (error) {
             console.error('Save failed', error);
+            alert('Settings synchronization failed. Check validation rules.');
         } finally {
             setSaving(false);
         }
@@ -210,8 +215,6 @@ function SettingsContent() {
                     Synchronize Magnitude
                 </motion.button>
             </div>
-
-            <TemplateManager />
 
             <div className="flex gap-4 p-1.5 bg-white/5 rounded-2xl w-fit">
                 {[
