@@ -12,6 +12,7 @@ const instanceRoutes = require('./routes/instance.routes');
 const chatRoutes = require('./routes/chat.routes');
 const contactRoutes = require('./routes/contact.routes');
 const morgan = require('morgan');
+require('./services/cron.service'); // Initialize daily cron jobs
 
 // Initialize App
 const app = express();

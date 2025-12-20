@@ -7,7 +7,7 @@ import {
     Users, PencilSimple, Trash, Warning,
     CheckCircle, XCircle, Spinner, CaretLeft, CaretRight, X,
     CaretDown, CaretUp, WhatsappLogo, PaperPlaneRight,
-    Shield
+    Shield, Envelope
 } from '@phosphor-icons/react';
 import CustomSelect from '@/components/ui/CustomSelect';
 
@@ -115,6 +115,19 @@ export default function AdminUsersPage() {
         }
     };
 
+    const handleToggleEmailVerification = async (userId: string, currentStatus: boolean) => {
+        if (!confirm(`Are you sure you want to ${currentStatus ? 'UNVERIFY' : 'VERIFY'} this user's email?`)) return;
+        try {
+            await fetchWithAuth(`/admin/users/${userId}/verify-email`, {
+                method: 'PATCH',
+                body: JSON.stringify({ verified: !currentStatus })
+            });
+            loadUsers();
+        } catch (error) {
+            console.error('Email verification toggle failed', error);
+        }
+    };
+
     return (
         <div className="space-y-10 pb-20">
             <div className="flex justify-between items-end">
@@ -206,14 +219,24 @@ export default function AdminUsersPage() {
                                                 </div>
                                             </td>
                                             <td className="p-6">
-                                                {u.is_active ?
-                                                    <div className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-widest">
-                                                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e]"></div> Verified
-                                                    </div> :
-                                                    <div className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest">
-                                                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div> Suspended
-                                                    </div>
-                                                }
+                                                <div className="flex flex-col gap-2">
+                                                    {u.is_active ?
+                                                        <div className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-widest">
+                                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e]"></div> Active
+                                                        </div> :
+                                                        <div className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest">
+                                                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div> Suspended
+                                                        </div>
+                                                    }
+                                                    {u.email_verified ?
+                                                        <div className="flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest">
+                                                            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div> Email Verified
+                                                        </div> :
+                                                        <div className="flex items-center gap-2 text-yellow-500 text-[10px] font-black uppercase tracking-widest">
+                                                            <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Email Pending
+                                                        </div>
+                                                    }
+                                                </div>
                                             </td>
                                             <td className="p-6">
                                                 <div className="text-[10px] font-black uppercase text-gray-500 tracking-widest font-mono italic">
@@ -222,6 +245,13 @@ export default function AdminUsersPage() {
                                             </td>
                                             <td className="p-6 text-right">
                                                 <div className="flex gap-2 justify-end">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleToggleEmailVerification(u.id, u.email_verified); }}
+                                                        className={`w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition border border-white/5 ${u.email_verified ? 'text-blue-400' : 'text-gray-400'}`}
+                                                        title={u.email_verified ? "Unverify Email" : "Verify Email"}
+                                                    >
+                                                        <Envelope size={18} weight={u.email_verified ? "fill" : "bold"} />
+                                                    </button>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setEditingUser(u); }}
                                                         className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition border border-white/5"

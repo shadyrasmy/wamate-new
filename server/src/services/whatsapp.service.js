@@ -61,7 +61,7 @@ class WhatsAppService {
                     creds: state.creds,
                     keys: makeCacheableSignalKeyStore(state.keys, logger),
                 },
-                browser: ['WaMate', 'Chrome', '10.0'],
+                browser: ['Ubuntu', 'Chrome', '20.0.04'],
                 generateHighQualityLinkPreview: true,
                 markOnlineOnConnect: false, // Don't auto-send presence
                 connectTimeoutMs: 60000,

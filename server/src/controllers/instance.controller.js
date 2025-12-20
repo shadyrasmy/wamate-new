@@ -110,11 +110,8 @@ exports.reconnectInstance = async (req, res, next) => {
 
         if (!instance) return next(new AppError('Instance not found', 404));
 
-        // FORCE CLEANUP: delete session folder to ensure a fresh QR
-        const sessionPath = require('path').join(__dirname, '../../sessions', instanceId);
-        if (require('fs').existsSync(sessionPath)) {
-            require('fs').rmSync(sessionPath, { recursive: true, force: true });
-        }
+        // FORCE CLEANUP: delete session folder and CLOSE SOCKET to ensure a fresh QR
+        await whatsappService.deleteInstance(instanceId);
 
         // Re-init session
         await whatsappService.initializeInstance(instanceId);

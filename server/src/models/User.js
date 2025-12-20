@@ -66,6 +66,10 @@ const User = sequelize.define('User', {
         type: DataTypes.DATE,
         allowNull: true
     },
+    last_expiry_warning_sent: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
     is_active: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
@@ -73,6 +77,14 @@ const User = sequelize.define('User', {
     phone_number: {
         type: DataTypes.STRING,
         allowNull: true // Optional for existing users, mandatory for new
+    },
+    email_verified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    verification_token: {
+        type: DataTypes.STRING,
+        allowNull: true
     }
 }, {
     timestamps: true,

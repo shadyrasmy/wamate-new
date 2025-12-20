@@ -1,6 +1,7 @@
-const { User, WhatsAppInstance, Plan, Invoice, sequelize } = require('../models');
+const { User, WhatsAppInstance, Plan, Invoice, sequelize, SiteConfig, EmailTemplate } = require('../models');
 const { AppError } = require('../middlewares/error.middleware');
 const { Op } = require('sequelize');
+const emailService = require('../services/email.service');
 
 exports.getAllUsers = async (req, res, next) => {
     try {
@@ -242,6 +243,17 @@ exports.extendSubscription = async (req, res, next) => {
         user.subscription_end_date = currentEnd;
         await user.save();
 
+        // Send Purchase Confirmation Email
+        try {
+            await emailService.sendTemplate(user.email, 'subscription_purchase', {
+                name: user.name,
+                plan_name: user.plan || 'Premium',
+                end_date: currentEnd.toLocaleDateString()
+            });
+        } catch (error) {
+            console.warn('Failed to send purchase confirmation email:', error.message);
+        }
+
         res.status(200).json({
             status: 'success',
             message: 'Temporal sequence extended.',
@@ -253,7 +265,7 @@ exports.extendSubscription = async (req, res, next) => {
 };
 
 // SITE CONFIG (CMS & TRACKING)
-const { SiteConfig } = require('../models');
+
 
 exports.getSiteConfig = async (req, res, next) => {
     try {
@@ -299,6 +311,91 @@ exports.getPublicSiteConfig = async (req, res, next) => {
         res.status(200).json({
             status: 'success',
             data: { config: publicConfig }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.testSmtp = async (req, res, next) => {
+    try {
+        const { to, message } = req.body;
+        if (!to) return next(new AppError('Recipient email is required', 400));
+
+        const html = `
+            <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                <h3>SMTP Test - WaMate</h3>
+                <p>This is a test email from your WaMate Admin Dashboard.</p>
+                <hr />
+                <p><strong>Custom Message:</strong></p>
+                <p>${message || 'No custom message provided.'}</p>
+            </div>
+        `;
+
+        await emailService.sendMail(to, 'SMTP Configuration Test', html);
+
+        res.status(200).json({
+            status: 'success',
+            message: `Test email sent successfully to ${to}`
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.toggleEmailVerification = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { verified } = req.body;
+
+        const user = await User.findByPk(userId);
+        if (!user) return next(new AppError('User not found', 404));
+
+        user.email_verified = !!verified;
+        if (verified) {
+            user.verification_token = null; // Clear token if verified manually
+        }
+        await user.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: `User email status set to ${verified ? 'VERIFIED' : 'UNVERIFIED'}.`,
+            data: { email_verified: user.email_verified }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// EMAIL TEMPLATES
+exports.getTemplates = async (req, res, next) => {
+    try {
+        const templates = await EmailTemplate.findAll({
+            attributes: ['key', 'name', 'subject', 'body', 'variables', 'is_active', 'updatedAt']
+        });
+        res.status(200).json({ status: 'success', data: { templates } });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.updateTemplate = async (req, res, next) => {
+    try {
+        const { key } = req.params;
+        const { subject, body } = req.body;
+
+        const template = await EmailTemplate.findOne({ where: { key } });
+        if (!template) return next(new AppError('Template not found', 404));
+
+        if (subject) template.subject = subject;
+        if (body) template.body = body;
+
+        await template.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Template updated successfully',
+            data: { template }
         });
     } catch (err) {
         next(err);

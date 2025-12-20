@@ -87,6 +87,11 @@ const SiteConfig = sequelize.define('SiteConfig', {
                 case2_footer: "HIGH-FASHION CUSTOMER CARE"
             }
         }
+    },
+    smtp_settings: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: null
     }
 }, {
     timestamps: true,

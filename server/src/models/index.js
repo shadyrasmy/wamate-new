@@ -1,6 +1,7 @@
 const User = require('./User');
 const WhatsAppInstance = require('./WhatsAppInstance');
 const SiteConfig = require('./SiteConfig');
+const EmailTemplate = require('./EmailTemplate')(require('../config/db').sequelize);
 const Seat = require('./Seat');
 const Contact = require('./Contact');
 const { Message, MessageLog } = require('./Message');
@@ -59,6 +60,7 @@ Plan.hasMany(User, { foreignKey: 'id_plan', as: 'users' });
 module.exports = {
     sequelize,
     User,
+    EmailTemplate,
     WhatsAppInstance,
     Seat,
     Contact,

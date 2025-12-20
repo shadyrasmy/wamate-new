@@ -36,5 +36,13 @@ router.post('/users/:userId/extend', validate(adminValidator.extendSubscriptionS
 // Site Config
 router.get('/config', adminController.getSiteConfig);
 router.patch('/config', validate(adminValidator.updateSiteConfigSchema), adminController.updateSiteConfig);
+router.post('/config/test-smtp', adminController.testSmtp);
+
+// Manual Verification
+router.patch('/users/:userId/verify-email', adminController.toggleEmailVerification);
+
+// Email Templates
+router.get('/config/templates', adminController.getTemplates);
+router.patch('/config/templates/:key', adminController.updateTemplate);
 
 module.exports = router;
