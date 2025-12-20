@@ -13,7 +13,8 @@ import {
     Spinner,
     WarningCircle,
     WhatsappLogo,
-    ShieldCheck
+    ShieldCheck,
+    CheckCircle
 } from '@phosphor-icons/react';
 
 export default function RegisterPage() {
@@ -21,6 +22,7 @@ export default function RegisterPage() {
     const [formData, setFormData] = useState({ name: '', email: '', password: '', phone_number: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -42,9 +44,8 @@ export default function RegisterPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Registration failed');
 
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.data.user));
-            router.push('/dashboard');
+            // Show success message - user needs to verify email before logging in
+            setRegistrationSuccess(true);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -67,125 +68,159 @@ export default function RegisterPage() {
                 >
                     <div className="absolute top-0 left-0 w-32 h-32 bg-white/[0.02] rounded-br-[100px] pointer-events-none" />
 
-                    <div className="flex flex-col mb-12">
-                        <div className="flex items-center gap-4 mb-6">
+                    {/* Success State - Check Your Email */}
+                    {registrationSuccess ? (
+                        <div className="flex flex-col items-center text-center">
                             <motion.div
-                                whileHover={{ rotate: -10, scale: 1.1 }}
-                                className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 shadow-xl"
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: 'spring', stiffness: 200 }}
+                                className="w-20 h-20 bg-green-500/10 rounded-2xl flex items-center justify-center border border-green-500/20 mb-8"
                             >
-                                <ShieldCheck size={32} weight="fill" className="text-primary" />
+                                <CheckCircle size={40} weight="fill" className="text-green-500" />
                             </motion.div>
-                            <div>
-                                <h2 className="text-3xl font-black text-white tracking-tight">Create Account</h2>
-                                <p className="text-gray-500 font-medium text-sm">Join the next-gen messaging platform.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <AnimatePresence mode="wait">
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="mb-8 p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold rounded-2xl flex items-center gap-3 uppercase tracking-widest"
-                            >
-                                <WarningCircle size={18} weight="fill" />
-                                {error}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Full Name</label>
-                            <div className="relative group">
-                                <User className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="Enter your name"
-                                    className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Email Address</label>
-                            <div className="relative group">
-                                <EnvelopeSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
-                                <input
-                                    type="email"
-                                    required
-                                    placeholder="your@email.com"
-                                    className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Phone Number</label>
-                            <div className="relative group">
-                                <WhatsappLogo className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="+1 234 567 890"
-                                    className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
-                                    value={formData.phone_number}
-                                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Secure Password</label>
-                            <div className="relative group">
-                                <LockSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
-                                <input
-                                    type="password"
-                                    required
-                                    placeholder="Enter your password"
-                                    className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <motion.button
-                            type="submit"
-                            disabled={loading}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3 text-sm uppercase tracking-[0.2em]"
-                        >
-                            {loading ? (
-                                <>
-                                    <Spinner size={20} className="animate-spin" />
-                                    Creating Account...
-                                </>
-                            ) : (
-                                <>
-                                    Create My Account
+                            <h2 className="text-3xl font-black text-white tracking-tight mb-4">Check Your Email!</h2>
+                            <p className="text-gray-400 font-medium text-sm mb-2">
+                                We've sent a verification link to:
+                            </p>
+                            <p className="text-primary font-bold text-lg mb-6">{formData.email}</p>
+                            <p className="text-gray-500 font-medium text-xs mb-8">
+                                Click the link in your email to verify your account. If you don't see it, check your spam folder.
+                            </p>
+                            <Link href="/login">
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    className="px-8 py-4 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition flex items-center gap-3 text-sm uppercase tracking-[0.2em]"
+                                >
+                                    Go to Login
                                     <ArrowRight size={18} weight="bold" />
-                                </>
-                            )}
-                        </motion.button>
-                    </form>
-
-                    <div className="mt-12 flex flex-col items-center gap-6">
-                        <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest text-center">
-                            Already have an account? {' '}
-                            <Link href="/login" className="text-primary font-black hover:text-white transition">
-                                Login Here
+                                </motion.button>
                             </Link>
-                        </p>
-                    </div>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex flex-col mb-12">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <motion.div
+                                        whileHover={{ rotate: -10, scale: 1.1 }}
+                                        className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 shadow-xl"
+                                    >
+                                        <ShieldCheck size={32} weight="fill" className="text-primary" />
+                                    </motion.div>
+                                    <div>
+                                        <h2 className="text-3xl font-black text-white tracking-tight">Create Account</h2>
+                                        <p className="text-gray-500 font-medium text-sm">Join the next-gen messaging platform.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <AnimatePresence mode="wait">
+                                {error && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="mb-8 p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold rounded-2xl flex items-center gap-3 uppercase tracking-widest"
+                                    >
+                                        <WarningCircle size={18} weight="fill" />
+                                        {error}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Full Name</label>
+                                    <div className="relative group">
+                                        <User className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="Enter your name"
+                                            className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Email Address</label>
+                                    <div className="relative group">
+                                        <EnvelopeSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                        <input
+                                            type="email"
+                                            required
+                                            placeholder="your@email.com"
+                                            className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Phone Number</label>
+                                    <div className="relative group">
+                                        <WhatsappLogo className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="+1 234 567 890"
+                                            className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                            value={formData.phone_number}
+                                            onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Secure Password</label>
+                                    <div className="relative group">
+                                        <LockSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                        <input
+                                            type="password"
+                                            required
+                                            placeholder="Enter your password"
+                                            className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                            value={formData.password}
+                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <motion.button
+                                    type="submit"
+                                    disabled={loading}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3 text-sm uppercase tracking-[0.2em]"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Spinner size={20} className="animate-spin" />
+                                            Creating Account...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Create My Account
+                                            <ArrowRight size={18} weight="bold" />
+                                        </>
+                                    )}
+                                </motion.button>
+                            </form>
+
+                            <div className="mt-12 flex flex-col items-center gap-6">
+                                <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest text-center">
+                                    Already have an account? {' '}
+                                    <Link href="/login" className="text-primary font-black hover:text-white transition">
+                                        Login Here
+                                    </Link>
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </motion.div>
 
                 <p className="mt-10 text-center text-[10px] font-black text-gray-700 uppercase tracking-[0.3em]">
