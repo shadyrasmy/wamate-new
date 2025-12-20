@@ -10,7 +10,7 @@ const sequelize = new Sequelize(
         dialect: 'mysql',
         logging: false,
         pool: {
-            max: 20, // Reduced to prevent hitting 'max_user_connections' limits in dev/shared hosting
+            max: 2, // Low for free/shared hosting limits
             min: 0,
             acquire: 30000,
             idle: 10000

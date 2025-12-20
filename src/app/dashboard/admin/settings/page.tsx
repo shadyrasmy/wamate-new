@@ -146,12 +146,16 @@ function SettingsContent() {
             // Strip metadata fields that the backend validator rejects
             const { id, createdAt, updatedAt, ...cleanConfig } = config;
 
-            await fetchWithAuth('/admin/config', {
+            const res = await fetchWithAuth('/admin/config', {
                 method: 'PATCH',
                 body: JSON.stringify(cleanConfig)
             });
+
+            if (res?.data?.config) {
+                setConfig(res.data.config); // Update state directly from response
+            }
+
             alert('Site configuration synchronized successfully.');
-            loadConfig(); // Reload to get fresh data
         } catch (error) {
             console.error('Save failed', error);
             alert('Settings synchronization failed. Check validation rules.');
