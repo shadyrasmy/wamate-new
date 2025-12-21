@@ -9,7 +9,7 @@ const registerSchema = Joi.object({
             'string.min': 'Password must be at least 8 characters long'
         }),
     phone_number: Joi.string().min(10).required(),
-    referralCode: Joi.string().alphanum().min(6).max(20).optional()
+    referralCode: Joi.string().alphanum().min(6).max(20).allow('').optional()
 });
 
 const loginSchema = Joi.object({

@@ -7,9 +7,16 @@ const { Op } = require('sequelize');
 
 exports.getStats = async (req, res, next) => {
     try {
-        const user = await User.findByPk(req.user.id, {
-            attributes: ['referral_code', 'referral_balance']
+        const crypto = require('crypto');
+        let user = await User.findByPk(req.user.id, {
+            attributes: ['id', 'referral_code', 'referral_balance']
         });
+
+        // 1. Generate code for legacy users if missing
+        if (!user.referral_code) {
+            user.referral_code = crypto.randomBytes(4).toString('hex').toUpperCase();
+            await user.save();
+        }
 
         // Get total earnings (sum of all 'commission' transactions)
         const totalEarnings = await ReferralTransaction.sum('amount', {

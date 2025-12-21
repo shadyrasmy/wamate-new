@@ -1,4 +1,12 @@
 import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "WaMate - Next Gen WhatsApp Automation",
+  description: "Automate your customer communication with WaMate.",
+  icons: {
+    icon: '/favicon.ico',
+  },
+};
 import { Outfit, El_Messiri } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { UIProvider, useUI } from "@/context/UIContext";
