@@ -15,7 +15,7 @@ User.hasMany(WhatsAppInstance, { foreignKey: 'user_id', as: 'instances' });
 WhatsAppInstance.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 // User -> Referral Associations
-User.hasOne(User, { as: 'referrer', foreignKey: 'referred_by' }); // The person who referred me
+User.belongsTo(User, { as: 'referrer', foreignKey: 'referred_by' }); // The person who referred me
 User.hasMany(User, { as: 'referrals', foreignKey: 'referred_by' }); // People I referred
 
 User.hasMany(ReferralTransaction, { foreignKey: 'referrer_id', as: 'commissions' }); // Money I earned

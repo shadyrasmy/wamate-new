@@ -80,7 +80,7 @@ export default function AdminUsersPage() {
                     monthly_message_limit: parseInt(editingUser.monthly_message_limit),
                     max_instances: parseInt(editingUser.max_instances),
                     max_seats: parseInt(editingUser.max_seats),
-                    is_active: editingUser.is_active,
+                    is_active: !!editingUser.is_active,
                     subscription_end_date: editingUser.subscription_end_date
                 })
             });
@@ -207,7 +207,7 @@ export default function AdminUsersPage() {
                                                         u.plan === 'pro' ? 'bg-pink-500/10 text-pink-400 border-pink-500/20' :
                                                             'bg-gray-500/10 text-gray-500 border-white/5'
                                                     }`}>
-                                                    {u.plan}
+                                                    {u.plan?.name || 'free'}
                                                 </span>
                                             </td>
                                             <td className="p-6">
@@ -363,19 +363,19 @@ export default function AdminUsersPage() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="carbon-card rounded-[2.5rem] shadow-2xl w-full max-w-2xl border border-white/10 overflow-hidden relative"
+                        className="carbon-card rounded-[2rem] lg:rounded-[2.5rem] shadow-2xl w-full max-w-2xl border border-white/10 overflow-hidden relative max-h-[90vh] overflow-y-auto custom-scroll"
                     >
-                        <div className="p-10 lg:p-12">
-                            <div className="mb-10 flex justify-between items-start">
+                        <div className="p-6 lg:p-12">
+                            <div className="mb-8 flex justify-between items-start">
                                 <div>
-                                    <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 mb-6 font-black text-primary">
-                                        <Shield size={28} weight="bold" />
+                                    <div className="w-10 h-10 lg:w-14 lg:h-14 bg-primary/10 rounded-xl lg:rounded-2xl flex items-center justify-center border border-primary/20 mb-4 lg:mb-6 font-black text-primary">
+                                        <Shield size={24} weight="bold" />
                                     </div>
-                                    <h3 className="text-3xl font-black mb-2">Override Node Magnitude</h3>
-                                    <p className="text-gray-500 font-medium">Adjusting parameters for operator: <span className="text-white">{editingUser.name}</span></p>
+                                    <h3 className="text-xl lg:text-3xl font-black mb-1 lg:mb-2">Override Node Magnitude</h3>
+                                    <p className="text-xs lg:text-sm text-gray-500 font-medium">Adjusting parameters for operator: <span className="text-white">{editingUser.name}</span></p>
                                 </div>
-                                <button onClick={() => setEditingUser(null)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 transition">
-                                    <X size={20} weight="bold" />
+                                <button onClick={() => setEditingUser(null)} className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 transition">
+                                    <X size={18} weight="bold" />
                                 </button>
                             </div>
 
@@ -392,8 +392,27 @@ export default function AdminUsersPage() {
                                     </div>
                                     <CustomSelect
                                         label="Service Tier"
-                                        value={editingUser.plan}
-                                        onChange={val => setEditingUser({ ...editingUser, plan: val })}
+                                        value={editingUser.plan?.name || editingUser.plan || 'free'}
+                                        onChange={val => {
+                                            // Auto-fill logic based on plan choice
+                                            let limits = {
+                                                monthly_message_limit: 1000,
+                                                max_instances: 1,
+                                                max_seats: 1
+                                            };
+
+                                            if (val === 'pro') {
+                                                limits = { monthly_message_limit: 10000, max_instances: 5, max_seats: 5 };
+                                            } else if (val === 'enterprise') {
+                                                limits = { monthly_message_limit: 100000, max_instances: 20, max_seats: 20 };
+                                            }
+
+                                            setEditingUser({
+                                                ...editingUser,
+                                                plan: val,
+                                                ...limits
+                                            });
+                                        }}
                                         options={[
                                             { value: 'free', label: 'FREE NODE' },
                                             { value: 'pro', label: 'PRO NODE' },
@@ -451,17 +470,17 @@ export default function AdminUsersPage() {
                                     />
                                 </div>
 
-                                <div className="pt-6 flex gap-4">
+                                <div className="pt-4 flex gap-3">
                                     <button
                                         type="button"
                                         onClick={() => setEditingUser(null)}
-                                        className="flex-1 py-4 text-gray-500 font-bold text-sm uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition border border-white/5"
+                                        className="flex-1 py-3 text-gray-500 font-bold text-[10px] uppercase tracking-widest bg-white/5 rounded-xl lg:rounded-2xl hover:bg-white/10 transition border border-white/5"
                                     >
                                         Abort
                                     </button>
                                     <button
                                         type="submit"
-                                        className="flex-1 bg-primary text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition"
+                                        className="flex-1 bg-primary text-white py-3 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition"
                                     >
                                         Apply Override
                                     </button>

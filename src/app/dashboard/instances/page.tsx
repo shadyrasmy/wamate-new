@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash, QrCode, WifiHigh, WifiSlash, Spinner, DeviceMobile, Broadcast, X, PencilSimple, ArrowClockwise } from '@phosphor-icons/react';
+import { Plus, Trash, QrCode, WifiHigh, WifiSlash, Spinner, DeviceMobile, Broadcast, X, PencilSimple, ArrowClockwise, Copy, CheckCircle } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchWithAuth, SOCKET_URL } from '@/lib/api';
 import { io } from 'socket.io-client';
@@ -23,6 +23,7 @@ export default function InstancesPage() {
     const [pairingCode, setPairingCode] = useState<string | null>(null);
     const [pairingLoading, setPairingLoading] = useState(false);
     const [newInstanceId, setNewInstanceId] = useState<string | null>(null);
+    const [pairingCopied, setPairingCopied] = useState(false);
 
     // Initialize Socket
     useEffect(() => {
@@ -120,6 +121,32 @@ export default function InstancesPage() {
         } finally {
             setPairingLoading(false);
         }
+    };
+
+    const copyPairingCode = () => {
+        if (!pairingCode) return;
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(pairingCode);
+        } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = pairingCode;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        setPairingCopied(true);
+        setTimeout(() => setPairingCopied(false), 2000);
     };
 
     const handleRename = async (e: React.FormEvent) => {
@@ -384,17 +411,31 @@ export default function InstancesPage() {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <div className="flex flex-col items-center gap-4 py-6 card-glass rounded-[2rem] border border-white/5 bg-white/[0.02]">
+                                                <div className="flex flex-col items-center gap-6 py-8 card-glass rounded-[2rem] border border-white/5 bg-white/[0.02]">
                                                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Your Pairing Code</p>
-                                                    <div className="flex gap-2">
+                                                    <div className="flex flex-wrap justify-center gap-1.5 md:gap-2 px-2">
                                                         {pairingCode.split('').map((char, i) => (
-                                                            <div key={i} className="w-10 h-14 bg-white/10 rounded-xl flex items-center justify-center text-2xl font-black text-primary border border-white/10 shadow-xl">
+                                                            <div key={i} className="w-8 h-10 md:w-10 md:h-14 bg-white/10 rounded-lg md:rounded-xl flex items-center justify-center text-xl md:text-2xl font-black text-primary border border-white/10 shadow-xl relative">
                                                                 {char}
-                                                                {i === 3 && <div className="absolute right-[-6px] w-1 h-1 bg-gray-500 rounded-full" />}
+                                                                {i === 3 && (
+                                                                    <div className="absolute -right-[0.45rem] top-1/2 -translate-y-1/2 w-1 h-1 bg-gray-500 rounded-full hidden md:block" />
+                                                                )}
                                                             </div>
                                                         ))}
                                                     </div>
-                                                    <p className="text-[9px] text-gray-600 font-medium max-w-[200px] text-center">Type this code on your WhatsApp mobile app.</p>
+                                                    <div className="flex flex-col items-center gap-3">
+                                                        <p className="text-[9px] text-gray-600 font-medium max-w-[200px] text-center">Type this code on your WhatsApp mobile app.</p>
+                                                        <button
+                                                            onClick={copyPairingCode}
+                                                            className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${pairingCopied
+                                                                    ? 'bg-green-500/20 text-green-500 border border-green-500/30'
+                                                                    : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white'
+                                                                }`}
+                                                        >
+                                                            {pairingCopied ? <CheckCircle size={14} weight="bold" /> : <Copy size={14} weight="bold" />}
+                                                            {pairingCopied ? 'Copied' : 'Copy Code'}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>

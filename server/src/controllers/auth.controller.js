@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { User, Plan } = require('../models');
 const { AppError } = require('../middlewares/error.middleware');
 const { registerSchema, loginSchema } = require('../validators/auth.validator');
 
@@ -173,7 +173,9 @@ exports.verifyEmail = async (req, res, next) => {
 
 exports.getMe = async (req, res, next) => {
     try {
-        const user = await User.findByPk(req.user.id);
+        const user = await User.findByPk(req.user.id, {
+            include: [{ model: Plan, as: 'plan', attributes: ['name', 'monthly_message_limit', 'max_instances', 'max_seats'] }]
+        });
         if (!user) return next(new AppError('User not found', 404));
 
         user.password = undefined;

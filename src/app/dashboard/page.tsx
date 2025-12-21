@@ -24,6 +24,7 @@ export default function DashboardHome() {
         seatCount: 0,
         quotaUsed: 0
     });
+    const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -42,6 +43,7 @@ export default function DashboardHome() {
             const seats = seatsRes.data.seats || [];
             const instances = instancesRes.data.instances || [];
 
+            setUser(user);
             setStats({
                 messagesSent: user.messages_sent_current_period || 0,
                 messageLimit: user.monthly_message_limit || 0,
@@ -68,14 +70,54 @@ export default function DashboardHome() {
     }
 
     const cards = [
-        { label: t('outbound_traffic'), value: stats.messagesSent.toLocaleString(), icon: ChatCircleDots, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-        { label: t('active_channels'), value: stats.instanceCount, icon: DeviceMobile, color: 'text-pink-500', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
-        { label: t('agent_seats'), value: stats.seatCount, icon: UsersThree, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/20' },
+        { label: t('outbound_traffic'), value: `${stats.messagesSent.toLocaleString()} / ${stats.messageLimit.toLocaleString()}`, icon: ChatCircleDots, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+        { label: t('active_channels'), value: `${stats.instanceCount} / ${user?.max_instances || 1}`, icon: DeviceMobile, color: 'text-pink-500', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
+        { label: t('agent_seats'), value: `${stats.seatCount} / ${user?.max_seats || 1}`, icon: UsersThree, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/20' },
         { label: t('system_quota'), value: `${stats.quotaUsed}%`, icon: Lightning, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
     ];
 
+    const userPlan = user?.plan?.name || user?.plan || 'Free';
+
     return (
         <div className="space-y-10 pb-20">
+            {/* Plan Info Card */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-surface rounded-3xl p-8 border border-border flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden shadow-sm"
+            >
+                <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
+                    <Lightning size={160} weight="fill" className="text-primary" />
+                </div>
+                <div className="flex items-center gap-6 group">
+                    <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 group-hover:scale-105 transition duration-500 shadow-xl shadow-primary/5">
+                        <Lightning size={32} weight="fill" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <h2 className="text-2xl font-black text-foreground capitalize">{userPlan} Plan</h2>
+                            <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/20">Active Node</span>
+                        </div>
+                        <p className="text-gray-500 font-medium">Your current operational capacity and grid parameters.</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    {userPlan.toLowerCase() === 'free' && (
+                        <button
+                            onClick={() => window.location.href = '/dashboard/plans'}
+                            className="flex-1 md:flex-none px-8 py-3.5 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-95 transition shadow-lg shadow-primary/20"
+                        >
+                            Upgrade Magnitude
+                        </button>
+                    )}
+                    <button
+                        onClick={() => window.location.href = '/dashboard/plans'}
+                        className="flex-1 md:flex-none px-8 py-3.5 bg-white/5 border border-white/10 text-gray-400 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-white/10 transition"
+                    >
+                        View Parameters
+                    </button>
+                </div>
+            </motion.div>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">

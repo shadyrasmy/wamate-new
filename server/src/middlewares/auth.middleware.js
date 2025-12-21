@@ -14,7 +14,6 @@ exports.protect = async (req, res, next) => {
         }
 
         if (!token) {
-            console.warn(`[Auth] No token provided for ${req.method} ${req.originalUrl}. Headers:`, JSON.stringify(req.headers));
             return next(new AppError('Authentication failed. Please provide a Bearer token or an access_token parameter.', 401));
         }
 
@@ -24,7 +23,6 @@ exports.protect = async (req, res, next) => {
 
             // 3. User Lookup from JWT
             const { User, Seat } = require('../models');
-            console.log(`[Auth] Verifying token for user ID: ${decoded.id}`);
             let user = await User.findByPk(decoded.id);
 
             if (!user) {

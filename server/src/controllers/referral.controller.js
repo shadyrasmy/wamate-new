@@ -8,7 +8,6 @@ const crypto = require('crypto');
 
 exports.getStats = async (req, res, next) => {
     try {
-        console.log(`[Referral] Fetching stats for user: ${req.user.id}`);
         let user = await User.findByPk(req.user.id, {
             attributes: ['id', 'referral_code', 'referral_balance']
         });
@@ -33,7 +32,6 @@ exports.getStats = async (req, res, next) => {
             }
         }
 
-        console.log(`[Referral] Summing transactions for user: ${req.user.id}`);
         // Get total earnings (sum of all 'commission' transactions)
         const totalEarnings = await ReferralTransaction.sum('amount', {
             where: {
@@ -42,7 +40,6 @@ exports.getStats = async (req, res, next) => {
             }
         }) || 0;
 
-        console.log(`[Referral] Counting referrals for user: ${req.user.id}`);
         // Get referral count
         const referralCount = await User.count({
             where: { referred_by: req.user.id }

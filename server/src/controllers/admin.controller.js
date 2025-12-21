@@ -40,6 +40,11 @@ exports.getAllUsers = async (req, res, next) => {
                             'messages_count'
                         ]
                     ]
+                },
+                {
+                    model: Plan,
+                    as: 'plan',
+                    attributes: ['id', 'name']
                 }
             ]
         });
@@ -76,12 +81,23 @@ exports.updateUserPlan = async (req, res, next) => {
         }
 
         // Update fields if provided
-        if (plan) user.plan = plan;
+        if (plan) {
+            const planDoc = await Plan.findOne({ where: { name: plan } });
+            if (planDoc) {
+                user.id_plan = planDoc.id;
+                // Auto-fill limits if they are not explicitly provided (or if they match the previous plan's defaults)
+                // For simplicity, if a plan name is passed, we usually want those limits unless specified otherwise
+                if (monthly_message_limit === undefined) user.monthly_message_limit = planDoc.monthly_message_limit;
+                if (max_instances === undefined) user.max_instances = planDoc.max_instances;
+                if (max_seats === undefined) user.max_seats = planDoc.max_seats;
+            }
+        }
+
         if (monthly_message_limit !== undefined) user.monthly_message_limit = monthly_message_limit;
         if (max_instances !== undefined) user.max_instances = max_instances;
         if (max_seats !== undefined) user.max_seats = max_seats;
-        if (is_active !== undefined) user.is_active = is_active;
-        if (subscription_end_date !== undefined) user.subscription_end_date = subscription_end_date;
+        if (is_active !== undefined) user.is_active = !!is_active;
+        if (subscription_end_date) user.subscription_end_date = subscription_end_date;
 
         await user.save();
 
@@ -101,7 +117,8 @@ exports.getUserDetails = async (req, res, next) => {
             attributes: { exclude: ['password'] },
             include: [
                 { model: WhatsAppInstance, as: 'instances' },
-                { model: Invoice, as: 'invoices', order: [['createdAt', 'DESC']] }
+                { model: Invoice, as: 'invoices', order: [['createdAt', 'DESC']] },
+                { model: Plan, as: 'plan' }
             ]
         });
 

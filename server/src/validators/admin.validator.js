@@ -11,7 +11,14 @@ const createPlanSchema = Joi.object({
 });
 
 const updateUserPlanSchema = Joi.object({
-    id_plan: Joi.string().uuid().required()
+    plan: Joi.string().optional(),
+    phone_number: Joi.string().allow('', null).optional(),
+    monthly_message_limit: Joi.number().integer().min(0).optional(),
+    max_instances: Joi.number().integer().min(1).optional(),
+    max_seats: Joi.number().integer().min(1).optional(),
+    is_active: Joi.boolean().optional(),
+    subscription_end_date: Joi.date().allow(null, '').optional(),
+    id_plan: Joi.string().uuid().optional()
 });
 
 const banUserSchema = Joi.object({

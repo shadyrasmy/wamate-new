@@ -27,7 +27,27 @@ export default function ReferralPage() {
     const copyLink = () => {
         if (!stats?.referral_code) return;
         const link = `${window.location.origin}/register?ref=${stats.referral_code}`;
-        navigator.clipboard.writeText(link);
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(link);
+        } else {
+            // Fallback for non-HTTPS or older browsers
+            const textArea = document.createElement("textarea");
+            textArea.value = link;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };

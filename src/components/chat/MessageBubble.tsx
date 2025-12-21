@@ -83,7 +83,7 @@ export default function MessageBubble({
         <motion.div
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className={`flex mb-4 items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}
+            className={`flex mb-4 items-end gap-2 group relative ${isMe ? 'flex-row-reverse' : 'flex-row'}`}
         >
             {/* Avatar */}
             {!isMe && (
