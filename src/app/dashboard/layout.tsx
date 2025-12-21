@@ -88,6 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                onClick={() => setSidebarOpen(false)}
                                 className={`px-8 py-3.5 flex items-center gap-4 text-gray-400 hover:text-foreground transition group border-r-4 transition-all ${isActive
                                     ? 'bg-primary/10 text-primary border-primary'
                                     : 'border-transparent'}`}

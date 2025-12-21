@@ -207,16 +207,16 @@ class WhatsAppService {
                 textContent = m.extendedTextMessage.text;
             } else if (m.imageMessage) {
                 textContent = m.imageMessage.caption || '📷 Image';
-                if (!fromMe) mediaUrl = await this.downloadMedia(m.imageMessage, 'image');
-                else mediaUrl = m.imageMessage.url;
+                mediaUrl = await this.downloadMedia(m.imageMessage, 'image');
             } else if (m.videoMessage) {
                 textContent = m.videoMessage.caption || '🎥 Video';
-                if (!fromMe) mediaUrl = await this.downloadMedia(m.videoMessage, 'video');
-                else mediaUrl = m.videoMessage.url;
+                mediaUrl = await this.downloadMedia(m.videoMessage, 'video');
             } else if (m.audioMessage) {
                 textContent = '🎤 Audio';
-                if (!fromMe) mediaUrl = await this.downloadMedia(m.audioMessage, 'audio');
-                else mediaUrl = m.audioMessage.url;
+                mediaUrl = await this.downloadMedia(m.audioMessage, 'audio');
+            } else if (m.stickerMessage) {
+                textContent = '👾 Sticker';
+                mediaUrl = await this.downloadMedia(m.stickerMessage, 'sticker'); // Use 'sticker' type, usually needs .webp
             } else {
                 textContent = Object.keys(m)[0];
             }
@@ -259,10 +259,24 @@ class WhatsAppService {
 
             // UPSERT CONTACT(S)
             try {
+                // Helper to fetch profile pic safely
+                const getProfilePic = async (targetJid) => {
+                    try {
+                        // avoid fetching if we already have it recently? For now just fetch.
+                        return await sessions.get(instanceId)?.profilePictureUrl(targetJid, 'image').catch(() => null);
+                    } catch (e) { return null; }
+                };
+
                 // 1. Group/Main Chat Contact
                 const existingContact = await Contact.findOne({
                     where: { user_id: instance.user_id, jid: jid }
                 });
+
+                // Only fetch profile pic if it's new or we don't have it (optimization)
+                let profilePicUrl = existingContact?.profile_pic;
+                if (!profilePicUrl) {
+                    profilePicUrl = await getProfilePic(jid);
+                }
 
                 await Contact.upsert({
                     jid: jid,
@@ -270,17 +284,25 @@ class WhatsAppService {
                     name: isGroup ? (existingContact?.name || jid.split('@')[0]) : (msg.pushName || jid.split('@')[0]),
                     push_name: isGroup ? null : msg.pushName,
                     is_group: isGroup,
+                    profile_pic: profilePicUrl,
                     last_active: new Date()
                 });
 
                 // 2. Individual Sender Contact (if in group)
                 if (isGroup && participant) {
+                    const existingParticipant = await Contact.findOne({
+                        where: { user_id: instance.user_id, jid: participant }
+                    });
+                    let pPic = existingParticipant?.profile_pic;
+                    if (!pPic) pPic = await getProfilePic(participant);
+
                     await Contact.upsert({
                         jid: participant,
                         user_id: instance.user_id,
                         name: msg.pushName || participant.split('@')[0],
                         push_name: msg.pushName,
                         is_group: false,
+                        profile_pic: pPic,
                         last_active: new Date()
                     });
                 }
@@ -339,7 +361,7 @@ class WhatsAppService {
                 buffer = Buffer.concat([buffer, chunk]);
             }
 
-            const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${type === 'image' ? 'jpg' : (type === 'video' ? 'mp4' : 'ogg')}`;
+            const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${type === 'image' ? 'jpg' : (type === 'video' ? 'mp4' : (type === 'sticker' ? 'webp' : 'ogg'))}`;
             const filePath = path.join(this.uploadDir, fileName);
             fs.writeFileSync(filePath, buffer);
 

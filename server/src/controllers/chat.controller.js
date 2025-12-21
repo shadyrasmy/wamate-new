@@ -47,7 +47,8 @@ exports.getRecentChats = async (req, res, next) => {
                     lastMessage: msg.content,
                     time: msg.timestamp,
                     unread: 0,
-                    name: remoteJid.replace('@s.whatsapp.net', '')
+                    name: remoteJid.replace('@s.whatsapp.net', ''),
+                    profilePicUrl: null // Will be populated from contacts
                 });
             }
         }
@@ -64,12 +65,13 @@ exports.getRecentChats = async (req, res, next) => {
 
             // Create lookup
             const contactNameMap = {};
-            contacts.forEach(c => { contactNameMap[c.jid] = c.name; });
+            contacts.forEach(c => { contactNameMap[c.jid] = { name: c.name, profile_pic: c.profile_pic }; });
 
-            // Apply names
+            // Apply names and profile pics
             for (const chat of chatsMap.values()) {
                 if (contactNameMap[chat.jid]) {
-                    chat.name = contactNameMap[chat.jid];
+                    chat.name = contactNameMap[chat.jid].name;
+                    chat.profilePicUrl = contactNameMap[chat.jid].profile_pic;
                 }
             }
         }
@@ -167,7 +169,7 @@ exports.sendMessage = async (req, res, next) => {
             return next(new AppError(`Your WhatsApp node [${instance.name || instanceId}] is ${instance.status}. Please scan the QR code and ensure it is connected before sending messages.`, 400));
         }
 
-        if (!content && type !== 'reaction') {
+        if (!content && type === 'text') {
             return next(new AppError('Missing field: message/content. You cannot send an empty message.', 400));
         }
 

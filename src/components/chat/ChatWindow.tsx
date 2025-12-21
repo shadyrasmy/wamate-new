@@ -36,6 +36,24 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
         s.emit('join_instance', instanceId);
 
         s.on('new_message', (parsedMsg: any) => {
+            // 0. Filter by JID to prevent cross-talk
+            // The message must belong to the current chat (either from them or from me to them)
+            // parsedMsg.key.remoteJid is the standard field for the chat JID in detailed objects, 
+            // but we need to check how the backend sends it. 
+            // Based on sidebar logic: `msg.senderJid` seems to be the one.
+            // Let's rely on checking if the message is intended for this chat.
+
+            // If it's a group, the jid is the group jid.
+            // If it's a DM, the jid is the user's jid.
+
+            const msgJid = parsedMsg.jid || parsedMsg.senderJid || parsedMsg.key?.remoteJid;
+
+            // Normalize JIDs (handle @s.whatsapp.net vs @g.us consistency if needed, but simple include check usually works)
+            if (msgJid !== chat.jid && parsedMsg.param !== 'chat') {
+                // If the message is not for this chat, ignore it.
+                return;
+            }
+
             setMessages(prev => {
                 // 1. Check if ID exists (exact match)
                 if (prev.some(m => m.id === parsedMsg.id)) return prev;
@@ -202,6 +220,7 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
             }]);
         } catch (error) {
             console.error('Upload failed', error);
+            alert('Failed to send media. Please try again.');
         }
 
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -230,8 +249,12 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
             <div className="h-16 lg:h-20 px-8 bg-carbon/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center z-20 sticky top-0">
                 <div className="flex items-center gap-5">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-secondary p-[1px]">
-                        <div className="w-full h-full bg-carbon rounded-2xl flex items-center justify-center text-white font-black text-xl overflow-hidden">
-                            {chat.name?.charAt(0) || <UserCircle size={32} />}
+                        <div className="w-full h-full bg-carbon rounded-2xl flex items-center justify-center text-white font-black text-xl overflow-hidden relative">
+                            {chat.profilePicUrl ? (
+                                <img src={chat.profilePicUrl} alt={chat.name} className="w-full h-full object-cover" />
+                            ) : (
+                                chat.name?.charAt(0) || <UserCircle size={32} />
+                            )}
                         </div>
                     </div>
                     <div>

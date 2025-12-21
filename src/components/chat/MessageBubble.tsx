@@ -130,8 +130,21 @@ export default function MessageBubble({
                         </div>
                     )}
 
+                    {type === 'sticker' && (
+                        <div className="mb-3 rounded-2xl overflow-hidden group cursor-pointer max-w-[150px]">
+                            {mediaUrl ? (
+                                <img src={mediaUrl} alt="Sticker" className="w-full h-auto object-cover hover:scale-105 transition duration-300" />
+                            ) : (
+                                <div className="p-4 flex flex-col items-center justify-center text-gray-500 gap-2 bg-white/5">
+                                    <Spinner className="animate-spin" size={20} />
+                                    <span className="text-[9px] font-black uppercase tracking-widest">Sticker...</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Text Content */}
-                    {content && type !== 'image' && type !== 'video' && type !== 'audio' && type !== 'document' && (
+                    {content && type !== 'image' && type !== 'video' && type !== 'audio' && type !== 'document' && type !== 'sticker' && (
                         <p className={`font-medium ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words`}>
                             {content}
                         </p>

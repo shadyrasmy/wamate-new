@@ -18,8 +18,9 @@ export default function ChatPage() {
                 />
                 <div className="flex-1 h-full min-w-0">
                     <ChatWindow
+                        key={selectedChat?.jid} // Force reset when switching chats
                         chat={selectedChat}
-                        instanceId={selectedInstanceId}
+                        instanceId={selectedChat?.instanceId || selectedInstanceId}
                     />
                 </div>
             </div>

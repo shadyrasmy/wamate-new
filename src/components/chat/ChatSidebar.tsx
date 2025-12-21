@@ -52,14 +52,29 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
         socket.on('new_message', (msg: any) => {
             const jid = msg.senderJid; // Parsed message has senderJid on top level
             const content = msg.content || 'Media';
-            const time = new Date((msg.time)); // Time is already a string or date from backend parsed message? backend says: time: new Date().toLocaleTimeString... which is skipping date info? 
-            // Wait, backend sends: time: new Date(savedMsg.timestamp).toLocaleTimeString... 
-            // This is actually bad for sorting. But for now let's match what backend sends or just use current time if it's broken.
-            // Actually, backend 'new_message' event has a time string. 
-            // Let's use Date.now() if we can't parse it, but for sidebar sorting we ideally want a Date object.
-            // Backend parsedMsg.time is a string "HH:MM". This is not sortable.
-            // We should arguably fix the backend to send ISO string, but for now let's just use Date.now() or try to parse.
-            const timeObj = new Date();
+
+            // Fix Invalid Date Issue
+            // Ensure we have a valid time. If msg.time is a string/number, use it. If invalid, use Date.now()
+            let timeObj = new Date();
+            if (msg.time) {
+                const parsedTime = new Date(msg.time * 1000); // Check if it's unix timestamp (seconds)
+                // If year is 1970, maybe it was milliseconds? 
+                if (parsedTime.getFullYear() === 1970 && msg.time > 2000000000) {
+                    // It was probably milliseconds already, or we multipled too much. 
+                    // Common issue. Let's just try `new Date(msg.time)` directly first
+                    const d = new Date(msg.time);
+                    if (!isNaN(d.getTime())) timeObj = d;
+                } else if (!isNaN(parsedTime.getTime())) {
+                    timeObj = parsedTime;
+                } else {
+                    // Try parsing as string if it wasn't a number
+                    const d = new Date(msg.time);
+                    if (!isNaN(d.getTime())) timeObj = d;
+                }
+            }
+            // Fallback for immediate UI update: just use 'now' if it's a live message
+            // Ideally live messages represent 'now' unless they are history syncs.
+            if (isNaN(timeObj.getTime())) timeObj = new Date();
 
             setChats(prev => {
                 const existing = prev.findIndex(c => c.jid === jid);
@@ -70,8 +85,9 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                     newChat = {
                         ...oldChat,
                         lastMessage: content,
-                        time,
-                        unread: (activeJid === jid) ? 0 : (oldChat.unread + 1)
+                        time: timeObj,
+                        unread: (activeJid === jid) ? 0 : (oldChat.unread + 1),
+                        instanceId: msg.instanceId || oldChat.instanceId // Update instanceId if present
                     };
                     const newChats = [...prev];
                     newChats.splice(existing, 1);
@@ -81,8 +97,9 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                         jid,
                         name: jid.split('@')[0],
                         lastMessage: content,
-                        time,
-                        unread: 1
+                        time: timeObj,
+                        unread: 1,
+                        instanceId: msg.instanceId // Store instanceId
                     };
                     return [newChat, ...prev];
                 }
@@ -238,8 +255,12 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                                     : 'border border-transparent hover:bg-white/5'}`}
                             >
                                 <div className="relative">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-white/5 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white border border-white/10 group-hover:scale-105 transition-transform">
-                                        {item.name?.charAt(0) || <UserCircle size={20} />}
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-white/5 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white border border-white/10 group-hover:scale-105 transition-transform overflow-hidden">
+                                        {item.profilePicUrl ? (
+                                            <img src={item.profilePicUrl} alt={item.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            item.name?.charAt(0) || <UserCircle size={20} />
+                                        )}
                                     </div>
                                     {activeTab === 'chats' && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-[2px] border-carbon"></div>}
                                 </div>
@@ -247,7 +268,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-baseline mb-0.5">
                                         <span className={`font-bold truncate text-[13px] transition-colors ${activeJid === item.jid ? 'text-white' : 'text-gray-300'}`}>
-                                            {item.name}
+                                            {item.name || item.jid || item.phone || 'Unknown User'}
                                         </span>
                                         {activeTab === 'chats' && item.time && (
                                             <span className="text-[9px] font-black text-gray-600 uppercase tracking-tighter">
