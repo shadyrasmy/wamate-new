@@ -2,15 +2,20 @@ const { User, ReferralTransaction, SiteConfig } = require('../models');
 const { AppError } = require('../middlewares/error.middleware');
 const { sequelize } = require('../config/db');
 const { Op } = require('sequelize');
+const crypto = require('crypto');
 
 // --- User Endpoints ---
 
 exports.getStats = async (req, res, next) => {
     try {
-        const crypto = require('crypto');
         let user = await User.findByPk(req.user.id, {
             attributes: ['id', 'referral_code', 'referral_balance']
         });
+
+        if (!user) {
+            console.error(`[Referral] User not found during stats fetch for id: ${req.user.id}`);
+            return next(new AppError('User session invalid. Please log in again.', 401));
+        }
 
         // 1. Generate code for legacy users if missing
         if (!user.referral_code) {
@@ -65,13 +70,14 @@ exports.getStats = async (req, res, next) => {
             status: 'success',
             data: {
                 referral_code: user.referral_code,
-                balance: user.referral_balance,
+                balance: user.referral_balance || 0,
                 total_earnings: totalEarnings,
                 referral_count: referralCount,
                 history: sanitizedHistory
             }
         });
     } catch (err) {
+        console.error('[Referral] Critical Error in getStats:', err);
         next(err);
     }
 };

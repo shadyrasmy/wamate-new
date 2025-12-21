@@ -68,10 +68,18 @@ exports.register = async (req, res, next) => {
 
         // 5. Send Verification Email
         try {
-            const baseUrl = process.env.PUBLIC_URL || process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+            let rawBaseUrl = process.env.PUBLIC_URL || process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+
+            // Fix missing protocol if user provided just domain
+            if (rawBaseUrl && !rawBaseUrl.startsWith('http')) {
+                rawBaseUrl = `https://${rawBaseUrl}`;
+            }
+
+            const baseUrl = rawBaseUrl;
+            console.log(`[Auth] Verification Email requested. Target Base URL: ${baseUrl}`);
             await emailService.sendVerificationEmail(user, verificationToken, baseUrl);
         } catch (emailError) {
-            console.error('Failed to send verification email:', emailError);
+            console.error('[Auth] Failed to send verification email:', emailError.message);
             // Optional: deleting user if email fails? For now, let's keep user and let them resend or contact support.
         }
 
