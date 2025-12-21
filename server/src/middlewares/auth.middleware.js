@@ -19,40 +19,44 @@ exports.protect = async (req, res, next) => {
         }
 
         // 2. Verify token
-        const { User, Seat } = require('../models');
-        console.log(`[Auth] Verifying token for user ID: ${decoded.id}`);
-        let user = await User.findByPk(decoded.id);
+        try {
+            const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-        if (!user) {
-            user = await Seat.findByPk(decoded.id);
-            if (user) user.role = 'seat';
-        }
+            // 3. User Lookup from JWT
+            const { User, Seat } = require('../models');
+            console.log(`[Auth] Verifying token for user ID: ${decoded.id}`);
+            let user = await User.findByPk(decoded.id);
 
-        if (!user) return next(new AppError('Account not found.', 401));
-
-        req.user = user;
-        return next();
-    } catch (err) {
-        // 4. Fallback to Static Access Token (UUID) for API Integrations
-        if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-            const { User } = require('../models');
-            const user = await User.findOne({ where: { access_token: token } });
-
-            if (user) {
-                req.user = user;
-                return next();
+            if (!user) {
+                user = await Seat.findByPk(decoded.id);
+                if (user) user.role = 'seat';
             }
+
+            if (!user) return next(new AppError('Account not found.', 401));
+
+            req.user = user;
+            return next();
+        } catch (err) {
+            // 4. Fallback to Static Access Token (UUID) for API Integrations
+            if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+                const { User } = require('../models');
+                const user = await User.findOne({ where: { access_token: token } });
+
+                if (user) {
+                    req.user = user;
+                    return next();
+                }
+            }
+
+            // If both fail, return original JWT error messages
+            if (err.name === 'JsonWebTokenError') return next(new AppError('Invalid token. Check your credentials.', 401));
+            if (err.name === 'TokenExpiredError') return next(new AppError('Token expired. Use a permanent access_token for integrations.', 401));
+
+            next(err);
         }
-
-        // If both fail, return original JWT error messages
-        if (err.name === 'JsonWebTokenError') return next(new AppError('Invalid token. Check your credentials.', 401));
-        if (err.name === 'TokenExpiredError') return next(new AppError('Token expired. Use a permanent access_token for integrations.', 401));
-
+    } catch (err) {
         next(err);
     }
-} catch (err) {
-    next(err);
-}
 };
 exports.restrictTo = (...roles) => {
     return (req, res, next) => {
