@@ -21,6 +21,10 @@ const SiteConfig = sequelize.define('SiteConfig', {
         type: DataTypes.TEXT,
         allowNull: true
     },
+    referral_commission_percentage: {
+        type: DataTypes.INTEGER,
+        defaultValue: 20
+    },
     fb_pixel_id: {
         type: DataTypes.STRING,
         allowNull: true

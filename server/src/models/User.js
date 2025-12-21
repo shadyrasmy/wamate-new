@@ -70,6 +70,28 @@ const User = sequelize.define('User', {
         type: DataTypes.DATE,
         allowNull: true
     },
+    notifications_enabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
+    // Referral System Fields
+    referral_code: {
+        type: DataTypes.STRING,
+        unique: true,
+        allowNull: true // Can be null if not generated yet, but usually generated on msg
+    },
+    referred_by: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'users',
+            key: 'id'
+        }
+    },
+    referral_balance: {
+        type: DataTypes.DECIMAL(10, 2),
+        defaultValue: 0.00
+    },
     is_active: {
         type: DataTypes.BOOLEAN,
         defaultValue: true

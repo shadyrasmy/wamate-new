@@ -49,7 +49,7 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
             const msgJid = parsedMsg.jid || parsedMsg.senderJid || parsedMsg.key?.remoteJid;
 
             // Normalize JIDs (handle @s.whatsapp.net vs @g.us consistency if needed, but simple include check usually works)
-            if (msgJid !== chat.jid && parsedMsg.param !== 'chat') {
+            if (msgJid !== chat?.jid && parsedMsg.param !== 'chat') {
                 // If the message is not for this chat, ignore it.
                 return;
             }
@@ -282,7 +282,12 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
             <div className="flex-1 overflow-y-auto custom-scroll p-6 lg:p-10 z-10 space-y-4">
                 {loading && <div className="flex justify-center py-10"><Spinner size={32} className="animate-spin text-primary" /></div>}
                 {messages.map((msg) => (
-                    <MessageBubble key={msg.id} {...msg} onReply={() => setReplyingTo(msg)} />
+                    <MessageBubble
+                        key={msg.id}
+                        {...msg}
+                        senderProfilePic={msg.senderProfilePic || (!msg.isMe ? chat.profilePicUrl : undefined)}
+                        onReply={() => setReplyingTo(msg)}
+                    />
                 ))}
                 <div ref={messagesEndRef} />
             </div>

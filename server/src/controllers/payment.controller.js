@@ -1,4 +1,5 @@
-const { User, Plan, Invoice } = require('../models');
+const { User, Plan, Invoice, ReferralTransaction, SiteConfig } = require('../models');
+const { sequelize } = require('../config/db');
 const { AppError } = require('../middlewares/error.middleware');
 const emailService = require('../services/email.service');
 
@@ -204,6 +205,33 @@ exports.webhook = async (req, res, next) => {
             return res.status(404).json({ status: 'error', message: 'Invoice not found' });
         }
 
+        // Verify with Fawaterak API to prevent spoofing
+        const FAWATERAK_API_KEY = process.env.FAWATERAK_API_KEY;
+        if (!FAWATERAK_API_KEY) {
+            console.error('FAWATERAK_API_KEY mismatch or missing during webhook verification');
+            // We might choose to return 500 or just log checking configuration
+        } else {
+            try {
+                const verifyRes = await fetch(`https://app.fawaterk.com/api/v2/getInvoiceData/${invoice_id}`, {
+                    headers: { 'Authorization': `Bearer ${FAWATERAK_API_KEY}` }
+                });
+                const verifyData = await verifyRes.json();
+
+                if (verifyData.status === 'success' && verifyData.data) {
+                    // Check actual status from provider
+                    const actualStatus = verifyData.data.paid ? 'paid' : (verifyData.data.status || 'pending');
+                    if (actualStatus !== 'paid' && invoice_status === 'paid') {
+                        console.warn(`⚠️ Potential Webhook Spoofing! Payload says paid, but API says ${actualStatus}. Invoice: ${invoice.invoice_number}`);
+                        return res.status(400).json({ status: 'error', message: 'Verification failed' });
+                    }
+                } else {
+                    console.warn(`Failed to verify invoice ${invoice_id} with Fawaterak.`);
+                }
+            } catch (verifyErr) {
+                console.error('Error verifying invoice with provider:', verifyErr);
+            }
+        }
+
         // Check if payment was successful
         const isPaid = invoice_status === 'paid' || invoice_status === 'PAID';
 
@@ -219,6 +247,55 @@ exports.webhook = async (req, res, next) => {
                 });
 
                 console.log(`✅ Payment successful for invoice ${invoice.invoice_number}`);
+
+                // --- REFERRAL COMMISSION LOGIC ---
+                try {
+                    const user = await User.findByPk(invoice.user_id);
+                    if (user && user.referred_by) {
+                        const referrer = await User.findByPk(user.referred_by);
+                        if (referrer) {
+                            // Get Commission Config
+                            const config = await SiteConfig.findOne();
+                            const percentage = config ? config.referral_commission_percentage : 20;
+
+                            // Calculate Commission
+                            const commissionAmount = (Number(invoice.amount) * percentage) / 100;
+
+                            if (commissionAmount > 0) {
+                                // Update Referrer Balance
+                                await referrer.increment('referral_balance', { by: commissionAmount });
+
+                                // Log Transaction
+                                await ReferralTransaction.create({
+                                    referrer_id: referrer.id,
+                                    referred_user_id: user.id,
+                                    amount: commissionAmount,
+                                    percentage: percentage,
+                                    type: 'commission',
+                                    status: 'completed',
+                                    note: `Commission for invoice ${invoice.invoice_number}`
+                                });
+
+                                // Send Email to Referrer
+                                try {
+                                    await emailService.sendTemplate(referrer.email, 'referral_earned', {
+                                        name: referrer.name,
+                                        amount: `$${commissionAmount.toFixed(2)}`,
+                                        plan_name: invoice.plan_name
+                                    });
+                                } catch (emailErr) {
+                                    console.warn('Failed to send referral email:', emailErr.message);
+                                }
+
+                                console.log(`💰 Commission of $${commissionAmount} added to referrer ${referrer.id}`);
+                            }
+                        }
+                    }
+                } catch (referralError) {
+                    console.error('Error processing referral commission:', referralError);
+                    // Do not fail the webhook request just because referral failed
+                }
+                // ---------------------------------
             } catch (upgradeError) {
                 console.error('Failed to upgrade user:', upgradeError);
                 await invoice.update({ status: 'failed' });

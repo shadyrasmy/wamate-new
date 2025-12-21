@@ -14,7 +14,7 @@ function SuccessContent() {
             setCountdown((prev) => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    router.push('/dashboard/subscription');
+                    router.push('/dashboard/plans');
                     return 0;
                 }
                 return prev - 1;
@@ -55,7 +55,7 @@ function SuccessContent() {
 
                 {/* Manual Navigation */}
                 <Link
-                    href="/dashboard/subscription"
+                    href="/dashboard/plans"
                     className="inline-flex items-center justify-center gap-2 bg-black text-white px-6 py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors"
                 >
                     Go to Dashboard

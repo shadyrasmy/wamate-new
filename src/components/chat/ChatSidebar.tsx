@@ -50,7 +50,9 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
         instances.forEach(i => socket.emit('join_instance', i.instance_id));
 
         socket.on('new_message', (msg: any) => {
-            const jid = msg.senderJid; // Parsed message has senderJid on top level
+            // Fix: Use chatJid if available (remote chat), otherwise fallback to senderJid
+            // This prevents "me" conversations when sending from phone.
+            const jid = msg.chatJid || msg.senderJid;
             const content = msg.content || 'Media';
 
             // Fix Invalid Date Issue

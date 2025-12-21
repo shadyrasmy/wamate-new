@@ -204,6 +204,7 @@ exports.getAllInvoices = async (req, res, next) => {
 
 // Payment approval imports
 const { upgradeUserPlan } = require('./payment.controller');
+const referralService = require('../services/referral.service');
 
 exports.approvePayment = async (req, res, next) => {
     try {
@@ -234,6 +235,9 @@ exports.approvePayment = async (req, res, next) => {
             status: 'paid',
             paid_at: new Date()
         });
+
+        // Trigger Referral Commission
+        await referralService.processCommission(invoice);
 
         res.status(200).json({
             status: 'success',

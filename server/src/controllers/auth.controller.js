@@ -36,9 +36,21 @@ exports.register = async (req, res, next) => {
             return next(new AppError('Email is already in use', 400));
         }
 
-        // 3. Hash Password
+        // 3. Hash Password & Generate Referral Code
         const hashedPassword = await bcrypt.hash(password, 12);
         const verificationToken = createVerificationToken();
+
+        // Generate unique referral code (8 chars, alphanumeric)
+        const myReferralCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+
+        // 3.5 Check for Referrer
+        let referredBy = null;
+        if (req.body.referralCode) {
+            const referrer = await User.findOne({ where: { referral_code: req.body.referralCode } });
+            if (referrer) {
+                referredBy = referrer.id;
+            }
+        }
 
         // 4. Create User (Unverified)
         const user = await User.create({
@@ -48,7 +60,10 @@ exports.register = async (req, res, next) => {
             phone_number,
             access_token: uuidv4(),
             email_verified: false,
-            verification_token: verificationToken
+            verification_token: verificationToken,
+            referral_code: myReferralCode,
+            referred_by: referredBy,
+            referral_balance: 0.00
         });
 
         // 5. Send Verification Email

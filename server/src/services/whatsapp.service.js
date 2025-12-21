@@ -201,6 +201,10 @@ class WhatsAppService {
             // Handle Reactions specifically
             if (m.reactionMessage) {
                 textContent = m.reactionMessage.text; // The emoji
+            } else if (m.senderKeyDistributionMessage || m.protocolMessage) {
+                // System messages usually invalid for display
+                console.log(`[WA] Skipping system message type: ${Object.keys(m)[0]}`);
+                return;
             } else if (m.conversation) {
                 textContent = m.conversation;
             } else if (m.extendedTextMessage) {
@@ -216,7 +220,11 @@ class WhatsAppService {
                 mediaUrl = await this.downloadMedia(m.audioMessage, 'audio');
             } else if (m.stickerMessage) {
                 textContent = '👾 Sticker';
-                mediaUrl = await this.downloadMedia(m.stickerMessage, 'sticker'); // Use 'sticker' type, usually needs .webp
+                mediaUrl = await this.downloadMedia(m.stickerMessage, 'sticker');
+            } else if (m.albumMessage) {
+                // Handle album (usually contains multiple images, we'll try to extract context or generic)
+                textContent = m.albumMessage.caption || '📸 Album';
+                // Albums are complex, often containing array of messages. For now, basic support.
             } else {
                 textContent = Object.keys(m)[0];
             }
@@ -335,6 +343,7 @@ class WhatsAppService {
                 mediaUrl: savedMsg.media_url,
                 senderName: savedMsg.sender_name,
                 senderJid: savedMsg.sender_jid,
+                chatJid: savedMsg.jid, // CRITICAL: The actual conversation JID (remote)
                 quotedMessage: savedMsg.quotedMessage ? {
                     id: savedMsg.quotedMessage.message_id,
                     content: savedMsg.quotedMessage.content
@@ -365,7 +374,7 @@ class WhatsAppService {
             const filePath = path.join(this.uploadDir, fileName);
             fs.writeFileSync(filePath, buffer);
 
-            const publicUrl = `${process.env.PUBLIC_URL || 'http://localhost:3000'}/public/uploads/${fileName}`;
+            const publicUrl = `${process.env.PUBLIC_URL || ''}/public/uploads/${fileName}`;
             return publicUrl;
         } catch (error) {
             console.error('[WA] Media download failed:', error);

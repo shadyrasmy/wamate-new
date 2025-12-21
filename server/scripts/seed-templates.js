@@ -82,6 +82,25 @@ const templates = [
             </div>
         `,
         variables: ['{{name}}', '{{renewal_link}}']
+    },
+    {
+        key: 'referral_earned',
+        name: 'Referral Earned',
+        subject: 'You\'ve earned {{amount}} from a referral! 💸',
+        body: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                <h2 style="color: #4ade80;">Cha-Ching! 💰</h2>
+                <p>Congratulations {{name}}!</p>
+                <p>One of your referrals just purchased the <b>{{plan_name}}</b>.</p>
+                <h3 style="color: #4ade80; font-size: 24px;">You earned {{amount}}</h3>
+                <p>This amount has been added to your referral balance.</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="https://wamate.ai/dashboard/referral" style="background: #000; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Check Earnings</a>
+                </div>
+                <p>Keep sharing the love to earn more!</p>
+            </div>
+        `,
+        variables: ['{{name}}', '{{amount}}', '{{plan_name}}']
     }
 ];
 

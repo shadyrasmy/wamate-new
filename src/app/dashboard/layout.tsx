@@ -20,7 +20,9 @@ import {
     Shield,
     Sun,
     Moon,
-    Translate
+    Translate,
+    Heart,
+    Users
 } from '@phosphor-icons/react';
 import { useUI } from '@/context/UIContext';
 
@@ -39,9 +41,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { icon: Crown, label: 'Manage Nodes', href: '/dashboard/admin/users', isAdmin: true },
         { icon: Gear, label: 'Landing CMS', href: '/dashboard/admin/settings?tab=landing', isAdmin: true },
         { icon: Receipt, label: 'Network Invoices', href: '/dashboard/admin/invoices', isAdmin: true },
+        { icon: Users, label: 'Affiliates', href: '/dashboard/admin/referrals', isAdmin: true },
         { icon: Shield, label: 'Service Plans', href: '/dashboard/admin/plans', isAdmin: true },
         { icon: Gear, label: 'System Protocols', href: '/dashboard/admin/settings', isAdmin: true },
         { icon: Crown, label: t('upgrade'), href: '/dashboard/plans' },
+        { icon: Heart, label: 'Share Love & Earn', href: '/dashboard/referral' },
         { icon: Code, label: t('api_center'), href: '/dashboard/api' },
     ];
 

@@ -58,22 +58,78 @@ exports.getRecentChats = async (req, res, next) => {
         if (uniqueJids.length > 0) {
             const contacts = await Contact.findAll({
                 where: {
-                    jid: uniqueJids,
-                    user_id: req.user.id
+                    user_id: req.user.id,
+                    [Op.or]: [
+                        { jid: uniqueJids },
+                        { lid: uniqueJids }
+                    ]
                 }
             });
 
             // Create lookup
             const contactNameMap = {};
-            contacts.forEach(c => { contactNameMap[c.jid] = { name: c.name, profile_pic: c.profile_pic }; });
+            contacts.forEach(c => {
+                contactNameMap[c.jid] = { name: c.name, profile_pic: c.profile_pic, canonical_jid: c.jid };
+                if (c.lid) {
+                    contactNameMap[c.lid] = { name: c.name, profile_pic: c.profile_pic, canonical_jid: c.jid };
+                }
+            });
 
-            // Apply names and profile pics
-            for (const chat of chatsMap.values()) {
-                if (contactNameMap[chat.jid]) {
-                    chat.name = contactNameMap[chat.jid].name;
-                    chat.profilePicUrl = contactNameMap[chat.jid].profile_pic;
+            // Apply names, profile pics, and MERGE duplicates (LID -> Phone)
+            const mergedMap = new Map();
+
+            for (const [jid, chat] of chatsMap.entries()) {
+                let canonicalJid = jid;
+
+                // Check for LID mapping in contacts
+                if (jid.endsWith('@lid') && contactNameMap[jid] && contactNameMap[jid].jid) {
+                    // We found a contact that links this LID to a phone number!
+                    // But wait, our contactNameMap needs to store the JID too.
+                    // We'll trust the contact's 'jid' field if it looks like a phone number.
+                    const mappedJid = contactNameMap[jid].canonical_jid;
+                    if (mappedJid && mappedJid.includes('@s.whatsapp.net')) {
+                        canonicalJid = mappedJid;
+                    }
+                }
+
+                // Get existing entry or create new
+                const existing = mergedMap.get(canonicalJid);
+
+                // Add contact info
+                let displayName = chat.name;
+                let displayPic = chat.profilePicUrl;
+
+                if (contactNameMap[canonicalJid]) {
+                    displayName = contactNameMap[canonicalJid].name || displayName;
+                    displayPic = contactNameMap[canonicalJid].profile_pic || displayPic;
+                } else if (contactNameMap[jid]) {
+                    displayName = contactNameMap[jid].name || displayName;
+                    displayPic = contactNameMap[jid].profile_pic || displayPic;
+                }
+
+                if (existing) {
+                    // Merge logic: Take latest time, sum unread (conceptually), use latest message
+                    if (new Date(chat.time) > new Date(existing.time)) {
+                        existing.time = chat.time;
+                        existing.lastMessage = chat.lastMessage;
+                        existing.status = chat.status;
+                        existing.type = chat.type;
+                        existing.fromMe = chat.fromMe;
+                    }
+                    existing.unread += chat.unread;
+                    existing.profilePicUrl = displayPic || existing.profilePicUrl; // Prefer non-null
+                    existing.name = displayName || existing.name;
+                } else {
+                    // Update the chat object with canonical data
+                    chat.jid = canonicalJid;
+                    chat.name = displayName;
+                    chat.profilePicUrl = displayPic;
+                    mergedMap.set(canonicalJid, chat);
                 }
             }
+
+            // Return values from the merged map
+            return res.status(200).json({ status: 'success', data: { chats: Array.from(mergedMap.values()) } });
         }
 
         res.status(200).json({
@@ -113,6 +169,26 @@ exports.getMessages = async (req, res, next) => {
             ]
         });
 
+        // Enrich with Sender Profile Pics
+        const senderJids = [...new Set(messages.map(m => m.sender_jid).filter(Boolean))];
+        const contactMap = {};
+
+        if (senderJids.length > 0) {
+            const contacts = await Contact.findAll({
+                where: {
+                    user_id: req.user.id,
+                    [Op.or]: [
+                        { jid: senderJids },
+                        { lid: senderJids }
+                    ]
+                }
+            });
+            contacts.forEach(c => {
+                contactMap[c.jid] = c.profile_pic;
+                if (c.lid) contactMap[c.lid] = c.profile_pic;
+            });
+        }
+
         const parsedMessages = messages.map(m => ({
             id: m.message_id,
             content: m.content,
@@ -121,6 +197,7 @@ exports.getMessages = async (req, res, next) => {
             mediaUrl: m.media_url,
             senderName: m.sender_name,
             senderJid: m.sender_jid,
+            senderProfilePic: contactMap[m.sender_jid] || null,
             quotedMessage: m.quotedMessage ? {
                 id: m.quotedMessage.message_id,
                 content: m.quotedMessage.content

@@ -16,6 +16,7 @@ interface MessageProps {
         id: string;
         content: string;
     };
+    senderProfilePic?: string; // New prop
     reactions?: string[];
     onReply?: () => void;
 }
@@ -30,18 +31,13 @@ export default function MessageBubble({
     mediaUrl,
     senderName,
     senderJid,
+    senderProfilePic,
     jid,
     quotedMessage,
     reactions = [],
     onReply
 }: MessageProps) {
-    // Reactions are shown as small overlays or separate messages. 
-    // If it's a reaction type, we might want to hide the main bubble if it's just the emoji.
-    if (type === 'reaction') {
-        return null; // For now, handle via reaction list on the relevant message. 
-        // Or if you want to show it as a message:
-        // return <div className="text-[10px] text-gray-500 italic mx-auto">Reacted with {content}</div>
-    }
+    if (type === 'reaction') return null;
 
     const isGroup = jid?.endsWith('@g.us');
     const showSender = !isMe && isGroup && senderName;
@@ -50,11 +46,23 @@ export default function MessageBubble({
         <motion.div
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className={`flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`}
+            className={`flex mb-4 items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}
         >
-            <div className={`relative max-w-[85%] sm:max-w-[70%] group`}>
+            {/* Avatar */}
+            {!isMe && (
+                <div className="w-8 h-8 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden shadow-md mb-1 pb-0">
+                    {senderProfilePic ? (
+                        <img src={senderProfilePic} alt="Sender" className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-600 text-xs font-bold text-gray-300">
+                            {(senderName || '?').charAt(0).toUpperCase()}
+                        </div>
+                    )}
+                </div>
+            )}
 
-                {/* Sender Name (Group Chat) */}
+            <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[70%]`}>
+                {/* Sender Name (Group Chat) - Moved inside the stack */}
                 {showSender && (
                     <div className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 ml-1 opacity-80">
                         {senderName}

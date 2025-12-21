@@ -11,6 +11,10 @@ const Contact = sequelize.define('Contact', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    lid: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     name: {
         type: DataTypes.STRING,
         allowNull: true
