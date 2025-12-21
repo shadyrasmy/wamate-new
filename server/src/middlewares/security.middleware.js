@@ -12,6 +12,7 @@ const setupSecurity = (app) => {
         'http://localhost:3001',
         'http://localhost:3002',
         process.env.FRONTEND_URL,
+        process.env.PUBLIC_URL,
         'https://beta.wamateai.online',
         'https://apibeta.wamateai.online'
     ];

@@ -41,7 +41,7 @@ class CronService {
                     await emailService.sendTemplate(user.email, 'subscription_expiring', {
                         name: user.name,
                         days: daysLeft.toString(),
-                        dashboard_link: `${process.env.PUBLIC_URL || 'http://localhost:3000'}/dashboard`
+                        dashboard_link: `${process.env.PUBLIC_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`
                     });
 
                     user.last_expiry_warning_sent = today;
@@ -68,7 +68,7 @@ class CronService {
                 try {
                     await emailService.sendTemplate(user.email, 'subscription_ended', {
                         name: user.name,
-                        dashboard_link: `${process.env.PUBLIC_URL || 'http://localhost:3000'}/dashboard`
+                        dashboard_link: `${process.env.PUBLIC_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`
                     });
 
                     // We don't want to spam this every day if they remain expired

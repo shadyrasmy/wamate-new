@@ -305,7 +305,30 @@ exports.sendMessage = async (req, res, next) => {
         // Normalize JID
         const formattedJid = jid.includes('@') ? jid : `${jid}@s.whatsapp.net`;
 
-        const response = await whatsappService.sendMessage(instanceId, formattedJid, messagePayload, options);
+        // PROD FIX: Detect if mediaUrl is local and send as absolute file path
+        // This prevents the server from needing to fetch itself over HTTP, which fails often in production.
+        let localMessagePayload = { ...messagePayload };
+        if (mediaUrl) {
+            const isLocal = mediaUrl.includes('localhost') ||
+                (process.env.PUBLIC_URL && mediaUrl.includes(process.env.PUBLIC_URL)) ||
+                mediaUrl.startsWith('/');
+
+            if (isLocal) {
+                const filename = mediaUrl.split('/').pop();
+                const path = require('path');
+                const filePath = path.join(__dirname, '../../public/uploads', filename);
+                const fs = require('fs');
+                if (fs.existsSync(filePath)) {
+                    console.log(`[WA] Optimized sending local file: ${filePath}`);
+                    if (type === 'image') localMessagePayload.image = { url: filePath };
+                    if (type === 'video') localMessagePayload.video = { url: filePath };
+                    if (type === 'audio') localMessagePayload.audio = { url: filePath };
+                    if (type === 'document') localMessagePayload.document = { url: filePath };
+                }
+            }
+        }
+
+        const response = await whatsappService.sendMessage(instanceId, formattedJid, localMessagePayload, options);
 
         res.status(200).json({ status: 'success', message: 'Message queued', data: response });
 
@@ -320,8 +343,9 @@ exports.uploadMedia = async (req, res, next) => {
             return next(new AppError('No file uploaded', 400));
         }
 
-        // Construct public URL - Use PORT 3000 as per user request (Proxy)
-        const fileUrl = `${process.env.PUBLIC_URL || 'http://localhost:3000'}/public/uploads/${req.file.filename}`;
+        // Construct public URL - Dynamic fallback if PUBLIC_URL is missing
+        const baseUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
+        const fileUrl = `${baseUrl}/public/uploads/${req.file.filename}`;
 
         res.status(200).json({
             status: 'success',

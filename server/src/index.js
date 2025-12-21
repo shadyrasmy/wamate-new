@@ -90,5 +90,5 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
     console.log(`\n🚀 Server running on port ${PORT}`);
     console.log(`🔒 Security headers enabled`);
-    console.log(`🔗 API URL: http://localhost:${PORT}`);
+    console.log(`🔗 Primary URL: ${process.env.PUBLIC_URL || `http://localhost:${PORT}`}`);
 });

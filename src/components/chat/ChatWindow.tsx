@@ -28,6 +28,7 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
     const [showEmoji, setShowEmoji] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const emojiRef = useRef<HTMLDivElement>(null);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
     // Initialize Socket
     useEffect(() => {
@@ -193,7 +194,13 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
         if (!file) return;
 
         try {
-            const uploadRes = await import('@/lib/api').then(m => m.uploadFile(file));
+            setUploadProgress(0);
+            const { uploadFileWithProgress } = await import('@/lib/api');
+            const uploadRes: any = await uploadFileWithProgress(file, (percent) => {
+                setUploadProgress(percent);
+            });
+
+            setUploadProgress(null); // Clear progress when done
 
             let type = 'document';
             if (file.type.startsWith('image/')) type = 'image';
@@ -220,6 +227,7 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
             }]);
         } catch (error) {
             console.error('Upload failed', error);
+            setUploadProgress(null);
             alert('Failed to send media. Please try again.');
         }
 
@@ -291,6 +299,22 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
                 ))}
                 <div ref={messagesEndRef} />
             </div>
+
+            {/* Progress Bar */}
+            {uploadProgress !== null && (
+                <div className="absolute top-16 lg:top-20 left-0 right-0 z-30 px-8 py-2 bg-primary/20 backdrop-blur-md border-b border-primary/30 flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
+                    <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)] transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                        />
+                    </div>
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{uploadProgress}%</span>
+                    <button onClick={() => setUploadProgress(null)} className="text-white/50 hover:text-white transition">
+                        <X size={14} weight="bold" />
+                    </button>
+                </div>
+            )}
 
             {/* Input Area */}
             <div className="p-4 lg:p-6 bg-transparent z-10 relative">

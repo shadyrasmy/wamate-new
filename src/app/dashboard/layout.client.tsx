@@ -22,7 +22,9 @@ import {
     Moon,
     Translate,
     Heart,
-    Users
+    Users,
+    CaretLeft,
+    CaretRight
 } from '@phosphor-icons/react';
 import { useUI } from '@/context/UIContext';
 
@@ -31,7 +33,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const pathname = usePathname();
     const router = useRouter();
     const [isSidebarOpen, setSidebarOpen] = useState(true);
+    const [isCollapsed, setIsCollapsed] = useState(false);
     const [user, setUser] = useState<any>(null);
+
+    // Load states from localStorage
+    useEffect(() => {
+        const collapsed = localStorage.getItem('sidebarCollapsed');
+        if (collapsed === 'true') setIsCollapsed(true);
+    }, []);
+
+    const toggleCollapse = () => {
+        const newState = !isCollapsed;
+        setIsCollapsed(newState);
+        localStorage.setItem('sidebarCollapsed', newState.toString());
+    };
 
     const menuItems = [
         { icon: SquaresFour, label: t('dashboard'), href: '/dashboard' },
@@ -70,20 +85,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans transition-colors duration-300">
-
             {/* Sidebar */}
-            <aside className={`fixed lg:relative z-50 h-full w-[260px] flex-shrink-0 bg-surface border-r border-border flex flex-col pt-8 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-                <div className="px-8 mb-8 flex items-center justify-between">
+            <aside
+                className={`fixed lg:relative z-50 h-full flex-shrink-0 bg-surface border-r border-border flex flex-col pt-8 transition-all duration-300 ease-in-out
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                ${isCollapsed ? 'w-20' : 'w-[260px]'}`}
+            >
+                <div className={`px-6 mb-8 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-tr from-green-400 to-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20">
+                        <div className="w-10 h-10 bg-gradient-to-tr from-green-400 to-green-600 rounded-xl flex-shrink-0 flex items-center justify-center shadow-lg shadow-green-500/20">
                             <WhatsappLogo size={24} weight="fill" className="text-white" />
                         </div>
-                        <span className="text-2xl font-bold tracking-tight">WaMate</span>
+                        {!isCollapsed && <span className="text-2xl font-bold tracking-tight animate-in fade-in duration-500">WaMate</span>}
                     </div>
-                    <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400">
-                        <X size={24} />
-                    </button>
+                    {!isCollapsed && (
+                        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400">
+                            <X size={24} />
+                        </button>
+                    )}
                 </div>
+
+                {/* Collapse Toggle Button (Desktop) */}
+                <button
+                    onClick={toggleCollapse}
+                    className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 bg-surface border border-border rounded-full items-center justify-center text-gray-400 hover:text-primary transition shadow-md z-[60]"
+                >
+                    {isCollapsed ? <CaretRight size={14} weight="bold" /> : <CaretLeft size={14} weight="bold" />}
+                </button>
 
                 <nav className="flex-1 space-y-1 overflow-y-auto custom-scroll px-2">
                     {menuItems.filter(item => !item.isAdmin || user?.role === 'admin').map((item) => {
@@ -93,46 +121,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 key={item.href}
                                 href={item.href}
                                 onClick={() => setSidebarOpen(false)}
-                                className={`px-8 py-3.5 flex items-center gap-4 text-gray-400 hover:text-foreground transition group border-r-4 transition-all ${isActive
-                                    ? 'bg-primary/10 text-primary border-primary'
-                                    : 'border-transparent'}`}
+                                className={`py-3.5 flex items-center gap-4 text-gray-400 hover:text-foreground transition group border-r-4 transition-all
+                                ${isCollapsed ? 'justify-center px-0' : 'px-8'}
+                                ${isActive
+                                        ? 'bg-primary/10 text-primary border-primary'
+                                        : 'border-transparent'}`}
                             >
-                                <item.icon size={22} weight={isActive ? "fill" : "bold"} className="group-hover:scale-110 transition" />
-                                <span className="font-bold text-xs uppercase tracking-widest">{item.label}</span>
+                                <item.icon size={22} weight={isActive ? "fill" : "bold"} className={`group-hover:scale-110 transition flex-shrink-0`} />
+                                {!isCollapsed && <span className="font-bold text-xs uppercase tracking-widest truncate animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>}
                             </Link>
                         );
                     })}
                 </nav>
 
-                <div className="p-4 space-y-2 border-t border-border mt-auto bg-surface/50">
+                <div className={`p-4 space-y-2 border-t border-border mt-auto bg-surface/50 ${isCollapsed ? 'items-center' : ''}`}>
                     {/* Theme & Language Toggles */}
-                    <div className="flex gap-2 mb-4">
+                    <div className={`flex ${isCollapsed ? 'flex-col' : 'gap-2'} mb-4`}>
                         <button
                             onClick={() => setTheme(theme === 'dark' ? 'nova-light' : 'dark')}
-                            className="flex-1 h-10 bg-background border border-border rounded-xl flex items-center justify-center gap-2 hover:border-primary/50 transition transition-colors"
+                            className={`h-10 bg-background border border-border rounded-xl flex items-center justify-center gap-2 hover:border-primary/50 transition transition-colors ${isCollapsed ? 'w-10' : 'flex-1'}`}
                         >
                             {theme === 'dark' ? <Sun size={18} weight="bold" className="text-orange-400" /> : <Moon size={18} weight="bold" className="text-purple-500" />}
-                            <span className="text-[9px] font-black uppercase tracking-tighter">{t('theme_toggle')}</span>
+                            {!isCollapsed && <span className="text-[9px] font-black uppercase tracking-tighter">{t('theme_toggle')}</span>}
                         </button>
                         <button
                             onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-                            className="flex-1 h-10 bg-background border border-border rounded-xl flex items-center justify-center gap-2 hover:border-primary/50 transition transition-colors"
+                            className={`h-10 bg-background border border-border rounded-xl flex items-center justify-center gap-2 hover:border-primary/50 transition transition-colors ${isCollapsed ? 'w-10' : 'flex-1'}`}
                         >
                             <Translate size={18} weight="bold" className="text-primary" />
-                            <span className="text-[9px] font-black uppercase tracking-tighter">{language === 'en' ? 'العربية' : 'English'}</span>
+                            {!isCollapsed && <span className="text-[9px] font-black uppercase tracking-tighter">{language === 'en' ? 'العربية' : 'English'}</span>}
                         </button>
                     </div>
 
-                    <Link href="/dashboard/settings" className={`flex items-center gap-4 px-6 py-3.5 glass-card rounded-2xl text-gray-400 hover:text-foreground transition ${pathname === '/dashboard/settings' ? 'text-foreground border-primary/20' : ''}`}>
-                        <Gear size={22} weight="bold" />
-                        <span className="font-bold text-xs uppercase tracking-widest">{t('settings')}</span>
+                    <Link href="/dashboard/settings" className={`flex items-center gap-4 py-3.5 glass-card rounded-2xl text-gray-400 hover:text-foreground transition ${isCollapsed ? 'justify-center px-0' : 'px-6'} ${pathname === '/dashboard/settings' ? 'text-foreground border-primary/20' : ''}`}>
+                        <Gear size={22} weight="bold" className="flex-shrink-0" />
+                        {!isCollapsed && <span className="font-bold text-xs uppercase tracking-widest truncate">{t('settings')}</span>}
                     </Link>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-4 px-6 py-3.5 rounded-2xl text-gray-500 hover:text-red-400 hover:bg-red-400/5 transition"
+                        className={`w-full flex items-center gap-4 py-3.5 rounded-2xl text-gray-500 hover:text-red-400 hover:bg-red-400/5 transition ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}
                     >
-                        <SignOut size={22} weight="bold" />
-                        <span className="font-bold text-xs uppercase tracking-widest">{t('sign_out')}</span>
+                        <SignOut size={22} weight="bold" className="flex-shrink-0" />
+                        {!isCollapsed && <span className="font-bold text-xs uppercase tracking-widest truncate">{t('sign_out')}</span>}
                     </button>
                 </div>
             </aside>

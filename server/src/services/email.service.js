@@ -44,8 +44,9 @@ class EmailService {
 
 
 
-    async sendVerificationEmail(user, token) {
-        const verificationLink = `${process.env.PUBLIC_URL || 'http://localhost:3000'}/auth/verify-email?token=${token}`;
+    async sendVerificationEmail(user, token, baseUrl = null) {
+        const linkBase = baseUrl || process.env.PUBLIC_URL || 'http://localhost:3000';
+        const verificationLink = `${linkBase}/auth/verify-email?token=${token}`;
 
         try {
             // Try to use template first

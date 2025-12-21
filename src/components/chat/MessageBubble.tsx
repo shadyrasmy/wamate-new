@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Checks, FileText, PlayCircle, Microphone, Spinner, ArrowBendUpLeft } from '@phosphor-icons/react';
+import { useState, useRef, useEffect } from 'react';
+import { Checks, FileText, PlayCircle, Microphone, Spinner, ArrowBendUpLeft, Play, Pause } from '@phosphor-icons/react';
 
 interface MessageProps {
     id: string;
@@ -37,6 +38,42 @@ export default function MessageBubble({
     reactions = [],
     onReply
 }: MessageProps) {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const updateProgress = () => {
+            const current = audio.currentTime;
+            const duration = audio.duration;
+            if (duration) {
+                setProgress((current / duration) * 100);
+            }
+        };
+
+        const onEnded = () => setIsPlaying(false);
+
+        audio.addEventListener('timeupdate', updateProgress);
+        audio.addEventListener('ended', onEnded);
+        return () => {
+            audio.removeEventListener('timeupdate', updateProgress);
+            audio.removeEventListener('ended', onEnded);
+        };
+    }, []);
+
+    const togglePlay = () => {
+        if (!audioRef.current) return;
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+    };
+
     if (type === 'reaction') return null;
 
     const isGroup = jid?.endsWith('@g.us');
@@ -112,15 +149,41 @@ export default function MessageBubble({
                     )}
 
                     {type === 'audio' && (
-                        <div className={`mb-3 flex items-center gap-3 p-3 rounded-2xl border-white/5 ${isMe ? 'bg-white/10' : 'bg-white/5'}`}>
-                            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg flex-shrink-0">
-                                <Microphone size={20} weight="fill" className="text-white" />
-                            </div>
-                            <div className="flex-1">
-                                {mediaUrl ? (
-                                    <audio src={mediaUrl} controls className="w-full h-8" style={{ filter: 'invert(1) hue-rotate(180deg)' }} />
+                        <div className={`mb-3 flex items-center gap-4 p-3 rounded-2xl border-white/5 min-w-[240px] ${isMe ? 'bg-white/10' : 'bg-white/5'}`}>
+                            <button
+                                onClick={togglePlay}
+                                disabled={!mediaUrl}
+                                className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg flex-shrink-0 hover:scale-105 active:scale-95 transition group disabled:opacity-50"
+                            >
+                                {isPlaying ? (
+                                    <Pause size={24} weight="fill" className="text-white" />
                                 ) : (
-                                    <span className="text-[10px] font-bold text-gray-500 italic uppercase">Processing Voice...</span>
+                                    <Play size={24} weight="fill" className="text-white translate-x-0.5" />
+                                )}
+                            </button>
+                            <div className="flex-1 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                        <Microphone size={14} weight="bold" className="text-primary" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Voice Note</span>
+                                    </div>
+                                    {!mediaUrl && <Spinner className="animate-spin text-primary" size={12} />}
+                                </div>
+                                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                                    <div
+                                        className="h-full bg-primary transition-all duration-100 shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]"
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                    <div
+                                        className="absolute top-0 h-full w-0.5 bg-white transition-all duration-100"
+                                        style={{ left: `${progress}%` }}
+                                    />
+                                </div>
+                                {mediaUrl && (
+                                    <audio ref={audioRef} src={mediaUrl} className="hidden" />
+                                )}
+                                {!mediaUrl && (
+                                    <span className="text-[9px] font-bold text-gray-500 italic uppercase">Syncing voice...</span>
                                 )}
                             </div>
                         </div>

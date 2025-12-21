@@ -15,7 +15,10 @@ exports.getStats = async (req, res, next) => {
         // 1. Generate code for legacy users if missing
         if (!user.referral_code) {
             user.referral_code = crypto.randomBytes(4).toString('hex').toUpperCase();
-            await user.save();
+            // Fetch fresh instance to ensure no partial fields issues during save
+            const freshUser = await User.findByPk(req.user.id);
+            freshUser.referral_code = user.referral_code;
+            await freshUser.save();
         }
 
         // Get total earnings (sum of all 'commission' transactions)

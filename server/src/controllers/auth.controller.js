@@ -68,7 +68,8 @@ exports.register = async (req, res, next) => {
 
         // 5. Send Verification Email
         try {
-            await emailService.sendVerificationEmail(user, verificationToken);
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            await emailService.sendVerificationEmail(user, verificationToken, baseUrl);
         } catch (emailError) {
             console.error('Failed to send verification email:', emailError);
             // Optional: deleting user if email fails? For now, let's keep user and let them resend or contact support.
@@ -145,7 +146,7 @@ exports.verifyEmail = async (req, res, next) => {
         try {
             await emailService.sendTemplate(user.email, 'welcome', {
                 name: user.name,
-                dashboard_link: `${process.env.PUBLIC_URL || 'http://localhost:3000'}/dashboard`
+                dashboard_link: `${process.env.PUBLIC_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`
             });
         } catch (error) {
             console.warn('Failed to send welcome email:', error.message);
