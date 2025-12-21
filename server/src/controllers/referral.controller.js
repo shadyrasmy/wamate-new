@@ -14,11 +14,17 @@ exports.getStats = async (req, res, next) => {
 
         // 1. Generate code for legacy users if missing
         if (!user.referral_code) {
+            console.log(`[Referral] Generating on-demand code for user: ${req.user.id}`);
             user.referral_code = crypto.randomBytes(4).toString('hex').toUpperCase();
             // Fetch fresh instance to ensure no partial fields issues during save
             const freshUser = await User.findByPk(req.user.id);
-            freshUser.referral_code = user.referral_code;
-            await freshUser.save();
+            if (freshUser) {
+                freshUser.referral_code = user.referral_code;
+                await freshUser.save();
+                console.log(`[Referral] Successfully saved code ${user.referral_code} for user: ${req.user.id}`);
+            } else {
+                console.error(`[Referral] Failed to fetch fresh user instance for id: ${req.user.id}`);
+            }
         }
 
         // Get total earnings (sum of all 'commission' transactions)

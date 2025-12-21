@@ -68,7 +68,7 @@ exports.register = async (req, res, next) => {
 
         // 5. Send Verification Email
         try {
-            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const baseUrl = process.env.PUBLIC_URL || process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
             await emailService.sendVerificationEmail(user, verificationToken, baseUrl);
         } catch (emailError) {
             console.error('Failed to send verification email:', emailError);

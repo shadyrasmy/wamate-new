@@ -16,6 +16,7 @@ require('./services/cron.service'); // Initialize daily cron jobs
 
 // Initialize App
 const app = express();
+app.set('trust proxy', true); // Trust proxy headers (X-Forwarded-For, X-Forwarded-Proto, etc.)
 const server = http.createServer(app);
 
 // 1. Security Middleware (Helmet, CORS, Rate Limit)
