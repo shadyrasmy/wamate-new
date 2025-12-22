@@ -11,6 +11,7 @@ const pino = require('pino');
 const path = require('path');
 const fs = require('fs');
 const { WhatsAppInstance, Message, Contact } = require('../models');
+const { Op } = require('sequelize');
 const { io } = require('../index');
 const QueueService = require('./queue.service');
 
@@ -135,6 +136,21 @@ class WhatsAppService {
                 }
             });
 
+            // Handle contact updates (vital for LID/Phone mapping)
+            sock.ev.on('contacts.upsert', async (contacts) => {
+                console.log(`[DEBUG] Contacts Upsert: ${contacts.length} contacts`);
+                for (const contact of contacts) {
+                    await this.handleContactUpdate(instanceId, contact);
+                }
+            });
+
+            sock.ev.on('contacts.update', async (updates) => {
+                console.log(`[DEBUG] Contacts Update: ${updates.length} updates`);
+                for (const update of updates) {
+                    await this.handleContactUpdate(instanceId, update);
+                }
+            });
+
             sessions.set(instanceId, sock);
             return sock;
         } catch (error) {
@@ -158,6 +174,78 @@ class WhatsAppService {
         }
     }
 
+    async handleContactUpdate(instanceId, update) {
+        try {
+            const { Contact, WhatsAppInstance } = require('../models');
+            const { jidNormalizedUser } = require('@whiskeysockets/baileys');
+            const { Op } = require('sequelize');
+
+            let jid = jidNormalizedUser(update.id);
+            if (!jid || jid.endsWith('@broadcast')) return;
+
+            // Only care about LID/Phone mappings
+            const lid = update.lid || (jid.endsWith('@lid') ? jid : null);
+            const phoneJid = update.pn ? `${update.pn}@s.whatsapp.net` : (jid.endsWith('@s.whatsapp.net') ? jid : null);
+
+            // Fetch the instance to get user_id
+            const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId } });
+            if (!instance) return;
+
+            // Find existing contact by JID or LID
+            let contact = await Contact.findOne({
+                where: {
+                    user_id: instance.user_id,
+                    instance_id: instance.id,
+                    [Op.or]: [
+                        { jid: jid },
+                        { lid: jid },
+                        ...(lid ? [{ lid: lid }] : []),
+                        ...(phoneJid ? [{ jid: phoneJid }] : [])
+                    ]
+                }
+            });
+
+            if (contact) {
+                let changed = false;
+                if (lid && contact.lid !== lid) {
+                    contact.lid = lid;
+                    changed = true;
+                }
+
+                // Upgrade LID record to Phone JID if available
+                if (contact.jid.endsWith('@lid') && phoneJid && !phoneJid.endsWith('@lid')) {
+                    contact.lid = contact.jid;
+                    contact.jid = phoneJid;
+                    changed = true;
+                }
+
+                if (update.name && contact.name !== update.name && !update.name.match(/^\d+$/)) {
+                    contact.name = update.name;
+                    changed = true;
+                }
+
+                if (changed) {
+                    console.log(`[DEBUG] Updated existing contact mapping for ${contact.jid} (LID: ${contact.lid})`);
+                    await contact.save();
+                }
+            } else if (phoneJid && lid) {
+                // If they don't exist, but we HAVE a mapping, create it now!
+                console.log(`[DEBUG] Creating NEW mapped contact from sync: ${phoneJid} -> ${lid}`);
+                await Contact.create({
+                    jid: phoneJid,
+                    lid: lid,
+                    user_id: instance.user_id,
+                    instance_id: instance.id,
+                    name: update.name || phoneJid.split('@')[0],
+                    push_name: update.name,
+                    last_active: new Date()
+                });
+            }
+        } catch (error) {
+            console.error('[WA] Error handling contact update:', error);
+        }
+    }
+
     emitToRoom(instanceId, event, data) {
         if (global.io) global.io.to(instanceId).emit(event, data);
     }
@@ -167,17 +255,20 @@ class WhatsAppService {
             const fromMe = msg.key.fromMe;
             const { jidNormalizedUser } = require('@whiskeysockets/baileys');
 
-            let jid = msg.key.remoteJid;
-            // PRE-PROCESS: Normalize JID to handle LID vs Phone Number mismatch
-            // 1. If we have a specific senderPn (Phone Number) provided by Baileys, use it.
-            //    This fixes the issue where a desktop reply comes from an @lid but we want the @s.whatsapp.net convo.
+            let rawJid = msg.key.remoteJid;
+            let lid = rawJid.endsWith('@lid') ? rawJid : null;
+            let jid = rawJid;
+
+            // Log the raw message metadata to debug "nested" or hidden fields
+            console.log(`[DEBUG] Raw Message JID: ${rawJid}, senderPn: ${msg.key.senderPn}, lid: ${lid}`);
+
+            // If we have a senderPn, that is a guaranteed Phone JID from WhatsApp
             if (msg.key.senderPn) {
                 jid = `${msg.key.senderPn}@s.whatsapp.net`;
             }
 
-            // 2. Standard Normalization (removes device specific suffix like :99)
-            // Note: jidNormalizedUser might still return an LID if that's what was passed, so senderPn check above is critical for merging.
             jid = jidNormalizedUser(jid);
+            rawJid = jidNormalizedUser(rawJid);
 
             const participant = msg.key.participant || msg.participant || null; // Sender JID in a group
             const isGroup = jid.endsWith('@g.us');
@@ -270,17 +361,79 @@ class WhatsAppService {
                 // Helper to fetch profile pic safely
                 const getProfilePic = async (targetJid) => {
                     try {
-                        // avoid fetching if we already have it recently? For now just fetch.
                         return await sessions.get(instanceId)?.profilePictureUrl(targetJid, 'image').catch(() => null);
                     } catch (e) { return null; }
                 };
 
-                // 1. Group/Main Chat Contact
-                const existingContact = await Contact.findOne({
-                    where: { user_id: instance.user_id, jid: jid }
+                // Find candidates for merging
+                let candidates = await Contact.findAll({
+                    where: {
+                        user_id: instance.user_id,
+                        instance_id: instance.id,
+                        [Op.or]: [
+                            { jid: jid },
+                            { lid: jid },
+                            { jid: rawJid },
+                            { lid: rawJid },
+                            ...(lid ? [{ jid: lid }, { lid: lid }] : [])
+                        ]
+                    }
                 });
 
-                // Only fetch profile pic if it's new or we don't have it (optimization)
+                let existingContact = candidates.find(c => c.jid === jid || (lid && c.lid === lid));
+
+                // NEW: If we didn't find it in DB, check if the Socket knows the mapping
+                if (!existingContact && lid && sessions.get(instanceId)) {
+                    const sock = sessions.get(instanceId);
+                    // Baileys sometimes stores these in sock.authState.creds.me or a hidden store
+                    // But we can also check if we can fetch the PN for this LID
+                    console.log(`[DEBUG] No DB contact for LID ${lid}. checking socket store...`);
+                }
+
+                let otherContact = candidates.find(c => c.id !== existingContact?.id);
+
+                // LOGIC: If we found a contact by LID but the current msg JID is Phone,
+                // or if we found two separate records, we MUST merge.
+                if (existingContact && otherContact && existingContact.id !== otherContact.id) {
+                    console.log(`[DEBUG] Record Collision found for ${jid}. Merging contacts.`);
+                    // Merge otherContact into existingContact
+                    existingContact.lid = lid || existingContact.lid || otherContact.lid || (otherContact.jid.endsWith('@lid') ? otherContact.jid : null);
+                    existingContact.profile_pic = existingContact.profile_pic || otherContact.profile_pic;
+
+                    if ((!existingContact.name || existingContact.name.match(/^\d+$/)) && otherContact.name) {
+                        existingContact.name = otherContact.name;
+                    }
+
+                    await existingContact.save();
+                    await otherContact.destroy();
+                } else if (!existingContact && otherContact) {
+                    // We found one contact by a secondary identifier.
+                    // If it's an LID-only contact and we now have a Phone JID, upgrade it!
+                    if (otherContact.jid.endsWith('@lid') && !jid.endsWith('@lid')) {
+                        console.log(`[DEBUG] Upgrading LID contact ${otherContact.jid} to Phone ${jid}`);
+                        otherContact.lid = otherContact.jid;
+                        otherContact.jid = jid;
+                        await otherContact.save();
+                        existingContact = otherContact;
+                    } else if (!otherContact.jid.endsWith('@lid') && jid.endsWith('@lid')) {
+                        // We have a phone contact, but the current message came via LID.
+                        // DO NOT create a new record. Use the phone contact.
+                        console.log(`[DEBUG] Using existing Phone contact ${otherContact.jid} for LID message ${jid}`);
+                        if (!otherContact.lid) otherContact.lid = jid;
+                        await otherContact.save();
+                        existingContact = otherContact;
+                        jid = otherContact.jid; // Redirect message storage to canonical JID
+                    } else {
+                        existingContact = otherContact;
+                    }
+                }
+
+                // Ensure jid is canonical before saving
+                if (existingContact && !existingContact.jid.endsWith('@lid') && jid.endsWith('@lid')) {
+                    jid = existingContact.jid;
+                }
+
+                // Only fetch profile pic if it's new or we don't have it
                 let profilePicUrl = existingContact?.profile_pic;
                 if (!profilePicUrl) {
                     profilePicUrl = await getProfilePic(jid);
@@ -288,9 +441,11 @@ class WhatsAppService {
 
                 await Contact.upsert({
                     jid: jid,
+                    lid: lid || existingContact?.lid,
                     user_id: instance.user_id,
-                    name: isGroup ? (existingContact?.name || jid.split('@')[0]) : (msg.pushName || jid.split('@')[0]),
-                    push_name: isGroup ? null : msg.pushName,
+                    instance_id: instance.id,
+                    name: (isGroup ? (existingContact?.name || jid.split('@')[0]) : (msg.pushName || existingContact?.name || jid.split('@')[0])),
+                    push_name: isGroup ? null : (msg.pushName || existingContact?.push_name),
                     is_group: isGroup,
                     profile_pic: profilePicUrl,
                     last_active: new Date()
@@ -299,7 +454,7 @@ class WhatsAppService {
                 // 2. Individual Sender Contact (if in group)
                 if (isGroup && participant) {
                     const existingParticipant = await Contact.findOne({
-                        where: { user_id: instance.user_id, jid: participant }
+                        where: { user_id: instance.user_id, instance_id: instance.id, jid: participant }
                     });
                     let pPic = existingParticipant?.profile_pic;
                     if (!pPic) pPic = await getProfilePic(participant);
@@ -307,6 +462,7 @@ class WhatsAppService {
                     await Contact.upsert({
                         jid: participant,
                         user_id: instance.user_id,
+                        instance_id: instance.id,
                         name: msg.pushName || participant.split('@')[0],
                         push_name: msg.pushName,
                         is_group: false,

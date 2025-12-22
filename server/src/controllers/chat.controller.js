@@ -3,18 +3,23 @@ const whatsappService = require('../services/whatsapp.service');
 const { AppError } = require('../middlewares/error.middleware');
 const { Op } = require('sequelize');
 
+const getManagerId = (user) => {
+    return user.role === 'seat' ? user.user_id : user.id;
+};
+
 exports.getRecentChats = async (req, res, next) => {
     try {
+        const managerId = getManagerId(req.user);
         const { instanceId } = req.query;
         let instanceIds = [];
 
         // 1. Determine which instances to query
         if (instanceId && instanceId !== 'all') {
-            const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId, user_id: req.user.id } });
+            const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId, user_id: managerId } });
             if (!instance) return next(new AppError('Instance not found', 404));
             instanceIds = [instance.id];
         } else {
-            const instances = await WhatsAppInstance.findAll({ where: { user_id: req.user.id } });
+            const instances = await WhatsAppInstance.findAll({ where: { user_id: managerId } });
             instanceIds = instances.map(i => i.id);
         }
 
@@ -29,7 +34,7 @@ exports.getRecentChats = async (req, res, next) => {
         const messages = await Message.findAll({
             where: instanceId && instanceId !== 'all'
                 ? { instance_id: instanceIds }
-                : { user_id: req.user.id },
+                : { user_id: managerId },
             attributes: ['jid', 'content', 'timestamp', 'from_me'],
             order: [['timestamp', 'DESC']],
         });
@@ -58,7 +63,7 @@ exports.getRecentChats = async (req, res, next) => {
         if (uniqueJids.length > 0) {
             const contacts = await Contact.findAll({
                 where: {
-                    user_id: req.user.id,
+                    user_id: managerId,
                     [Op.or]: [
                         { jid: uniqueJids },
                         { lid: uniqueJids }
@@ -82,7 +87,7 @@ exports.getRecentChats = async (req, res, next) => {
                 let canonicalJid = jid;
 
                 // Check for LID mapping in contacts
-                if (jid.endsWith('@lid') && contactNameMap[jid] && contactNameMap[jid].jid) {
+                if (jid.endsWith('@lid') && contactNameMap[jid] && contactNameMap[jid].canonical_jid) {
                     // We found a contact that links this LID to a phone number!
                     // But wait, our contactNameMap needs to store the JID too.
                     // We'll trust the contact's 'jid' field if it looks like a phone number.
@@ -117,13 +122,15 @@ exports.getRecentChats = async (req, res, next) => {
                         existing.fromMe = chat.fromMe;
                     }
                     existing.unread += chat.unread;
-                    existing.profilePicUrl = displayPic || existing.profilePicUrl; // Prefer non-null
+                    existing.profilePicUrl = displayPic || existing.profilePicUrl;
                     existing.name = displayName || existing.name;
+                    existing.lid = chat.lid || existing.lid;
                 } else {
                     // Update the chat object with canonical data
                     chat.jid = canonicalJid;
                     chat.name = displayName;
                     chat.profilePicUrl = displayPic;
+                    chat.lid = (jid === canonicalJid) ? (contactNameMap[jid]?.lid) : jid;
                     mergedMap.set(canonicalJid, chat);
                 }
             }
@@ -143,23 +150,37 @@ exports.getRecentChats = async (req, res, next) => {
 
 exports.getMessages = async (req, res, next) => {
     try {
-        const { instanceId, jid } = req.query;
+        const managerId = getManagerId(req.user);
+        const { jid, instanceId } = req.query;
+        // Find the contact to see if there is a linked LID
+        const contact = await Contact.findOne({
+            where: {
+                user_id: managerId,
+                [Op.or]: [{ jid }, { lid: jid }]
+            }
+        });
 
-        let whereClause = { jid };
+        let targetJids = [jid];
+        if (contact) {
+            targetJids.push(contact.jid);
+            if (contact.lid) targetJids.push(contact.lid);
+        }
+        targetJids = [...new Set(targetJids.filter(Boolean))];
+
+        let whereClause = { jid: targetJids };
 
         if (instanceId && instanceId !== 'all') {
-            const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId, user_id: req.user.id } });
+            const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId, user_id: managerId } });
             if (!instance) return next(new AppError('Instance not found', 404));
             whereClause.instance_id = instance.id;
         } else {
-            // If searching all, we show everything for this JID that belongs to the user
-            whereClause.user_id = req.user.id;
+            whereClause.user_id = managerId;
         }
 
         const messages = await Message.findAll({
             where: whereClause,
-            order: [['timestamp', 'ASC']],
-            limit: 100,
+            order: [['timestamp', 'DESC']],
+            limit: 500,
             include: [
                 {
                     model: Message,
@@ -176,7 +197,7 @@ exports.getMessages = async (req, res, next) => {
         if (senderJids.length > 0) {
             const contacts = await Contact.findAll({
                 where: {
-                    user_id: req.user.id,
+                    user_id: managerId,
                     [Op.or]: [
                         { jid: senderJids },
                         { lid: senderJids }
@@ -204,7 +225,7 @@ exports.getMessages = async (req, res, next) => {
             } : null,
             time: new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             status: m.status || 'read'
-        }));
+        })).reverse(); // Reverse back to ASC for the UI
 
         res.status(200).json({
             status: 'success',
@@ -218,7 +239,7 @@ exports.getMessages = async (req, res, next) => {
 
 exports.sendMessage = async (req, res, next) => {
     try {
-        // Support both req.body (POST) and req.query (GET for one-line API)
+        const managerId = getManagerId(req.user);
         const params = { ...req.body, ...req.query };
         const { instanceId, type = 'text', mediaUrl, reaction, quotedMessageId } = params;
 
@@ -236,7 +257,7 @@ exports.sendMessage = async (req, res, next) => {
             return next(new AppError('Missing field: number (destination). Provide the phone number with country code.', 400));
         }
 
-        const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId, user_id: req.user.id } });
+        const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId, user_id: managerId } });
 
         if (!instance) {
             return next(new AppError(`Instance [${instanceId}] not found. Check your instance ID or ensure you own this channel.`, 404));
@@ -251,7 +272,7 @@ exports.sendMessage = async (req, res, next) => {
         }
 
         // Check Message Limits
-        const user = await User.findByPk(req.user.id);
+        const user = await User.findByPk(managerId);
         if (user.messages_sent_current_period >= (user.monthly_message_limit || 0)) {
             return next(new AppError('Monthly message limit reached. Please upgrade your plan in the dashboard to continue sending messages.', 403));
         }
@@ -392,9 +413,10 @@ exports.getAssignedChats = async (req, res, next) => {
 exports.resolveChat = async (req, res, next) => {
     try {
         const { jid } = req.body;
+        const managerId = getManagerId(req.user);
         const { Contact } = require('../models');
 
-        const whereClause = { jid, user_id: req.user.id };
+        const whereClause = { jid, user_id: managerId };
         if (req.user.role === 'seat') {
             whereClause.assigned_seat_id = req.user.id;
         }
@@ -418,9 +440,10 @@ exports.resolveChat = async (req, res, next) => {
 
 exports.getContacts = async (req, res, next) => {
     try {
+        const managerId = getManagerId(req.user);
         // Contact model uses user_id, not instance_id
         const contacts = await Contact.findAll({
-            where: { user_id: req.user.id },
+            where: { user_id: managerId },
             order: [['name', 'ASC']]
         });
 

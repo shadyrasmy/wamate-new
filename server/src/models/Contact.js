@@ -42,6 +42,10 @@ const Contact = sequelize.define('Contact', {
     user_id: {
         type: DataTypes.UUID,
         allowNull: true
+    },
+    instance_id: {
+        type: DataTypes.UUID,
+        allowNull: true
     }
 }, {
     timestamps: true,
@@ -49,7 +53,7 @@ const Contact = sequelize.define('Contact', {
     indexes: [
         {
             unique: true,
-            fields: ['user_id', 'jid']
+            fields: ['user_id', 'instance_id', 'jid']
         }
     ]
 });

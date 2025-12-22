@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchWithAuth } from '@/lib/api';
+import { fetchWithAuth, API_URL } from '@/lib/api';
 import { Armchair, EnvelopeSimple, Lock, Spinner } from '@phosphor-icons/react';
 
 export default function SeatLoginPage() {
@@ -20,7 +20,7 @@ export default function SeatLoginPage() {
         try {
             // Note: Seats login via logic handled in backend or same auth endpoint? 
             // In our implemented controller, it's /api/seats/login
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/seats/login`, {
+            const res = await fetch(`${API_URL}/seats/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

@@ -26,7 +26,7 @@ ReferralTransaction.belongsTo(User, { foreignKey: 'referred_user_id', as: 'refer
 
 // User -> Seats
 User.hasMany(Seat, { foreignKey: 'user_id', as: 'seats' });
-Seat.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+Seat.belongsTo(User, { foreignKey: 'user_id', as: 'manager' });
 
 // Instance -> Seat (A seat is assigned to an instance)
 WhatsAppInstance.hasOne(Seat, { foreignKey: 'instance_id', as: 'seat' });

@@ -60,6 +60,9 @@
   --color-primary-glow: var(--primary-glow);
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
+  --color-wa-green: #25d366;
+  --color-wa-dark-green: #1ebd53;
+  --color-wa-teal: #128c7e;
 
   --font-sans: var(--font-outfit);
 }

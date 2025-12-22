@@ -9,8 +9,17 @@ class AssignmentService {
      */
     async assignChat(instanceId, userId, jid) {
         try {
+            const { WhatsAppInstance } = require('../models');
+            const { jidNormalizedUser } = require('@whiskeysockets/baileys');
+
+            // Normalize incoming JID (Baileys sometimes sends :99 suffix)
+            const cleanJid = jidNormalizedUser(jid);
+
+            const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId } });
+            if (!instance) return;
+
             // 1. Check if already assigned
-            let contact = await Contact.findOne({ where: { jid, instance_id: instanceId } }); // Note: Contact model needs instance_id or unique constraint
+            let contact = await Contact.findOne({ where: { jid: cleanJid, instance_id: instance.id } });
 
             // If contact doesn't exist or isn't assigned, proceed
             if (contact && contact.assigned_seat_id) {
@@ -53,7 +62,7 @@ class AssignmentService {
             selectedSeat.assigned_chats_count += 1;
             await selectedSeat.save();
 
-            console.log(`[Assignment] Assigned chat ${jid} to seat ${selectedSeat.name}`);
+            console.log(`[Assignment] Assigned chat ${cleanJid} to seat ${selectedSeat.name}`);
 
             // TODO: Notify Seat via Socket (need socket implementation for seats)
 

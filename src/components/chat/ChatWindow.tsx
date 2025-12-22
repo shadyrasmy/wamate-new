@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
     PaperPlaneRight, Smiley, Paperclip, Microphone,
     DotsThreeVertical, Phone, VideoCamera, Spinner,
-    UserCircle, Circle, X
+    UserCircle, Circle, X, CaretLeft
 } from '@phosphor-icons/react';
 import MessageBubble from './MessageBubble';
 import { fetchWithAuth, SOCKET_URL } from '@/lib/api';
@@ -15,9 +15,10 @@ import EmojiPicker, { Theme } from 'emoji-picker-react';
 interface ChatWindowProps {
     chat: any | null;
     instanceId: string | null;
+    onBack?: () => void;
 }
 
-export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
+export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps) {
     const [messages, setMessages] = useState<any[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -254,23 +255,31 @@ export default function ChatWindow({ chat, instanceId }: ChatWindowProps) {
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] invert" />
 
             {/* Header */}
-            <div className="h-16 lg:h-20 px-8 bg-carbon/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center z-20 sticky top-0">
-                <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-secondary p-[1px]">
+            <div className="h-16 lg:h-20 px-4 lg:px-8 bg-carbon/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center z-20 sticky top-0">
+                <div className="flex items-center gap-3 lg:gap-5">
+                    {onBack && (
+                        <button
+                            onClick={onBack}
+                            className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-gray-400 hover:text-white transition border border-white/5 mr-1"
+                        >
+                            <CaretLeft size={20} weight="bold" />
+                        </button>
+                    )}
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-gradient-to-tr from-primary to-secondary p-[1px] flex-shrink-0">
                         <div className="w-full h-full bg-carbon rounded-2xl flex items-center justify-center text-white font-black text-xl overflow-hidden relative">
                             {chat.profilePicUrl ? (
                                 <img src={chat.profilePicUrl} alt={chat.name} className="w-full h-full object-cover" />
                             ) : (
-                                chat.name?.charAt(0) || <UserCircle size={32} />
+                                chat.name?.charAt(0) || <UserCircle size={24} />
                             )}
                         </div>
                     </div>
-                    <div>
-                        <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                    <div className="min-w-0">
+                        <h3 className="font-bold text-white text-base lg:text-lg flex items-center gap-2 truncate">
                             {chat.name}
-                            <Circle size={8} weight="fill" className="text-green-500 animate-pulse" />
+                            <Circle size={6} weight="fill" className="text-green-500 animate-pulse flex-shrink-0" />
                         </h3>
-                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest opacity-60">{chat.jid}</p>
+                        <p className="text-[8px] lg:text-[10px] text-gray-500 font-black uppercase tracking-widest opacity-60 truncate">{chat.jid}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 lg:gap-4">

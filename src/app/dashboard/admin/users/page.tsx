@@ -72,11 +72,13 @@ export default function AdminUsersPage() {
     const handleSaveUser = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const planToSend = typeof editingUser.plan === 'object' ? editingUser.plan?.name : editingUser.plan;
+
             await fetchWithAuth(`/admin/users/${editingUser.id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({
                     phone_number: editingUser.phone_number,
-                    plan: editingUser.plan,
+                    plan: planToSend,
                     monthly_message_limit: parseInt(editingUser.monthly_message_limit),
                     max_instances: parseInt(editingUser.max_instances),
                     max_seats: parseInt(editingUser.max_seats),

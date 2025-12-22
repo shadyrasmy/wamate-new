@@ -17,6 +17,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
     const [chats, setChats] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [activeJid, setActiveJid] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Load Instances
     useEffect(() => {
@@ -79,7 +80,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
             if (isNaN(timeObj.getTime())) timeObj = new Date();
 
             setChats(prev => {
-                const existing = prev.findIndex(c => c.jid === jid);
+                const existing = prev.findIndex(c => c.jid === jid || (c.lid && c.lid === jid));
                 let newChat;
 
                 if (existing !== -1) {
@@ -139,6 +140,17 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
             loadContacts(selectedInstanceId);
         }
     }, [activeTab, selectedInstanceId]);
+
+    const filteredList = (activeTab === 'chats' ? chats : contacts).filter(item => {
+        if (!searchTerm) return true;
+        const search = searchTerm.toLowerCase();
+        return (
+            item.name?.toLowerCase().includes(search) ||
+            item.jid?.toLowerCase().includes(search) ||
+            item.phone?.toLowerCase().includes(search) ||
+            item.lastMessage?.toLowerCase().includes(search)
+        );
+    });
 
     const loadContacts = async (instanceId: string) => {
         setLoading(true);
@@ -227,6 +239,8 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                     <input
                         type="text"
                         placeholder={`Search ${activeTab === 'chats' ? 'conversations' : 'contacts'}...`}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-12 pr-4 py-3 bg-white/[0.03] border border-white/5 rounded-2xl text-sm text-white focus:outline-none focus:border-primary/50 transition-all font-sans"
                     />
                 </div>
@@ -238,7 +252,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                     <div className="flex justify-center p-12">
                         <Spinner className="animate-spin text-primary" size={24} />
                     </div>
-                ) : (activeTab === 'chats' ? chats : contacts).length === 0 ? (
+                ) : filteredList.length === 0 ? (
                     <div className="text-center p-12">
                         <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-white/5">
                             <ChatCircleDots size={32} weight="duotone" className="text-gray-500" />
@@ -248,7 +262,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                     </div>
                 ) : (
                     <div className="space-y-1">
-                        {(activeTab === 'chats' ? chats : contacts).map((item) => (
+                        {filteredList.map((item) => (
                             <div
                                 key={item.jid}
                                 onClick={() => handleSelect(item)}
