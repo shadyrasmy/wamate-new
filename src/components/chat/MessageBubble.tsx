@@ -98,7 +98,7 @@ export default function MessageBubble({
                 </div>
             )}
 
-            <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[70%]`}>
+            <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[65%] w-fit`}>
                 {/* Sender Name (Group Chat) - Moved inside the stack */}
                 {showSender && (
                     <div className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 ml-1 opacity-80">
@@ -216,12 +216,12 @@ export default function MessageBubble({
 
                     {/* Text Content */}
                     {content && type !== 'image' && type !== 'video' && type !== 'audio' && type !== 'document' && type !== 'sticker' && (
-                        <p className={`font-medium ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words`}>
+                        <p className={`font-medium ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-all`}>
                             {content}
                         </p>
                     )}
                     {(type === 'image' || type === 'video') && content && content !== '📷 Image' && content !== '🎥 Video' && (
-                        <p className={`font-medium mt-2 ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words`}>
+                        <p className={`font-medium mt-2 ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-all`}>
                             {content}
                         </p>
                     )}

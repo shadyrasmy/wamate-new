@@ -63,6 +63,14 @@ const Message = sequelize.define('Message', {
             fields: ['instance_id', 'jid']
         },
         {
+            // Optimization: Composite index for fast chat history retrieval with sort
+            fields: ['instance_id', 'jid', 'timestamp']
+        },
+        {
+            // Optimization: Fast retrieval of latest messages globally for an instance
+            fields: ['instance_id', 'timestamp']
+        },
+        {
             unique: true,
             fields: ['instance_id', 'message_id']
         }

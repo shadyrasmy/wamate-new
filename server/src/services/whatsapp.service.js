@@ -151,6 +151,81 @@ class WhatsAppService {
                 }
             });
 
+            // Handle LID-Phone mapping updates (THE KEY FIX for JID-LID connection!)
+            sock.ev.on('lid-mapping.update', async (mapping) => {
+                try {
+                    console.log(`[DEBUG] LID Mapping Update:`, JSON.stringify(mapping));
+
+                    // Extract pn (phone number) and lid from the mapping
+                    const pn = mapping?.pn || mapping?.pnUser;
+                    const lidValue = mapping?.lid || mapping?.lidUser;
+
+                    if (!pn || !lidValue) {
+                        console.log(`[DEBUG] LID Mapping missing pn or lid, skipping`);
+                        return;
+                    }
+
+                    const phoneJid = pn.includes('@') ? pn : `${pn}@s.whatsapp.net`;
+                    const lid = lidValue.includes('@') ? lidValue : `${lidValue}@lid`;
+
+                    console.log(`[WA] Processing LID Mapping: ${phoneJid} <-> ${lid}`);
+
+                    const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId } });
+                    if (!instance) return;
+
+                    // Find existing contacts by phone JID or LID
+                    const candidates = await Contact.findAll({
+                        where: {
+                            user_id: instance.user_id,
+                            instance_id: instance.id,
+                            [Op.or]: [
+                                { jid: phoneJid },
+                                { jid: lid },
+                                { lid: lid },
+                                { lid: phoneJid }
+                            ]
+                        }
+                    });
+
+                    const phoneContact = candidates.find(c => c.jid === phoneJid);
+                    const lidContact = candidates.find(c => c.jid === lid && c.id !== phoneContact?.id);
+
+                    if (phoneContact && lidContact) {
+                        // MERGE: We have both - merge LID contact into phone contact
+                        console.log(`[WA] Merging LID contact ${lidContact.jid} into phone contact ${phoneContact.jid}`);
+                        phoneContact.lid = lid;
+                        phoneContact.name = phoneContact.name || lidContact.name;
+                        phoneContact.push_name = phoneContact.push_name || lidContact.push_name;
+                        phoneContact.profile_pic = phoneContact.profile_pic || lidContact.profile_pic;
+                        await phoneContact.save();
+
+                        // Move any messages from LID contact to phone contact
+                        await Message.update(
+                            { jid: phoneJid },
+                            { where: { jid: lid, instance_id: instance.id } }
+                        );
+
+                        // Delete the duplicate LID contact
+                        await lidContact.destroy();
+                        console.log(`[WA] Merged and deleted duplicate LID contact`);
+                    } else if (phoneContact && !phoneContact.lid) {
+                        // UPDATE: Phone contact exists but has no LID - add it
+                        console.log(`[WA] Adding LID ${lid} to existing phone contact ${phoneContact.jid}`);
+                        phoneContact.lid = lid;
+                        await phoneContact.save();
+                    } else if (lidContact && !phoneContact) {
+                        // UPGRADE: LID contact exists but no phone contact - upgrade it
+                        console.log(`[WA] Upgrading LID contact ${lidContact.jid} to phone ${phoneJid}`);
+                        lidContact.lid = lidContact.jid;
+                        lidContact.jid = phoneJid;
+                        await lidContact.save();
+                    }
+                    // If neither exists, we'll create the contact when a message arrives
+                } catch (error) {
+                    console.error('[WA] Error handling LID mapping:', error);
+                }
+            });
+
             sessions.set(instanceId, sock);
             return sock;
         } catch (error) {
@@ -272,6 +347,51 @@ class WhatsAppService {
 
             const participant = msg.key.participant || msg.participant || null; // Sender JID in a group
             const isGroup = jid.endsWith('@g.us');
+
+            // FIX: If we have a LID but no senderPn, look up the phone JID from the database
+            // This prevents conversations from being split between LID and phone JID
+            if (lid && !msg.key.senderPn && !isGroup) {
+                try {
+                    const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId } });
+                    if (instance) {
+                        // Look for existing contact that has this LID mapped to a phone JID
+                        const existingContact = await Contact.findOne({
+                            where: {
+                                user_id: instance.user_id,
+                                instance_id: instance.id,
+                                lid: lid,
+                                jid: { [Op.notLike]: '%@lid' } // Has a phone JID, not another LID
+                            }
+                        });
+
+                        if (existingContact) {
+                            console.log(`[WA] Found LID mapping in DB: ${lid} -> ${existingContact.jid}`);
+                            jid = existingContact.jid;
+                        } else {
+                            // Also check if there's a contact with this LID as their primary JID but with a different lid field
+                            const altContact = await Contact.findOne({
+                                where: {
+                                    user_id: instance.user_id,
+                                    instance_id: instance.id,
+                                    [Op.or]: [
+                                        { jid: lid },
+                                        { lid: lid }
+                                    ]
+                                }
+                            });
+
+                            if (altContact && !altContact.jid.endsWith('@lid')) {
+                                console.log(`[WA] Found phone contact with matching LID: ${lid} -> ${altContact.jid}`);
+                                jid = altContact.jid;
+                            } else {
+                                console.log(`[WA] No LID mapping found in DB for ${lid}, will create new contact`);
+                            }
+                        }
+                    }
+                } catch (lookupErr) {
+                    console.error(`[WA] Error looking up LID mapping:`, lookupErr);
+                }
+            }
 
             console.log(`[DEBUG] saveMessage START. JID: ${jid}. Participant: ${participant}. FromMe: ${fromMe}`);
 

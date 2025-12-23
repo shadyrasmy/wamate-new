@@ -102,73 +102,96 @@ export default function ApiPage() {
             ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                     <div className="xl:col-span-2 space-y-8">
-                        {/* Access Token Section */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="carbon-card p-10 rounded-[2.5rem] border-white/5 relative overflow-hidden"
+                            className="space-y-6"
                         >
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+                            {/* Instance Selector Dropdown */}
+                            <div className="carbon-card p-2 rounded-2xl border-white/5 bg-black/20">
+                                <CustomSelect
+                                    label=""
+                                    value={selectedInstance}
+                                    onChange={setSelectedInstance}
+                                    placeholder="Select Active Node"
+                                    options={instances.map(inst => ({
+                                        value: inst.instance_id,
+                                        label: inst.name
+                                    }))}
+                                />
+                            </div>
 
-                            <h2 className="text-2xl font-black mb-2 flex items-center gap-3">
-                                <Code className="text-primary" size={28} weight="bold" /> Authentication Key
-                            </h2>
-                            <p className="text-gray-500 font-medium mb-8">
-                                Use this Bearer Token in your request headers to authorize external calls.
-                            </p>
+                            {/* Selected Instance Details Card */}
+                            <div className="carbon-card p-10 rounded-[2.5rem] border-white/5 relative overflow-hidden">
+                                {selectedInstance && instances.find(i => i.instance_id === selectedInstance) ? (
+                                    <>
+                                        <div className="flex items-center justify-between mb-10">
+                                            <div className="flex items-center gap-6">
+                                                <div className="w-16 h-16 bg-gradient-to-tr from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/20 text-white">
+                                                    <span className="text-2xl font-black">
+                                                        {instances.find(i => i.instance_id === selectedInstance)?.name.charAt(0)}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-2xl font-black text-white">
+                                                        {instances.find(i => i.instance_id === selectedInstance)?.name}
+                                                    </h3>
+                                                    <div className="text-gray-400 font-mono text-sm mt-1">
+                                                        {instances.find(i => i.instance_id === selectedInstance)?.phone_number || 'No Linked Number'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 font-black text-xs uppercase tracking-widest flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                                Active
+                                            </div>
+                                        </div>
 
-                            <div className="relative group">
-                                <div className="w-full bg-black/40 border border-white/5 p-6 rounded-2xl font-mono text-sm text-primary/80 break-all pr-20 shadow-inner">
-                                    {token || 'LOADING_AUTH_STUB_IDENTITY...'}
-                                </div>
-                                <button
-                                    onClick={copyToken}
-                                    className="absolute top-1/2 -translate-y-1/2 right-4 w-12 h-12 flex items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20 hover:scale-110 active:scale-90 transition"
-                                >
-                                    {copied ? <Check size={20} weight="bold" /> : <Copy size={20} weight="bold" />}
-                                </button>
+                                        <div className="space-y-8">
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest ml-1">Instance ID</label>
+                                                <div className="relative group">
+                                                    <div className="w-full bg-black/40 border border-white/5 p-4 rounded-xl font-mono text-sm text-gray-300 shadow-inner">
+                                                        {selectedInstance}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(selectedInstance);
+                                                            // flash copied feedback
+                                                        }}
+                                                        className="absolute top-1/2 -translate-y-1/2 right-3 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition"
+                                                        title="Copy Instance ID"
+                                                    >
+                                                        <Copy size={16} weight="bold" />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest ml-1">Access Token</label>
+                                                <div className="relative group">
+                                                    <div className="w-full bg-black/40 border border-white/5 p-4 rounded-xl font-mono text-sm text-gray-300 shadow-inner truncate pr-16">
+                                                        {token}
+                                                    </div>
+                                                    <button
+                                                        onClick={copyToken}
+                                                        className="absolute top-1/2 -translate-y-1/2 right-3 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition"
+                                                        title="Copy Access Token"
+                                                    >
+                                                        <Copy size={16} weight="bold" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="text-center py-10 text-gray-500">
+                                        <div className="mb-4 flex justify-center opacity-50"><TerminalWindow size={48} weight="duotone" /></div>
+                                        <p>Select a node to view connection details</p>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
-
-                        {/* Endpoints List */}
-                        <div className="space-y-6">
-                            <h2 className="text-xl font-black uppercase tracking-widest text-gray-500 ml-2">Active Channel Endpoints</h2>
-                            {loading ? (
-                                <div className="flex justify-center py-10">
-                                    <Spinner size={32} className="animate-spin text-primary" />
-                                </div>
-                            ) : instances.map((inst, i) => (
-                                <motion.div
-                                    key={inst.instance_id}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="carbon-card p-8 rounded-[2rem] border-white/5 hover:border-primary/20 transition-all group"
-                                >
-                                    <div className="flex justify-between items-center mb-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 text-primary font-bold">
-                                                {inst.name.charAt(0)}
-                                            </div>
-                                            <h3 className="font-black text-lg">{inst.name}</h3>
-                                        </div>
-                                        <span className="text-[10px] font-black tracking-widest bg-white/5 px-3 py-1.5 rounded-lg text-gray-400 border border-white/5 group-hover:text-primary transition">
-                                            {inst.instance_id}
-                                        </span>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-4 bg-black/20 p-4 rounded-xl border border-white/5 font-mono text-[11px] group-hover:border-primary/10 transition">
-                                            <span className="px-2 py-0.5 bg-green-500/10 text-green-400 rounded-md border border-green-500/20 font-black">POST</span>
-                                            <span className="text-gray-400 truncate">{API_URL}/chat/send</span>
-                                        </div>
-                                        <div className="flex items-center gap-4 bg-black/20 p-4 rounded-xl border border-white/5 font-mono text-[11px] group-hover:border-primary/10 transition">
-                                            <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-md border border-blue-500/20 font-black">GET</span>
-                                            <span className="text-gray-400 truncate">{API_URL}/chat/messages</span>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
                     </div>
 
                     {/* Test Sender */}

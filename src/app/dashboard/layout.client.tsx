@@ -24,7 +24,8 @@ import {
     Heart,
     Users,
     CaretLeft,
-    CaretRight
+    CaretRight,
+    PlugsConnected
 } from '@phosphor-icons/react';
 import { useUI } from '@/context/UIContext';
 
@@ -61,6 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { icon: Gear, label: 'System Protocols', href: '/dashboard/admin/settings', isAdmin: true },
         { icon: Crown, label: t('upgrade'), href: '/dashboard/plans' },
         { icon: Heart, label: 'Share Love & Earn', href: '/dashboard/referral' },
+        { icon: PlugsConnected, label: 'Integrations', href: '/dashboard/integrations' },
         { icon: Code, label: t('api_center'), href: '/dashboard/api' },
     ];
 
