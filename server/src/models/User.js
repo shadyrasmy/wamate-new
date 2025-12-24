@@ -52,7 +52,7 @@ const User = sequelize.define('User', {
     // Subscription Fields
     monthly_message_limit: {
         type: DataTypes.INTEGER,
-        defaultValue: 1000 // Free tier default
+        defaultValue: 100 // Free tier default
     },
     messages_sent_current_period: {
         type: DataTypes.INTEGER,

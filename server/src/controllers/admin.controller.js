@@ -1,4 +1,4 @@
-const { User, WhatsAppInstance, Plan, Invoice, sequelize, SiteConfig, EmailTemplate } = require('../models');
+const { User, WhatsAppInstance, Plan, Invoice, sequelize, SiteConfig, EmailTemplate, Message, ReferralTransaction } = require('../models');
 const { AppError } = require('../middlewares/error.middleware');
 const { Op } = require('sequelize');
 const emailService = require('../services/email.service');
@@ -493,6 +493,172 @@ exports.updateTemplate = async (req, res, next) => {
             status: 'success',
             message: 'Template updated successfully',
             data: { template }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.getInsights = async (req, res, next) => {
+    try {
+        const now = new Date();
+        const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        // 1. Instance & Connection Stats
+        const totalInstances = await WhatsAppInstance.count();
+        const onlineInstances = await WhatsAppInstance.count({ where: { status: 'connected' } });
+
+        // 2. Messaging Ecosystem
+        const globalSentMessages = await Message.count({ where: { from_me: true } });
+        const globalReceivedMessages = await Message.count({ where: { from_me: false } });
+
+        // Message Type Breakdown
+        const typeBreakdown = await Message.findAll({
+            attributes: ['type', [sequelize.fn('COUNT', sequelize.col('type')), 'count']],
+            group: ['type']
+        });
+
+        // 3. User Growth & Conversion
+        const totalUsers = await User.count();
+        const newUsers24h = await User.count({ where: { createdAt: { [Op.gte]: last24h } } });
+        const newUsers7d = await User.count({ where: { createdAt: { [Op.gte]: last7d } } });
+
+        const paidUsersCount = await User.count({
+            where: {
+                id_plan: { [Op.ne]: null },
+                subscription_end_date: { [Op.gte]: now }
+            }
+        });
+        const conversionRate = totalUsers > 0 ? (paidUsersCount / totalUsers) * 100 : 0;
+
+        // Churn Risk (Expiring in next 7 days)
+        const churnRisk = await User.findAll({
+            where: {
+                subscription_end_date: {
+                    [Op.between]: [now, new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)]
+                }
+            },
+            attributes: ['id', 'name', 'email', 'subscription_end_date'],
+            limit: 10
+        });
+
+        // 4. Revenue & Plans
+        const totalEarningsResult = await Invoice.sum('amount', { where: { status: 'paid' } });
+        const totalEarnings = parseFloat(totalEarningsResult || 0);
+
+        // Pending vs Paid Invoices (Last 30 days)
+        const last30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const invoiceStats = await Invoice.findAll({
+            where: { createdAt: { [Op.gte]: last30d } },
+            attributes: ['status', [sequelize.fn('COUNT', sequelize.col('status')), 'count']],
+            group: ['status']
+        });
+
+        // Plan Distribution
+        const planDistribution = await User.findAll({
+            attributes: [
+                [sequelize.literal('COALESCE(plan.name, "Free")'), 'plan_name'],
+                [sequelize.fn('COUNT', sequelize.col('User.id')), 'count']
+            ],
+            include: [{ model: Plan, as: 'plan', attributes: [] }],
+            group: ['plan.id', 'plan.name'],
+            raw: true
+        });
+
+        // MRR Calculation (Approximate)
+        const activeSubscriptions = await User.findAll({
+            where: {
+                id_plan: { [Op.ne]: null },
+                subscription_end_date: { [Op.gte]: now }
+            },
+            include: [{ model: Plan, as: 'plan' }]
+        });
+
+        let mrr = 0;
+        activeSubscriptions.forEach(user => {
+            if (user.plan) {
+                if (user.plan.billing_cycle === 'yearly') {
+                    mrr += user.plan.price / 12;
+                } else {
+                    mrr += user.plan.price;
+                }
+            }
+        });
+
+        // 5. Affiliates
+        const topReferrers = await ReferralTransaction.findAll({
+            attributes: [
+                'referrer_id',
+                [sequelize.fn('SUM', sequelize.col('amount')), 'total_earned']
+            ],
+            include: [{ model: User, as: 'referrer', attributes: ['name', 'email'] }],
+            group: ['referrer_id', 'referrer.id', 'referrer.name', 'referrer.email'],
+            order: [[sequelize.literal('total_earned'), 'DESC']],
+            limit: 5
+        });
+
+        const totalCommissionsResult = await ReferralTransaction.sum('amount', { where: { type: 'commission' } });
+        const totalCommissions = parseFloat(totalCommissionsResult || 0);
+
+        // 6. Performance Tables
+        const instances = await WhatsAppInstance.findAll({
+            attributes: [
+                'id', 'instance_id', 'name', 'status', 'phone_number',
+                [
+                    sequelize.literal('(SELECT COUNT(*) FROM messages WHERE messages.instance_id = WhatsAppInstance.id AND messages.from_me = true)'),
+                    'messages_sent'
+                ]
+            ],
+            include: [{ model: User, as: 'user', attributes: ['name', 'email'] }],
+            limit: 10,
+            order: [[sequelize.literal('messages_sent'), 'DESC']]
+        });
+
+        const topUsers = await User.findAll({
+            attributes: [
+                'id', 'name', 'email',
+                [
+                    sequelize.literal('(SELECT COUNT(*) FROM messages WHERE messages.user_id = User.id AND messages.from_me = true)'),
+                    'messages_sent'
+                ]
+            ],
+            order: [[sequelize.literal('messages_sent'), 'DESC']],
+            limit: 10
+        });
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                summary: {
+                    totalInstances,
+                    onlineInstances,
+                    globalSentMessages,
+                    globalReceivedMessages,
+                    totalEarnings,
+                    mrr,
+                    totalUsers,
+                    newUsers24h,
+                    newUsers7d,
+                    conversionRate: conversionRate.toFixed(1) + '%',
+                    totalCommissions
+                },
+                messaging: {
+                    typeBreakdown,
+                },
+                revenue: {
+                    invoiceStats,
+                    planDistribution
+                },
+                retention: {
+                    churnRisk
+                },
+                affiliates: {
+                    topReferrers
+                },
+                instances,
+                topUsers
+            }
         });
     } catch (err) {
         next(err);

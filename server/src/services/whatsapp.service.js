@@ -12,7 +12,6 @@ const path = require('path');
 const fs = require('fs');
 const { WhatsAppInstance, Message, Contact } = require('../models');
 const { Op } = require('sequelize');
-const { io } = require('../index');
 const QueueService = require('./queue.service');
 
 // Store active sockets and retry counts
@@ -305,8 +304,8 @@ class WhatsAppService {
                 }
             } else if (phoneJid && lid) {
                 // If they don't exist, but we HAVE a mapping, create it now!
-                console.log(`[DEBUG] Creating NEW mapped contact from sync: ${phoneJid} -> ${lid}`);
-                await Contact.create({
+                console.log(`[DEBUG] Creating/Updating NEW mapped contact from sync: ${phoneJid} -> ${lid}`);
+                await Contact.upsert({
                     jid: phoneJid,
                     lid: lid,
                     user_id: instance.user_id,

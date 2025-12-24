@@ -18,11 +18,12 @@ router.use(requireAdmin);
 router.get('/users', adminController.getAllUsers);
 router.get('/users/:userId', adminController.getUserDetails);
 router.patch('/users/:userId', validate(adminValidator.updateUserPlanSchema), adminController.updateUserPlan);
+router.get('/insights', adminController.getInsights);
 
 // Plans
 router.get('/plans', adminController.getPlans);
 router.post('/plans', validate(adminValidator.createPlanSchema), adminController.createPlan);
-router.patch('/plans/:planId', validate(adminValidator.createPlanSchema), adminController.updatePlan);
+router.patch('/plans/:planId', validate(adminValidator.updatePlanSchema), adminController.updatePlan);
 router.delete('/plans/:planId', adminController.deletePlan);
 
 // Invoices

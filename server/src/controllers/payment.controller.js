@@ -2,6 +2,7 @@ const { User, Plan, Invoice, ReferralTransaction, SiteConfig } = require('../mod
 const { sequelize } = require('../config/db');
 const { AppError } = require('../middlewares/error.middleware');
 const emailService = require('../services/email.service');
+const { fetchWithRetry } = require('../utils/http');
 
 // Helper: Calculate subscription end date based on billing cycle
 const calculateEndDate = (startDate, billingCycle) => {
@@ -116,7 +117,7 @@ exports.createInvoice = async (req, res, next) => {
         const failureUrl = fail_url || `${baseUrl}/payment/failed`;
 
         // Create Fawaterak invoice
-        const fawaterakResponse = await fetch('https://app.fawaterk.com/api/v2/invoiceInitPay', {
+        const fawaterakResponse = await fetchWithRetry('https://app.fawaterk.com/api/v2/invoiceInitPay', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -212,7 +213,7 @@ exports.webhook = async (req, res, next) => {
             // We might choose to return 500 or just log checking configuration
         } else {
             try {
-                const verifyRes = await fetch(`https://app.fawaterk.com/api/v2/getInvoiceData/${invoice_id}`, {
+                const verifyRes = await fetchWithRetry(`https://app.fawaterk.com/api/v2/getInvoiceData/${invoice_id}`, {
                     headers: { 'Authorization': `Bearer ${FAWATERAK_API_KEY}` }
                 });
                 const verifyData = await verifyRes.json();
@@ -342,7 +343,7 @@ exports.verifyPayment = async (req, res, next) => {
         }
 
         // Verify with Fawaterak
-        const response = await fetch(`https://app.fawaterk.com/api/v2/getInvoiceData/${invoice.fawaterak_invoice_id}`, {
+        const response = await fetchWithRetry(`https://app.fawaterk.com/api/v2/getInvoiceData/${invoice.fawaterak_invoice_id}`, {
             headers: {
                 'Authorization': `Bearer ${FAWATERAK_API_KEY}`
             }

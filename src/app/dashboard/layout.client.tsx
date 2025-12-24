@@ -25,7 +25,8 @@ import {
     Users,
     CaretLeft,
     CaretRight,
-    PlugsConnected
+    PlugsConnected,
+    ChartBar
 } from '@phosphor-icons/react';
 import { useUI } from '@/context/UIContext';
 
@@ -55,6 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { icon: HardDrives, label: t('instances'), href: '/dashboard/instances' },
         { icon: UsersThree, label: t('team_seats'), href: '/dashboard/seats' },
         { icon: Crown, label: 'Manage Nodes', href: '/dashboard/admin/users', isAdmin: true },
+        { icon: ChartBar, label: 'Analytics Insights', href: '/dashboard/admin/insights', isAdmin: true },
         { icon: Gear, label: 'Landing CMS', href: '/dashboard/admin/settings?tab=landing', isAdmin: true },
         { icon: Receipt, label: 'Network Invoices', href: '/dashboard/admin/invoices', isAdmin: true },
         { icon: Users, label: 'Affiliates', href: '/dashboard/admin/referrals', isAdmin: true },

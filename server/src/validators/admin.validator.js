@@ -10,6 +10,16 @@ const createPlanSchema = Joi.object({
     features: Joi.array().items(Joi.string()).optional()
 });
 
+const updatePlanSchema = Joi.object({
+    name: Joi.string().optional(),
+    price: Joi.number().optional(),
+    billing_cycle: Joi.string().valid('monthly', 'yearly').optional(),
+    max_instances: Joi.number().integer().min(1).optional(),
+    max_seats: Joi.number().integer().min(1).optional(),
+    monthly_message_limit: Joi.number().integer().min(0).optional(),
+    features: Joi.array().items(Joi.string()).optional()
+}).unknown(true);
+
 const updateUserPlanSchema = Joi.object({
     plan: Joi.string().optional(),
     phone_number: Joi.string().allow('', null).optional(),
@@ -40,6 +50,7 @@ const updateSiteConfigSchema = Joi.object({
 
 module.exports = {
     createPlanSchema,
+    updatePlanSchema,
     updateUserPlanSchema,
     banUserSchema,
     extendSubscriptionSchema,
