@@ -1,4 +1,4 @@
-const { Message, WhatsAppInstance, Contact, User } = require('../models');
+const { Message, WhatsAppInstance, Contact, User, Lead, Order } = require('../models');
 const whatsappService = require('../services/whatsapp.service');
 const { AppError } = require('../middlewares/error.middleware');
 const { Op } = require('sequelize');
@@ -58,7 +58,7 @@ exports.getRecentChats = async (req, res, next) => {
             }
         }
 
-        // 4. Enrich with Contact Names - Look for ANY contact owned by user for this JID
+        // 4. Build LID-to-Phone mapping from contacts
         const uniqueJids = Array.from(chatsMap.keys());
         if (uniqueJids.length > 0) {
             const contacts = await Contact.findAll({
@@ -71,49 +71,53 @@ exports.getRecentChats = async (req, res, next) => {
                 }
             });
 
-            // Create lookup
+            // Build TWO mappings:
+            // 1. contactNameMap: jid -> {name, profile_pic}
+            // 2. lidToPhoneMap: lid -> phone_jid (for merging)
             const contactNameMap = {};
+            const lidToPhoneMap = {};
+
             contacts.forEach(c => {
-                contactNameMap[c.jid] = { name: c.name, profile_pic: c.profile_pic, canonical_jid: c.jid };
-                if (c.lid) {
-                    contactNameMap[c.lid] = { name: c.name, profile_pic: c.profile_pic, canonical_jid: c.jid };
+                // Store contact info by phone JID
+                contactNameMap[c.jid] = { name: c.name || c.push_name, profile_pic: c.profile_pic };
+
+                // If contact has LID, create mapping from LID to phone JID
+                if (c.lid && c.jid.includes('@s.whatsapp.net')) {
+                    lidToPhoneMap[c.lid] = c.jid;
+                    // Also store name lookup by LID
+                    contactNameMap[c.lid] = { name: c.name || c.push_name, profile_pic: c.profile_pic };
                 }
             });
+
+            console.log(`[getChats] LID-to-Phone mappings found: ${Object.keys(lidToPhoneMap).length}`);
+            console.log(`[getChats] LID mappings:`, JSON.stringify(lidToPhoneMap));
+            console.log(`[getChats] Chats in map:`, Array.from(chatsMap.keys()));
 
             // Apply names, profile pics, and MERGE duplicates (LID -> Phone)
             const mergedMap = new Map();
 
             for (const [jid, chat] of chatsMap.entries()) {
+                // Determine canonical JID (prefer phone number over LID)
                 let canonicalJid = jid;
 
-                // Check for LID mapping in contacts
-                if (jid.endsWith('@lid') && contactNameMap[jid] && contactNameMap[jid].canonical_jid) {
-                    // We found a contact that links this LID to a phone number!
-                    // But wait, our contactNameMap needs to store the JID too.
-                    // We'll trust the contact's 'jid' field if it looks like a phone number.
-                    const mappedJid = contactNameMap[jid].canonical_jid;
-                    if (mappedJid && mappedJid.includes('@s.whatsapp.net')) {
-                        canonicalJid = mappedJid;
-                    }
+                // If this is a LID and we have a mapping to phone, use the phone JID
+                if (jid.endsWith('@lid') && lidToPhoneMap[jid]) {
+                    canonicalJid = lidToPhoneMap[jid];
+                    console.log(`[getChats] ✅ Mapping LID ${jid} -> ${canonicalJid}`);
+                } else if (jid.endsWith('@lid')) {
+                    console.log(`[getChats] ❌ No mapping for LID ${jid}`);
                 }
 
-                // Get existing entry or create new
+                // Get contact info
+                const contactInfo = contactNameMap[jid] || contactNameMap[canonicalJid] || {};
+                const displayName = contactInfo.name || chat.name;
+                const displayPic = contactInfo.profile_pic || chat.profilePicUrl;
+
+                // Check if we already have this canonical JID in merged map
                 const existing = mergedMap.get(canonicalJid);
 
-                // Add contact info
-                let displayName = chat.name;
-                let displayPic = chat.profilePicUrl;
-
-                if (contactNameMap[canonicalJid]) {
-                    displayName = contactNameMap[canonicalJid].name || displayName;
-                    displayPic = contactNameMap[canonicalJid].profile_pic || displayPic;
-                } else if (contactNameMap[jid]) {
-                    displayName = contactNameMap[jid].name || displayName;
-                    displayPic = contactNameMap[jid].profile_pic || displayPic;
-                }
-
                 if (existing) {
-                    // Merge logic: Take latest time, sum unread (conceptually), use latest message
+                    // Merge: Take latest message, combine unread
                     if (new Date(chat.time) > new Date(existing.time)) {
                         existing.time = chat.time;
                         existing.lastMessage = chat.lastMessage;
@@ -124,13 +128,18 @@ exports.getRecentChats = async (req, res, next) => {
                     existing.unread += chat.unread;
                     existing.profilePicUrl = displayPic || existing.profilePicUrl;
                     existing.name = displayName || existing.name;
-                    existing.lid = chat.lid || existing.lid;
+                    // Store LID reference if this was a LID
+                    if (jid.endsWith('@lid')) {
+                        existing.lid = jid;
+                    }
                 } else {
-                    // Update the chat object with canonical data
+                    // New entry
                     chat.jid = canonicalJid;
                     chat.name = displayName;
                     chat.profilePicUrl = displayPic;
-                    chat.lid = (jid === canonicalJid) ? (contactNameMap[jid]?.lid) : jid;
+                    if (jid.endsWith('@lid')) {
+                        chat.lid = jid;
+                    }
                     mergedMap.set(canonicalJid, chat);
                 }
             }
@@ -273,6 +282,14 @@ exports.sendMessage = async (req, res, next) => {
 
         // Check Message Limits
         const user = await User.findByPk(managerId);
+
+        // Check Subscription Status
+        const now = new Date();
+        const endDate = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
+        if (!endDate || now > endDate) {
+            return next(new AppError('Your subscription has expired. Please renew your plan to continue sending messages.', 403));
+        }
+
         if (user.messages_sent_current_period >= (user.monthly_message_limit || 0)) {
             return next(new AppError('Monthly message limit reached. Please upgrade your plan in the dashboard to continue sending messages.', 403));
         }
@@ -450,6 +467,93 @@ exports.getContacts = async (req, res, next) => {
         res.status(200).json({
             status: 'success',
             data: { contacts }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.convertLead = async (req, res, next) => {
+    try {
+        const managerId = getManagerId(req.user);
+        const { jid, name, intent, instanceId, governorate, city, phone2 } = req.body;
+
+        // Find or create contact first
+        let contact = await Contact.findOne({ where: { jid, user_id: managerId } });
+        if (!contact) {
+            contact = await Contact.create({ jid, name, user_id: managerId, instance_id: instanceId });
+        } else if (name) {
+            contact.name = name;
+            await contact.save();
+        }
+
+        const lead = await Lead.create({
+            user_id: managerId,
+            contact_id: contact.id,
+            intent: intent || 'sales',
+            status: 'New',
+            title: `Lead from ${contact.name}`,
+            metadata: {
+                governorate,
+                city,
+                phone2
+            }
+        });
+
+        res.status(201).json({ status: 'success', data: { lead } });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.createOrder = async (req, res, next) => {
+    try {
+        const managerId = getManagerId(req.user);
+        const { jid, items, total_price, currency, instanceId, governorate, city, address, phone2 } = req.body;
+
+        // Find contact
+        const contact = await Contact.findOne({ where: { jid, user_id: managerId } });
+        if (!contact) return next(new AppError('Contact not found. Send a message first to establish contact.', 404));
+
+        const order = await Order.create({
+            user_id: managerId,
+            contact_id: contact.id,
+            items: typeof items === 'string' ? [{ product: items, quantity: 1 }] : items,
+            total_price,
+            currency: currency || 'USD',
+            status: 'Pending',
+            shipping_details: {
+                governorate,
+                city,
+                address,
+                phone2
+            }
+        });
+
+        res.status(201).json({ status: 'success', data: { order } });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.toggleAIChat = async (req, res, next) => {
+    try {
+        const { jid, enabled } = req.body;
+        const managerId = getManagerId(req.user);
+
+        const contact = await Contact.findOne({
+            where: { jid, user_id: managerId }
+        });
+
+        if (!contact) return next(new AppError('Contact not found', 404));
+
+        contact.ai_replies_enabled = !!enabled;
+        await contact.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: `AI Replies are now ${contact.ai_replies_enabled ? 'ENABLED' : 'DISABLED'} for this contact.`,
+            data: { ai_replies_enabled: contact.ai_replies_enabled }
         });
     } catch (err) {
         next(err);

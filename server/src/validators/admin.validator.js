@@ -3,21 +3,31 @@ const Joi = require('joi');
 const createPlanSchema = Joi.object({
     name: Joi.string().required(),
     price: Joi.number().required(),
-    billing_cycle: Joi.string().valid('monthly', 'yearly').required(),
+    billing_cycle: Joi.string().valid('monthly', 'yearly', 'quarterly', 'lifetime').required(),
     max_instances: Joi.number().integer().min(1).required(),
     max_seats: Joi.number().integer().min(1).required(),
     monthly_message_limit: Joi.number().integer().min(0).required(),
-    features: Joi.array().items(Joi.string()).optional()
-});
+    features: Joi.array().items(Joi.string()).optional(),
+    is_active: Joi.boolean().optional(),
+    ai_enabled: Joi.boolean().optional(),
+    ai_reply_limit: Joi.number().integer().min(0).optional(),
+    ai_knowledge_limit: Joi.number().integer().min(0).optional(),
+    ai_model_id: Joi.string().optional()
+}).unknown(true);
 
 const updatePlanSchema = Joi.object({
     name: Joi.string().optional(),
     price: Joi.number().optional(),
-    billing_cycle: Joi.string().valid('monthly', 'yearly').optional(),
+    billing_cycle: Joi.string().valid('monthly', 'yearly', 'quarterly', 'lifetime').optional(),
     max_instances: Joi.number().integer().min(1).optional(),
     max_seats: Joi.number().integer().min(1).optional(),
     monthly_message_limit: Joi.number().integer().min(0).optional(),
-    features: Joi.array().items(Joi.string()).optional()
+    features: Joi.array().items(Joi.string()).optional(),
+    is_active: Joi.boolean().optional(),
+    ai_enabled: Joi.boolean().optional(),
+    ai_reply_limit: Joi.number().integer().min(0).optional(),
+    ai_knowledge_limit: Joi.number().integer().min(0).optional(),
+    ai_model_id: Joi.string().optional()
 }).unknown(true);
 
 const updateUserPlanSchema = Joi.object({
@@ -28,8 +38,12 @@ const updateUserPlanSchema = Joi.object({
     max_seats: Joi.number().integer().min(1).optional(),
     is_active: Joi.boolean().optional(),
     subscription_end_date: Joi.date().allow(null, '').optional(),
-    id_plan: Joi.string().uuid().optional()
-});
+    id_plan: Joi.string().uuid().optional(),
+    ai_enabled: Joi.boolean().optional(),
+    ai_reply_limit: Joi.number().integer().min(0).optional(),
+    ai_knowledge_limit: Joi.number().integer().min(0).optional(),
+    ai_model_id: Joi.string().optional()
+}).unknown(true);
 
 const banUserSchema = Joi.object({
     is_active: Joi.boolean().required()

@@ -57,20 +57,18 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
             const content = msg.content || 'Media';
 
             // Fix Invalid Date Issue
-            // Ensure we have a valid time. If msg.time is a string/number, use it. If invalid, use Date.now()
+            // Use raw timestamp if available (new backend), otherwise try parsing string
             let timeObj = new Date();
-            if (msg.time) {
-                const parsedTime = new Date(msg.time * 1000); // Check if it's unix timestamp (seconds)
-                // If year is 1970, maybe it was milliseconds? 
+            if (msg.timestamp) {
+                timeObj = new Date(msg.timestamp);
+            } else if (msg.time) {
+                const parsedTime = new Date(msg.time * 1000);
                 if (parsedTime.getFullYear() === 1970 && msg.time > 2000000000) {
-                    // It was probably milliseconds already, or we multipled too much. 
-                    // Common issue. Let's just try `new Date(msg.time)` directly first
                     const d = new Date(msg.time);
                     if (!isNaN(d.getTime())) timeObj = d;
                 } else if (!isNaN(parsedTime.getTime())) {
                     timeObj = parsedTime;
                 } else {
-                    // Try parsing as string if it wasn't a number
                     const d = new Date(msg.time);
                     if (!isNaN(d.getTime())) timeObj = d;
                 }

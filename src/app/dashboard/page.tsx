@@ -76,7 +76,7 @@ export default function DashboardHome() {
         { label: t('system_quota'), value: `${stats.quotaUsed}%`, icon: Lightning, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
     ];
 
-    const userPlan = user?.plan?.name || user?.plan || 'Free';
+    const userPlan = user?.plan?.name || (typeof user?.plan === 'string' ? user?.plan : 'Free');
 
     return (
         <div className="space-y-10 pb-20">

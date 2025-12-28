@@ -46,6 +46,10 @@ const Contact = sequelize.define('Contact', {
     instance_id: {
         type: DataTypes.UUID,
         allowNull: true
+    },
+    ai_replies_enabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
     }
 }, {
     timestamps: true,

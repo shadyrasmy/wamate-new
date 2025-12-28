@@ -8,6 +8,10 @@ const { Message, MessageLog } = require('./Message');
 const Plan = require('./Plan');
 const Invoice = require('./Invoice');
 const ReferralTransaction = require('./ReferralTransaction');
+const Lead = require('./Lead');
+const Order = require('./Order');
+const Knowledge = require('./Knowledge');
+const Bot = require('./Bot');
 const { sequelize } = require('../config/db');
 
 // User -> Instances
@@ -67,6 +71,38 @@ Invoice.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 User.belongsTo(Plan, { foreignKey: 'id_plan', as: 'plan' });
 Plan.hasMany(User, { foreignKey: 'id_plan', as: 'users' });
 
+// User -> Leads
+User.hasMany(Lead, { foreignKey: 'user_id', as: 'leads' });
+Lead.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Contact -> Leads
+Contact.hasMany(Lead, { foreignKey: 'contact_id', as: 'leads' });
+Lead.belongsTo(Contact, { foreignKey: 'contact_id', as: 'contact' });
+
+// User -> Orders
+User.hasMany(Order, { foreignKey: 'user_id', as: 'orders' });
+Order.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Contact -> Orders
+Contact.hasMany(Order, { foreignKey: 'contact_id', as: 'orders' });
+Order.belongsTo(Contact, { foreignKey: 'contact_id', as: 'contact' });
+
+// User -> Knowledge
+User.hasMany(Knowledge, { foreignKey: 'user_id', as: 'knowledge' });
+Knowledge.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Instance -> Knowledge
+WhatsAppInstance.hasMany(Knowledge, { foreignKey: 'instance_id', as: 'instance_knowledge' });
+Knowledge.belongsTo(WhatsAppInstance, { foreignKey: 'instance_id', as: 'instance' });
+
+// User -> Bots
+User.hasMany(Bot, { foreignKey: 'user_id', as: 'bots' });
+Bot.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Instance -> Bots
+WhatsAppInstance.hasMany(Bot, { foreignKey: 'instance_id', as: 'instance_bots' });
+Bot.belongsTo(WhatsAppInstance, { foreignKey: 'instance_id', as: 'instance' });
+
 // Export everything
 module.exports = {
     sequelize,
@@ -80,5 +116,9 @@ module.exports = {
     Plan,
     Invoice,
     ReferralTransaction,
-    SiteConfig
+    SiteConfig,
+    Lead,
+    Order,
+    Knowledge,
+    Bot
 };

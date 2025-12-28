@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import { fetchWithAuth } from '@/lib/api';
 import {
     Gear, Eye, Code, FacebookLogo, Envelope,
-    Spinner, Check, WarningCircle, ToggleLeft, ToggleRight, PaperPlaneRight, FileText
+    Spinner, Check, WarningCircle, ToggleLeft, ToggleRight, PaperPlaneRight, FileText,
+    Robot, Brain, Key, MagnifyingGlassPlus
 } from '@phosphor-icons/react';
 
 import { useSearchParams } from 'next/navigation';
@@ -227,7 +228,8 @@ function SettingsContent() {
                     { id: 'scripts', label: 'Script Lab', icon: Code },
                     { id: 'facebook', label: 'Tracking', icon: FacebookLogo },
                     { id: 'smtp', label: 'SMTP / Email', icon: Envelope },
-                    { id: 'templates', label: 'Msg Templates', icon: FileText }
+                    { id: 'templates', label: 'Msg Templates', icon: FileText },
+                    { id: 'ai', label: 'AI Engine', icon: Robot }
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -687,22 +689,95 @@ function SettingsContent() {
                                     />
                                 </div>
                             </div>
-                            <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl flex gap-4">
-                                <FacebookLogo size={24} weight="fill" className="text-primary" />
-                                <div className="text-xs font-medium text-gray-400">
-                                    Tracking will automatically emit events for: **LandingPageView**, **SignupStarted**, and **SubscriptionComplete**.
+                        </div>
+                    )
+                }
+
+                {
+                    activeTab === 'ai' && (
+                        <div className="space-y-10">
+                            <div className="flex justify-between items-start">
+                                <div className="space-y-1">
+                                    <h3 className="text-xl font-bold">Neural Core Configuration</h3>
+                                    <p className="text-gray-500 text-sm">Orchestrate global AI behavior and secure provider credentials.</p>
+                                </div>
+                                <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+                                    <div className="text-right">
+                                        <p className="text-xs font-black text-white leading-none mb-1">GLOBAL AI STATUS</p>
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{config.ai_settings?.global_enabled ? 'Active Pulse' : 'Standby Mode'}</p>
+                                    </div>
+                                    <button onClick={() => setConfig({ ...config, ai_settings: { ...config.ai_settings, global_enabled: !config.ai_settings?.global_enabled } })}>
+                                        {config.ai_settings?.global_enabled ? (
+                                            <ToggleRight size={38} weight="fill" className="text-primary" />
+                                        ) : (
+                                            <ToggleLeft size={38} weight="fill" className="text-gray-700" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-8 pt-6 border-t border-white/5">
+                                <div className="space-y-2 col-span-full">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                        <Key size={14} /> Google Generative AI Key
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={config.ai_settings?.google_api_key || ''}
+                                        onChange={e => setConfig({ ...config, ai_settings: { ...config.ai_settings, google_api_key: e.target.value } })}
+                                        className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                        placeholder="••••••••••••••••••••••••••••••••"
+                                    />
+                                    <p className="text-[10px] text-gray-400 ml-1">Used for Gemini 3 Flash and Deep Think models.</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                        <Brain size={14} /> Pinecone API Key (RAG)
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={config.ai_settings?.pinecone_api_key || ''}
+                                        onChange={e => setConfig({ ...config, ai_settings: { ...config.ai_settings, pinecone_api_key: e.target.value } })}
+                                        className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                        placeholder="••••••••-••••-••••-••••-••••••••••••"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                        <MagnifyingGlassPlus size={14} /> Pinecone Environment
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={config.ai_settings?.pinecone_environment || ''}
+                                        onChange={e => setConfig({ ...config, ai_settings: { ...config.ai_settings, pinecone_environment: e.target.value } })}
+                                        className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                        placeholder="e.g. us-east-1-aws"
+                                    />
+                                </div>
+
+                                <div className="space-y-2 col-span-full">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Default Platform Model</label>
+                                    <input
+                                        type="text"
+                                        value={config.ai_settings?.default_model || 'gemini-3-flash'}
+                                        onChange={e => setConfig({ ...config, ai_settings: { ...config.ai_settings, default_model: e.target.value } })}
+                                        className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
+                                    />
                                 </div>
                             </div>
                         </div>
                     )
                 }
+
                 {
                     activeTab === 'templates' && (
                         <TemplateManager />
                     )
                 }
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }
 

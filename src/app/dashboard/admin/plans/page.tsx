@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import { fetchWithAuth } from '@/lib/api';
 import {
     Shield, Plus, PencilSimple, X, Spinner,
-    ChatCircleDots, DeviceMobile, UsersThree, Trash
+    ChatCircleDots, DeviceMobile, UsersThree, Trash,
+    Robot, Brain, Database, Selection
 } from '@phosphor-icons/react';
 import CustomSelect from '@/components/ui/CustomSelect';
 
@@ -40,8 +41,11 @@ export default function AdminPlansPage() {
                 ...editingPlan,
                 price: parseFloat(editingPlan.price) || 0,
                 monthly_message_limit: parseInt(editingPlan.monthly_message_limit) || 0,
-                max_instances: parseInt(editingPlan.max_instances) || 0,
-                max_seats: parseInt(editingPlan.max_seats) || 0
+                max_seats: parseInt(editingPlan.max_seats) || 0,
+                ai_enabled: !!editingPlan.ai_enabled,
+                ai_reply_limit: parseInt(editingPlan.ai_reply_limit) || 0,
+                ai_knowledge_limit: parseInt(editingPlan.ai_knowledge_limit) || 0,
+                ai_model_id: editingPlan.ai_model_id || 'gemini-3-flash'
             };
 
             await fetchWithAuth(url, {
@@ -75,7 +79,11 @@ export default function AdminPlansPage() {
                 <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setEditingPlan({ name: '', price: 0, monthly_message_limit: 1000, max_instances: 1, max_seats: 1, is_active: true })}
+                    onClick={() => setEditingPlan({
+                        name: '', price: 0, monthly_message_limit: 100, max_instances: 1, max_seats: 1,
+                        is_active: true, ai_enabled: false, ai_reply_limit: 0, ai_knowledge_limit: 0,
+                        ai_model_id: 'gemini-3-flash'
+                    })}
                     className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 flex items-center gap-3"
                 >
                     <Plus size={20} weight="bold" />
@@ -138,6 +146,12 @@ export default function AdminPlansPage() {
                                     <UsersThree size={20} weight="duotone" className="text-primary" />
                                     <span>{plan.max_seats} Support Seats</span>
                                 </div>
+                                {plan.ai_enabled && (
+                                    <div className="flex items-center gap-4 text-primary font-black text-xs uppercase tracking-widest mt-2">
+                                        <Robot size={18} weight="bold" />
+                                        <span>AI INFUSED ({plan.ai_reply_limit} msg)</span>
+                                    </div>
+                                )}
                             </div>
 
                             {!plan.is_active && (
@@ -158,9 +172,9 @@ export default function AdminPlansPage() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="carbon-card rounded-[2.5rem] shadow-2xl w-full max-w-2xl border-white/10 overflow-hidden"
+                        className="carbon-card rounded-[2.5rem] shadow-2xl w-full max-w-2xl border-white/10 overflow-hidden flex flex-col max-h-[90vh]"
                     >
-                        <div className="p-10 lg:p-12">
+                        <div className="p-6 lg:p-10 overflow-y-auto custom-scroll">
                             <h3 className="text-3xl font-black mb-10">Protocol Configuration</h3>
 
                             <form onSubmit={handleSavePlan} className="space-y-6">
@@ -223,6 +237,71 @@ export default function AdminPlansPage() {
                                             { value: 'lifetime', label: 'LIFETIME' }
                                         ]}
                                     />
+
+                                    {/* AI Features Section */}
+                                    <div className="col-span-full pt-6 border-t border-white/5 space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${editingPlan.ai_enabled ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-white/5 border-white/10 text-gray-500'}`}>
+                                                    <Robot size={20} weight="bold" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-black text-white leading-none">AI CORE INTEGRATION</p>
+                                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Toggle cognitive expansion for this tier</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditingPlan({ ...editingPlan, ai_enabled: !editingPlan.ai_enabled })}
+                                                className={`w-12 h-6 rounded-full relative transition-colors ${editingPlan.ai_enabled ? 'bg-primary' : 'bg-white/10'}`}
+                                            >
+                                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${editingPlan.ai_enabled ? 'right-1' : 'left-1'}`} />
+                                            </button>
+                                        </div>
+
+                                        {editingPlan.ai_enabled && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="grid md:grid-cols-2 gap-8 bg-primary/5 p-6 rounded-[2rem] border border-primary/10"
+                                            >
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1 flex items-center gap-2">
+                                                        <Brain size={12} /> AI Reply Limit
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={editingPlan.ai_reply_limit ?? ''}
+                                                        onChange={e => setEditingPlan({ ...editingPlan, ai_reply_limit: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                                                        className="w-full bg-black/20 border border-primary/20 p-4 rounded-xl text-white focus:outline-none focus:border-primary transition font-bold"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1 flex items-center gap-2">
+                                                        <Database size={12} /> Knowledge Cap
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={editingPlan.ai_knowledge_limit ?? ''}
+                                                        onChange={e => setEditingPlan({ ...editingPlan, ai_knowledge_limit: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                                                        className="w-full bg-black/20 border border-primary/20 p-4 rounded-xl text-white focus:outline-none focus:border-primary transition font-bold"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2 col-span-full">
+                                                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1 flex items-center gap-2">
+                                                        <Selection size={12} /> Model ID
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={editingPlan.ai_model_id}
+                                                        onChange={e => setEditingPlan({ ...editingPlan, ai_model_id: e.target.value })}
+                                                        className="w-full bg-black/20 border border-primary/20 p-4 rounded-xl text-white focus:outline-none focus:border-primary transition font-bold"
+                                                        placeholder="e.g. gemini-3-flash"
+                                                    />
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="pt-10 flex gap-4">

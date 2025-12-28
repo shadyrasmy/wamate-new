@@ -39,6 +39,23 @@ const Plan = sequelize.define('Plan', {
     is_active: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
+    },
+    // AI Integration Fields
+    ai_enabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    ai_reply_limit: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    ai_knowledge_limit: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    ai_model_id: {
+        type: DataTypes.STRING,
+        defaultValue: 'gemini-3-flash'
     }
 }, {
     timestamps: true,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash, QrCode, WifiHigh, WifiSlash, Spinner, DeviceMobile, Broadcast, X, PencilSimple, ArrowClockwise, Copy, CheckCircle } from '@phosphor-icons/react';
+import { Plus, Trash, QrCode, WifiHigh, WifiSlash, Spinner, DeviceMobile, Broadcast, X, PencilSimple, ArrowClockwise, Copy, CheckCircle, Brain, Info } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchWithAuth, SOCKET_URL } from '@/lib/api';
 import { io } from 'socket.io-client';
@@ -17,6 +17,10 @@ export default function InstancesPage() {
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [socket, setSocket] = useState<any>(null);
     const [editingInstance, setEditingInstance] = useState<any>(null);
+    const [isAIOpen, setIsAIOpen] = useState(false);
+    const [isRenameOpen, setIsRenameOpen] = useState(false);
+    const [aiPrompt, setAiPrompt] = useState('');
+    const [aiLoading, setAiLoading] = useState(false);
     const [newName, setNewName] = useState('');
     const [connectionMethod, setConnectionMethod] = useState<'qr' | 'pairing'>('qr');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -24,6 +28,7 @@ export default function InstancesPage() {
     const [pairingLoading, setPairingLoading] = useState(false);
     const [newInstanceId, setNewInstanceId] = useState<string | null>(null);
     const [pairingCopied, setPairingCopied] = useState(false);
+    const [user, setUser] = useState<any>(null);
 
     // Initialize Socket
     useEffect(() => {
@@ -35,6 +40,10 @@ export default function InstancesPage() {
     // Fetch Instances
     useEffect(() => {
         loadInstances();
+        const userData = localStorage.getItem('user');
+        if (userData) {
+            setUser(JSON.parse(userData));
+        }
     }, []);
 
     const loadInstances = async () => {
@@ -156,10 +165,30 @@ export default function InstancesPage() {
                 method: 'PATCH',
                 body: JSON.stringify({ name: newName })
             });
+            setIsRenameOpen(false);
             setEditingInstance(null);
             loadInstances();
         } catch (error) {
             alert('Failed to rename instance');
+        }
+    };
+
+    const handleUpdateAISettings = async () => {
+        if (!editingInstance) return;
+        setAiLoading(true);
+        try {
+            await fetchWithAuth(`/instances/${editingInstance.instance_id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ system_instruction: aiPrompt })
+            });
+            setIsAIOpen(false);
+            setEditingInstance(null);
+            loadInstances();
+        } catch (error) {
+            console.error('Update AI settings failed', error);
+            alert('Failed to update main prompt.');
+        } finally {
+            setAiLoading(false);
         }
     };
 
@@ -212,7 +241,7 @@ export default function InstancesPage() {
                                     <div className="flex items-center gap-2 group/title">
                                         <h3 className="font-black text-xl text-white truncate">{instance.name}</h3>
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); setEditingInstance(instance); setNewName(instance.name); }}
+                                            onClick={(e) => { e.stopPropagation(); setEditingInstance(instance); setNewName(instance.name); setIsRenameOpen(true); }}
                                             className="opacity-0 group-hover/title:opacity-100 transition-opacity p-1 hover:text-primary shrink-0"
                                         >
                                             <PencilSimple size={14} />
@@ -270,6 +299,50 @@ export default function InstancesPage() {
                                     />
                                 </button>
                             </div>
+
+                            {(user?.role === 'admin' || user?.ai_enabled || user?.plan?.ai_enabled) && (
+                                <div className="border-t border-white/5 pt-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">AI Support</span>
+                                            <p className="text-[9px] text-gray-600 font-medium">Automated response engine</p>
+                                        </div>
+                                        <button
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                try {
+                                                    await fetchWithAuth(`/instances/${instance.instance_id}/toggle-ai`, {
+                                                        method: 'PATCH',
+                                                        body: JSON.stringify({ enabled: !instance.ai_enabled })
+                                                    });
+                                                    loadInstances();
+                                                } catch (error) {
+                                                    alert('Toggle operation failed.');
+                                                }
+                                            }}
+                                            className={`w-12 h-6 rounded-full relative transition-colors duration-500 ${instance.ai_enabled ? 'bg-primary shadow-[0_0_10px_rgba(255,255,255,0.1)]' : 'bg-white/10 border border-white/5'}`}
+                                        >
+                                            <motion.div
+                                                animate={{ x: instance.ai_enabled ? 26 : 4 }}
+                                                className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg"
+                                            />
+                                        </button>
+                                    </div>
+
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingInstance(instance);
+                                            setAiPrompt(instance.system_instruction || '');
+                                            setIsAIOpen(true);
+                                        }}
+                                        className="w-full py-3 bg-white/5 hover:bg-primary/10 hover:text-primary rounded-xl text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] border border-white/5 transition flex items-center justify-center gap-2"
+                                    >
+                                        <Brain size={14} weight="bold" />
+                                        Main Prompt
+                                    </button>
+                                </div>
+                            )}
 
                             <div className="flex items-center justify-between border-t border-white/5 pt-6">
                                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Phone Record</span>
@@ -428,8 +501,8 @@ export default function InstancesPage() {
                                                         <button
                                                             onClick={copyPairingCode}
                                                             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${pairingCopied
-                                                                    ? 'bg-green-500/20 text-green-500 border border-green-500/30'
-                                                                    : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white'
+                                                                ? 'bg-green-500/20 text-green-500 border border-green-500/30'
+                                                                : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white'
                                                                 }`}
                                                         >
                                                             {pairingCopied ? <CheckCircle size={14} weight="bold" /> : <Copy size={14} weight="bold" />}
@@ -494,7 +567,7 @@ export default function InstancesPage() {
             </AnimatePresence>
             {/* Rename Modal */}
             <AnimatePresence>
-                {editingInstance && (
+                {isRenameOpen && editingInstance && (
                     <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-background/80 backdrop-blur-xl">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -518,7 +591,7 @@ export default function InstancesPage() {
                                 <div className="flex gap-4">
                                     <button
                                         type="button"
-                                        onClick={() => setEditingInstance(null)}
+                                        onClick={() => { setIsRenameOpen(false); setEditingInstance(null); }}
                                         className="flex-1 py-4 text-gray-500 font-bold text-sm uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition"
                                     >
                                         {t('abort')}
@@ -531,6 +604,72 @@ export default function InstancesPage() {
                                     </button>
                                 </div>
                             </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+            {/* AI Settings Modal */}
+            <AnimatePresence>
+                {isAIOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => { setIsAIOpen(false); setEditingInstance(null); }}
+                            className="absolute inset-0 bg-background/80 backdrop-blur-xl"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="glass-card w-full max-w-2xl rounded-[3rem] p-10 lg:p-12 relative z-10 border-white/10"
+                        >
+                            <div className="flex justify-between items-center mb-8">
+                                <div>
+                                    <h3 className="text-2xl font-black flex items-center gap-3">
+                                        <Brain size={28} className="text-primary" />
+                                        Main Prompt Tuning
+                                    </h3>
+                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Node: {editingInstance?.name}</p>
+                                </div>
+                                <button onClick={() => { setIsAIOpen(false); setEditingInstance(null); }} className="p-2 hover:bg-white/5 rounded-full transition"><X size={24} /></button>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Main System Instruction (Prompt)</label>
+                                    <textarea
+                                        value={aiPrompt}
+                                        onChange={e => setAiPrompt(e.target.value)}
+                                        className="w-full min-h-[250px] bg-white/5 border border-white/10 p-6 rounded-[2rem] text-white font-medium text-sm focus:outline-none focus:border-primary/50 transition resize-none custom-scroll"
+                                        placeholder="Define how this specific node should behave. e.g. 'You are a formal customer support agent for WaMate. Be polite and helpful, use bullet points for product lists...'"
+                                    />
+                                </div>
+
+                                <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex gap-4">
+                                    <Info size={24} className="text-primary flex-shrink-0" />
+                                    <p className="text-[10px] text-gray-400 font-medium leading-relaxed uppercase tracking-widest">
+                                        This prompt is specific to this WhatsApp number. It overrides general AI behavior and allows you to run multiple brands/personas from one account.
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-4">
+                                    <button
+                                        onClick={() => { setIsAIOpen(false); setEditingInstance(null); }}
+                                        className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleUpdateAISettings}
+                                        disabled={aiLoading}
+                                        className="flex-1 bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition flex items-center justify-center gap-2"
+                                    >
+                                        {aiLoading ? <Spinner size={16} className="animate-spin" /> : 'Apply Intelligence'}
+                                    </button>
+                                </div>
+                            </div>
                         </motion.div>
                     </div>
                 )}

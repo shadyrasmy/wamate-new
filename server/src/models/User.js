@@ -58,6 +58,26 @@ const User = sequelize.define('User', {
         type: DataTypes.INTEGER,
         defaultValue: 0
     },
+    ai_replies_sent_current_period: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    ai_enabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    ai_reply_limit: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    ai_knowledge_limit: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    ai_model_id: {
+        type: DataTypes.STRING,
+        defaultValue: 'gemini-3-flash'
+    },
     subscription_start_date: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW

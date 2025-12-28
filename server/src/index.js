@@ -60,6 +60,9 @@ app.use('/api/seats', require('./routes/seat.routes'));
 app.use('/api/user', require('./routes/user.routes'));
 app.use('/api/payment', require('./routes/payment.routes'));
 app.use('/api/referrals', require('./routes/referral.routes'));
+app.use('/api/leads', require('./routes/lead.routes'));
+app.use('/api/orders', require('./routes/order.routes'));
+app.use('/api/bots', require('./routes/bot.routes'));
 
 
 // 404 Handler

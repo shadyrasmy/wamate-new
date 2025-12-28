@@ -9,6 +9,8 @@ interface User {
     email: string;
     role: string;
     plan: string;
+    subscription_status?: 'active' | 'expired';
+    days_until_expiry?: number;
 }
 
 interface AuthContextType {

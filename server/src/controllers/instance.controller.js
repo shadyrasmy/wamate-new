@@ -46,7 +46,7 @@ exports.getInstances = async (req, res, next) => {
     try {
         const instances = await WhatsAppInstance.findAll({
             where: { user_id: req.user.id },
-            attributes: ['instance_id', 'name', 'phone_number', 'status', 'qr_code', 'chat_enabled']
+            attributes: ['id', 'instance_id', 'name', 'phone_number', 'status', 'qr_code', 'chat_enabled', 'ai_enabled', 'system_instruction']
         });
 
         res.status(200).json({
@@ -84,7 +84,7 @@ exports.deleteInstance = async (req, res, next) => {
 exports.updateInstance = async (req, res, next) => {
     try {
         const { instanceId } = req.params;
-        const { name } = req.body;
+        const { name, system_instruction } = req.body;
 
         const instance = await WhatsAppInstance.findOne({
             where: { instance_id: instanceId, user_id: req.user.id }
@@ -92,7 +92,9 @@ exports.updateInstance = async (req, res, next) => {
 
         if (!instance) return next(new AppError('Instance not found', 404));
 
-        instance.name = name;
+        if (name) instance.name = name;
+        if (system_instruction !== undefined) instance.system_instruction = system_instruction;
+
         await instance.save();
 
         res.status(200).json({ status: 'success', data: { instance } });
@@ -140,6 +142,30 @@ exports.toggleChatLogging = async (req, res, next) => {
             status: 'success',
             message: `Chat logging is now ${instance.chat_enabled ? 'ENABLED' : 'DISABLED'} for this instance.`,
             data: { chat_enabled: instance.chat_enabled }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.toggleAI = async (req, res, next) => {
+    try {
+        const { instanceId } = req.params;
+        const { enabled } = req.body;
+
+        const instance = await WhatsAppInstance.findOne({
+            where: { instance_id: instanceId, user_id: req.user.id }
+        });
+
+        if (!instance) return next(new AppError('Instance not found', 404));
+
+        instance.ai_enabled = !!enabled;
+        await instance.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: `AI Status is now ${instance.ai_enabled ? 'ENABLED' : 'DISABLED'} for this node.`,
+            data: { ai_enabled: instance.ai_enabled }
         });
     } catch (err) {
         next(err);

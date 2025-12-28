@@ -10,9 +10,10 @@ const { Boom } = require('@hapi/boom');
 const pino = require('pino');
 const path = require('path');
 const fs = require('fs');
-const { WhatsAppInstance, Message, Contact } = require('../models');
+const { User, WhatsAppInstance, SiteConfig, Contact, Message, Lead, Order } = require('../models');
 const { Op } = require('sequelize');
 const QueueService = require('./queue.service');
+const aiService = require('./ai.service');
 
 // Store active sockets and retry counts
 const sessions = new Map();
@@ -128,7 +129,7 @@ class WhatsAppService {
 
             // Handle incoming messages
             sock.ev.on('messages.upsert', async ({ messages, type }) => {
-                console.log(`[DEBUG] Baileys Upsert: Type=${type}, Count=${messages.length}`);
+                console.log(`[DEBUG] Baileys Upsert: Type = ${type}, Count = ${messages.length}`);
                 for (const msg of messages) {
                     if (!msg.message && !msg.messageStubType) continue;
                     await this.saveMessage(instanceId, msg);
@@ -153,7 +154,7 @@ class WhatsAppService {
             // Handle LID-Phone mapping updates (THE KEY FIX for JID-LID connection!)
             sock.ev.on('lid-mapping.update', async (mapping) => {
                 try {
-                    console.log(`[DEBUG] LID Mapping Update:`, JSON.stringify(mapping));
+                    console.log(`[DEBUG] LID Mapping Update: `, JSON.stringify(mapping));
 
                     // Extract pn (phone number) and lid from the mapping
                     const pn = mapping?.pn || mapping?.pnUser;
@@ -421,13 +422,19 @@ class WhatsAppService {
                 textContent = m.extendedTextMessage.text;
             } else if (m.imageMessage) {
                 textContent = m.imageMessage.caption || '📷 Image';
-                mediaUrl = await this.downloadMedia(m.imageMessage, 'image');
+                const mediaData = await this.downloadMedia(m.imageMessage, 'image', true);
+                mediaUrl = mediaData.url;
+                msg.mediaBuffer = mediaData.buffer;
+                msg.mimeType = m.imageMessage.mimetype;
             } else if (m.videoMessage) {
                 textContent = m.videoMessage.caption || '🎥 Video';
                 mediaUrl = await this.downloadMedia(m.videoMessage, 'video');
             } else if (m.audioMessage) {
                 textContent = '🎤 Audio';
-                mediaUrl = await this.downloadMedia(m.audioMessage, 'audio');
+                const mediaData = await this.downloadMedia(m.audioMessage, 'audio', true);
+                mediaUrl = mediaData.url;
+                msg.mediaBuffer = mediaData.buffer;
+                msg.mimeType = m.audioMessage.mimetype;
             } else if (m.stickerMessage) {
                 textContent = '👾 Sticker';
                 mediaUrl = await this.downloadMedia(m.stickerMessage, 'sticker');
@@ -476,6 +483,7 @@ class WhatsAppService {
             }
 
             // UPSERT CONTACT(S)
+            let existingContact = null;
             try {
                 // Helper to fetch profile pic safely
                 const getProfilePic = async (targetJid) => {
@@ -499,7 +507,7 @@ class WhatsAppService {
                     }
                 });
 
-                let existingContact = candidates.find(c => c.jid === jid || (lid && c.lid === lid));
+                existingContact = candidates.find(c => c.jid === jid || (lid && c.lid === lid));
 
                 // NEW: If we didn't find it in DB, check if the Socket knows the mapping
                 if (!existingContact && lid && sessions.get(instanceId)) {
@@ -624,6 +632,8 @@ class WhatsAppService {
                     content: savedMsg.quotedMessage.content
                 } : null,
                 time: new Date(savedMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                timestamp: savedMsg.timestamp, // Raw timestamp for sorting
+                instanceId: instanceId, // Required for multi-instance frontend
                 status: savedMsg.status || 'read'
             };
             this.emitToRoom(instanceId, 'new_message', parsedMsg);
@@ -631,13 +641,92 @@ class WhatsAppService {
             if (!fromMe) {
                 const assignmentService = require('./assignment.service');
                 await assignmentService.assignChat(instanceId, instance.user_id, jid);
+
+                // Fetch quoted message content if this is a reply
+                let quotedText = null;
+                if (quotedMessageId) {
+                    try {
+                        const quotedMsg = await Message.findOne({
+                            where: { message_id: quotedMessageId, instance_id: instance.id }
+                        });
+                        if (quotedMsg) {
+                            quotedText = quotedMsg.content;
+                            console.log(`[AI] 💬 Reply to: "${quotedText?.substring(0, 50)}..."`);
+                        }
+                    } catch (err) {
+                        console.log('[AI] Could not fetch quoted message:', err.message);
+                    }
+                }
+
+                // AI TRIGGER LOGIC (Buffered)
+                this.bufferMessage(instance, existingContact || { jid }, {
+                    text: textContent,
+                    type: messageType,
+                    quotedText: quotedText, // Pass quoted message context
+                    media: msg.mediaBuffer ? {
+                        buffer: msg.mediaBuffer,
+                        mimeType: msg.mimeType
+                    } : null
+                });
             }
         } catch (e) {
             console.error('Error saving message:', e);
         }
     }
 
-    async downloadMedia(message, type) {
+    // New Buffering Logic (Debounce)
+    async bufferMessage(instance, contact, messageData) {
+        if (!global.messageBuffers) global.messageBuffers = new Map();
+
+        const key = `${instance.instance_id}:${contact.jid}`;
+
+        // 1. Clear existing timeout
+        if (global.messageBuffers.has(key)) {
+            const existing = global.messageBuffers.get(key);
+            clearTimeout(existing.timeout);
+            existing.parts.push(messageData); // Append new message
+
+            // Re-set timeout
+            existing.timeout = setTimeout(() => this.processBuffer(key), 3500); // Wait 3.5s
+            console.log(`[AI] ⏳ Buffering message for ${contact.jid} (Count: ${existing.parts.length})`);
+        } else {
+            // 2. New Buffer
+            global.messageBuffers.set(key, {
+                instance,
+                contact,
+                parts: [messageData],
+                timeout: setTimeout(() => this.processBuffer(key), 3500)
+            });
+            console.log(`[AI] ⏳ Started buffer for ${contact.jid}`);
+        }
+    }
+
+    async processBuffer(key) {
+        // Retrieve and delete from map immediately
+        const data = global.messageBuffers.get(key);
+        if (!data) return;
+        global.messageBuffers.delete(key);
+
+        const { instance, contact, parts } = data;
+
+        // Combine text parts
+        const combinedText = parts.map(p => p.text).filter(t => t).join(' \n');
+        // Use the last media found, if any
+        const lastMedia = parts.reverse().find(p => p.media)?.media;
+        // Use last message type
+        const finalType = parts[0].type;
+
+        console.log(`[AI] 🔥 Processing buffered batch (${parts.length} messages) for ${contact.jid}`);
+
+        await this.triggerAI(instance, contact, {
+            text: combinedText,
+            type: finalType,
+            quotedText: parts.find(p => p.quotedText)?.quotedText, // Use any quoted text found
+            media: lastMedia
+        });
+    }
+
+    async downloadMedia(message, type, returnBuffer = false) {
         try {
             const stream = await downloadContentFromMessage(message, type);
             let buffer = Buffer.from([]);
@@ -645,15 +734,15 @@ class WhatsAppService {
                 buffer = Buffer.concat([buffer, chunk]);
             }
 
-            const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${type === 'image' ? 'jpg' : (type === 'video' ? 'mp4' : (type === 'sticker' ? 'webp' : 'ogg'))}`;
+            const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${type === 'image' ? 'jpg' : (type === 'video' ? 'mp4' : (type === 'sticker' ? 'webp' : (type === 'audio' ? 'ogg' : 'bin')))}`;
             const filePath = path.join(this.uploadDir, fileName);
             fs.writeFileSync(filePath, buffer);
 
             const publicUrl = `${process.env.PUBLIC_URL || ''}/public/uploads/${fileName}`;
-            return publicUrl;
+            return returnBuffer ? { url: publicUrl, buffer } : publicUrl;
         } catch (error) {
             console.error('[WA] Media download failed:', error);
-            return null;
+            return returnBuffer ? { url: null, buffer: null } : null;
         }
     }
 
@@ -696,6 +785,103 @@ class WhatsAppService {
         }
         if (fs.existsSync(path.join(this.sessionsDir, instanceId))) {
             fs.rmSync(path.join(this.sessionsDir, instanceId), { recursive: true, force: true });
+        }
+    }
+
+    async triggerAI(instance, contact, messageData) {
+        try {
+            console.log(`[AI] Trigger check for contact ${contact.jid} on instance ${instance.instance_id}`);
+
+            // 1. Check Global Settings
+            const siteConfig = await SiteConfig.findOne();
+            if (!siteConfig?.ai_settings?.global_enabled) {
+                console.log(`[AI] ❌ Global AI is DISABLED in SiteConfig`);
+                return;
+            }
+            console.log(`[AI] ✓ Global AI enabled`);
+
+            // 2. Check Instance Settings
+            if (!instance.ai_enabled) {
+                console.log(`[AI] ❌ Instance AI is DISABLED for ${instance.name || instance.instance_id}`);
+                return;
+            }
+            console.log(`[AI] ✓ Instance AI enabled`);
+
+            // 3. Check Contact Settings
+            if (contact.id && !contact.ai_replies_enabled) {
+                console.log(`[AI] ❌ Contact AI replies DISABLED for ${contact.jid}`);
+                return;
+            }
+            console.log(`[AI] ✓ Contact AI enabled (or new contact)`);
+
+            // [SECURITY] 4. Buffering handles the rate limiting now.
+            // We removed the 10s cooldown here to allow the 3.5s buffer to work.
+
+            // 4. Check Group Exemption
+            if (contact.jid?.endsWith('@g.us')) {
+                console.log(`[AI] ❌ Skipping group message`);
+                return;
+            }
+
+            // 5. Check User Plan & Limits
+            const user = await User.findByPk(instance.user_id, { include: ['plan'] });
+            if (!user.ai_enabled) {
+                console.log(`[AI] ❌ User AI is DISABLED (user.ai_enabled = false)`);
+                return;
+            }
+            console.log(`[AI] ✓ User AI enabled`);
+
+            if (!user.plan?.ai_enabled) {
+                console.log(`[AI] ❌ User's plan does NOT have AI enabled (plan: ${user.plan?.name || 'none'})`);
+                return;
+            }
+            console.log(`[AI] ✓ Plan AI enabled (${user.plan.name})`);
+
+            if (user.ai_replies_sent_current_period >= user.plan.ai_reply_limit) {
+                console.log(`[AI] ❌ User ${user.id} has reached AI reply limit (${user.ai_replies_sent_current_period}/${user.plan.ai_reply_limit})`);
+                return;
+            }
+            console.log(`[AI] ✓ AI replies remaining: ${user.plan.ai_reply_limit - user.ai_replies_sent_current_period}`);
+
+            // 6. Generate Response
+            console.log(`[AI] 🔄 Generating response...`);
+
+            // Show "typing" indicator while AI is generating
+            const sock = sessions.get(instance.instance_id);
+            if (sock) {
+                try {
+                    await sock.sendPresenceUpdate('composing', contact.jid);
+                    console.log(`[AI] ⌨️ Typing indicator started for ${contact.jid}`);
+                } catch (presenceErr) {
+                    console.log(`[AI] ⚠️ Could not send typing indicator:`, presenceErr.message);
+                }
+            }
+
+            const aiResponse = await aiService.generateResponse(user, contact, messageData, instance);
+
+            // Stop typing indicator
+            if (sock) {
+                try {
+                    await sock.sendPresenceUpdate('paused', contact.jid);
+                } catch (presenceErr) {
+                    // Ignore - not critical
+                }
+            }
+
+            if (!aiResponse) {
+                console.log(`[AI] ❌ AI service returned no response`);
+                return;
+            }
+
+            // 7. Send Response
+            console.log(`🚀 [AI] Delivering response to ${contact.jid}`);
+            await this.sendMessage(instance.instance_id, contact.jid, { text: aiResponse.text });
+
+            // 8. Track Usage
+            await user.increment('ai_replies_sent_current_period');
+
+        } catch (error) {
+            console.error('[AI] Trigger Error:', error);
         }
     }
 }

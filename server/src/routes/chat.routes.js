@@ -17,4 +17,9 @@ router.get('/contacts', chatController.getContacts);
 router.get('/assigned', chatController.getAssignedChats);
 router.post('/resolve', validate(chatValidator.resolveChatSchema), chatController.resolveChat);
 
+// Commerce & AI Actions
+router.post('/leads', chatController.convertLead);
+router.post('/orders', chatController.createOrder);
+router.patch('/toggle-ai', chatController.toggleAIChat);
+
 module.exports = router;

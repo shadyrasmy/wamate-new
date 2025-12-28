@@ -72,7 +72,11 @@ exports.updateUserPlan = async (req, res, next) => {
             max_instances,
             max_seats,
             is_active,
-            subscription_end_date
+            subscription_end_date,
+            ai_enabled,
+            ai_reply_limit,
+            ai_knowledge_limit,
+            ai_model_id
         } = req.body;
 
         const user = await User.findByPk(userId);
@@ -98,6 +102,11 @@ exports.updateUserPlan = async (req, res, next) => {
         if (max_seats !== undefined) user.max_seats = max_seats;
         if (is_active !== undefined) user.is_active = !!is_active;
         if (subscription_end_date) user.subscription_end_date = subscription_end_date;
+
+        if (ai_enabled !== undefined) user.ai_enabled = !!ai_enabled;
+        if (ai_reply_limit !== undefined) user.ai_reply_limit = ai_reply_limit;
+        if (ai_knowledge_limit !== undefined) user.ai_knowledge_limit = ai_knowledge_limit;
+        if (ai_model_id !== undefined) user.ai_model_id = ai_model_id;
 
         await user.save();
 

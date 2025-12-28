@@ -41,15 +41,19 @@ async function mergeContacts() {
             const lidNumber = lidContact.jid.split('@')[0];
 
             // Look for a matching phone contact (same user_id, instance_id)
-            // that has a lid field matching this LID
+            // Match by: existing LID link, OR same name/push_name
             const [phoneContacts] = await sequelize.query(`
                 SELECT id, jid, lid, name, push_name, profile_pic
                 FROM contacts 
                 WHERE user_id = ? 
                   AND instance_id = ?
                   AND jid LIKE '%@s.whatsapp.net'
-                  AND (lid = ? OR lid IS NULL)
                   AND id != ?
+                  AND (
+                      lid = ?
+                      OR (name IS NOT NULL AND name = ? AND name != '')
+                      OR (push_name IS NOT NULL AND push_name = ? AND push_name != '')
+                  )
                 ORDER BY 
                     CASE WHEN lid = ? THEN 0 ELSE 1 END
                 LIMIT 1
@@ -57,8 +61,10 @@ async function mergeContacts() {
                 replacements: [
                     lidContact.user_id,
                     lidContact.instance_id,
-                    lidContact.jid,
                     lidContact.id,
+                    lidContact.jid,
+                    lidContact.name,
+                    lidContact.push_name,
                     lidContact.jid
                 ]
             });

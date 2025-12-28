@@ -14,6 +14,7 @@ router.patch('/:instanceId', validate(instanceValidator.updateInstanceSchema), i
 router.post('/:instanceId/reconnect', instanceController.reconnectInstance);
 router.delete('/:instanceId', instanceController.deleteInstance);
 router.patch('/:instanceId/toggle-chat', validate(instanceValidator.toggleChatSchema), instanceController.toggleChatLogging);
+router.patch('/:instanceId/toggle-ai', instanceController.toggleAI);
 router.post('/:instanceId/pairing-code', validate(instanceValidator.pairingCodeSchema), instanceController.getPairingCode);
 
 module.exports = router;

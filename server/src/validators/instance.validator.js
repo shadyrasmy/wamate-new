@@ -5,7 +5,8 @@ const createInstanceSchema = Joi.object({
 });
 
 const updateInstanceSchema = Joi.object({
-    name: Joi.string().min(2).max(50).required()
+    name: Joi.string().min(2).max(50).optional(),
+    system_instruction: Joi.string().allow('').optional()
 });
 
 const pairingCodeSchema = Joi.object({

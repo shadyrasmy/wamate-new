@@ -174,15 +174,25 @@ exports.verifyEmail = async (req, res, next) => {
 exports.getMe = async (req, res, next) => {
     try {
         const user = await User.findByPk(req.user.id, {
-            include: [{ model: Plan, as: 'plan', attributes: ['name', 'monthly_message_limit', 'max_instances', 'max_seats'] }]
+            include: [{ model: Plan, as: 'plan', attributes: ['name', 'monthly_message_limit', 'max_instances', 'max_seats', 'ai_enabled', 'ai_reply_limit', 'ai_knowledge_limit'] }]
         });
         if (!user) return next(new AppError('User not found', 404));
 
         user.password = undefined;
 
+        // Calculate subscription status
+        const now = new Date();
+        const endDate = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
+        const isExpired = endDate ? now > endDate : true; // No end date = expired (needs plan)
+        const daysUntilExpiry = endDate ? Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)) : -1;
+
         res.status(200).json({
             status: 'success',
-            data: { user }
+            data: {
+                user,
+                subscription_status: isExpired ? 'expired' : 'active',
+                days_until_expiry: daysUntilExpiry
+            }
         });
     } catch (err) {
         next(err);

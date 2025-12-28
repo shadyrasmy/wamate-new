@@ -88,6 +88,17 @@ const SiteConfig = sequelize.define('SiteConfig', {
         type: DataTypes.JSON,
         allowNull: true,
         defaultValue: null
+    },
+    ai_settings: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: {
+            global_enabled: true,
+            google_api_key: null,
+            pinecone_api_key: null,
+            pinecone_environment: null,
+            default_model: 'gemini-2.5-flash-preview-05-20'
+        }
     }
 }, {
     timestamps: true,

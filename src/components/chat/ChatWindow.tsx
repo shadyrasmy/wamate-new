@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     PaperPlaneRight, Smiley, Paperclip, Microphone,
     DotsThreeVertical, Phone, VideoCamera, Spinner,
-    UserCircle, Circle, X, CaretLeft
+    UserCircle, Circle, X, CaretLeft, Target, ShoppingCart, Robot
 } from '@phosphor-icons/react';
 import MessageBubble from './MessageBubble';
 import { fetchWithAuth, SOCKET_URL } from '@/lib/api';
@@ -22,6 +23,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
     const [messages, setMessages] = useState<any[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const [user, setUser] = useState<any>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [socket, setSocket] = useState<any>(null);
 
@@ -30,6 +32,93 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
     const fileInputRef = useRef<HTMLInputElement>(null);
     const emojiRef = useRef<HTMLDivElement>(null);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+
+    useEffect(() => {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+            setUser(JSON.parse(userData));
+        }
+    }, []);
+
+    // AI/Commerce States
+    const [showLeadModal, setShowLeadModal] = useState(false);
+    const [showOrderModal, setShowOrderModal] = useState(false);
+    const [leadForm, setLeadForm] = useState({
+        name: chat?.name || '',
+        intent: 'sales',
+        status: 'New',
+        governorate: '',
+        city: '',
+        phone2: ''
+    });
+    const [orderForm, setOrderForm] = useState({
+        items: '',
+        total_price: 0,
+        currency: 'USD',
+        governorate: '',
+        city: '',
+        address: '',
+        phone2: ''
+    });
+    const [aiRepliesEnabled, setAiRepliesEnabled] = useState(chat?.ai_replies_enabled ?? true);
+
+    useEffect(() => {
+        setAiRepliesEnabled(chat?.ai_replies_enabled ?? true);
+    }, [chat?.jid, chat?.ai_replies_enabled]);
+
+    const handleToggleAI = async () => {
+        try {
+            const newState = !aiRepliesEnabled;
+            const res = await fetchWithAuth('/chat/toggle-ai', {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    jid: chat.jid,
+                    enabled: newState
+                })
+            });
+            if (res.status === 'success') {
+                setAiRepliesEnabled(newState);
+            }
+        } catch (error) {
+            console.error('Failed to toggle AI', error);
+        }
+    };
+
+    const handleLeadSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await fetchWithAuth('/chat/leads', {
+                method: 'POST',
+                body: JSON.stringify({
+                    jid: chat.jid,
+                    instanceId,
+                    ...leadForm
+                })
+            });
+            setShowLeadModal(false);
+            alert('Contact converted to Lead.');
+        } catch (error) {
+            console.error('Lead conversion failed', error);
+        }
+    };
+
+    const handleOrderSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await fetchWithAuth('/chat/orders', {
+                method: 'POST',
+                body: JSON.stringify({
+                    jid: chat.jid,
+                    instanceId,
+                    ...orderForm
+                })
+            });
+            setShowOrderModal(false);
+            alert('Order created successfully.');
+        } catch (error) {
+            console.error('Order creation failed', error);
+        }
+    };
 
     // Initialize Socket
     useEffect(() => {
@@ -48,7 +137,10 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
             // If it's a group, the jid is the group jid.
             // If it's a DM, the jid is the user's jid.
 
-            const msgJid = parsedMsg.jid || parsedMsg.senderJid || parsedMsg.key?.remoteJid;
+            // 0. Filter by JID to prevent cross-talk
+            // We need to match the message to the current active chat.
+            // The backend sends 'chatJid' which is the remote JID for both incoming and outgoing messages.
+            const msgJid = parsedMsg.chatJid || parsedMsg.jid || parsedMsg.senderJid || parsedMsg.key?.remoteJid;
 
             // Normalize JIDs (handle @s.whatsapp.net vs @g.us consistency if needed, but simple include check usually works)
             if (msgJid !== chat?.jid && parsedMsg.param !== 'chat') {
@@ -282,14 +374,42 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                         <p className="text-[8px] lg:text-[10px] text-gray-500 font-black uppercase tracking-widest opacity-60 truncate">{chat.jid}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 lg:gap-4">
-                    {[VideoCamera, Phone].map((Icon, idx) => (
-                        <button key={idx} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition border border-white/5">
-                            <Icon size={20} weight="bold" />
-                        </button>
-                    ))}
-                    <div className="w-[1px] h-8 bg-white/5 mx-2" />
-                    <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition border border-white/5">
+                <div className="flex items-center gap-1.5 lg:gap-2">
+                    {(user?.role === 'admin' || user?.ai_enabled || user?.plan?.ai_enabled) && (
+                        <>
+                            <button
+                                onClick={handleToggleAI}
+                                title={aiRepliesEnabled ? 'Silence AI' : 'Active AI'}
+                                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${aiRepliesEnabled ? 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20' : 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'}`}
+                            >
+                                <Robot size={22} weight={aiRepliesEnabled ? "fill" : "bold"} />
+                            </button>
+
+                            <div className="w-[1px] h-8 bg-white/5 mx-1" />
+
+                            <button
+                                onClick={() => {
+                                    setLeadForm({ ...leadForm, name: chat?.name || '' });
+                                    setShowLeadModal(true);
+                                }}
+                                title="Create Sales Lead"
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 transition-all border border-orange-500/20"
+                            >
+                                <Target size={22} weight="bold" />
+                            </button>
+                            <button
+                                onClick={() => setShowOrderModal(true)}
+                                title="New Order Pipeline"
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-500 transition-all border border-green-500/20"
+                            >
+                                <ShoppingCart size={22} weight="bold" />
+                            </button>
+
+                            <div className="w-[1px] h-8 bg-white/5 mx-1" />
+                        </>
+                    )}
+
+                    <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5">
                         <DotsThreeVertical size={24} weight="bold" />
                     </button>
                 </div>
@@ -402,6 +522,167 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                     </div>
                 </div>
             </div>
-        </div>
+            {/* Modals */}
+            <AnimatePresence>
+                {showLeadModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80 backdrop-blur-xl">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="glass-card w-full max-w-md rounded-[2.5rem] p-10 border-white/10"
+                        >
+                            <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
+                                <Target size={28} className="text-orange-500" />
+                                Convert to Lead
+                            </h3>
+                            <form onSubmit={handleLeadSubmit} className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Contact Name</label>
+                                    <input
+                                        type="text"
+                                        value={leadForm.name}
+                                        onChange={e => setLeadForm({ ...leadForm, name: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Governorate / State</label>
+                                    <input
+                                        type="text"
+                                        value={leadForm.governorate}
+                                        onChange={e => setLeadForm({ ...leadForm, governorate: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                        placeholder="e.g. Cairo"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">City</label>
+                                        <input
+                                            type="text"
+                                            value={leadForm.city}
+                                            onChange={e => setLeadForm({ ...leadForm, city: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Alt Phone</label>
+                                        <input
+                                            type="text"
+                                            value={leadForm.phone2}
+                                            onChange={e => setLeadForm({ ...leadForm, phone2: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Intent</label>
+                                    <select
+                                        value={leadForm.intent}
+                                        onChange={e => setLeadForm({ ...leadForm, intent: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold focus:outline-none"
+                                    >
+                                        <option value="sales">Sales Opportunity</option>
+                                        <option value="inquiry">General Inquiry</option>
+                                        <option value="support">Technical Support</option>
+                                    </select>
+                                </div>
+                                <div className="pt-6 flex gap-4">
+                                    <button type="button" onClick={() => setShowLeadModal(false)} className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase bg-white/5 rounded-2xl">Abort</button>
+                                    <button type="submit" className="flex-1 bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Save Lead</button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )
+                }
+
+                {
+                    showOrderModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80 backdrop-blur-xl">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="glass-card w-full max-w-md rounded-[2.5rem] p-10 border-white/10"
+                            >
+                                <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
+                                    <ShoppingCart size={28} className="text-green-500" />
+                                    Create Order
+                                </h3>
+                                <form onSubmit={handleOrderSubmit} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Order Items</label>
+                                        <textarea
+                                            value={orderForm.items}
+                                            onChange={e => setOrderForm({ ...orderForm, items: e.target.value })}
+                                            className="w-full h-32 bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                            placeholder="e.g. 2x Nitro Coffee, 1x Bagel"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Governorate</label>
+                                            <input
+                                                type="text"
+                                                value={orderForm.governorate}
+                                                onChange={e => setOrderForm({ ...orderForm, governorate: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">City</label>
+                                            <input
+                                                type="text"
+                                                value={orderForm.city}
+                                                onChange={e => setOrderForm({ ...orderForm, city: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Address</label>
+                                        <input
+                                            type="text"
+                                            value={orderForm.address}
+                                            onChange={e => setOrderForm({ ...orderForm, address: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Alt Phone</label>
+                                            <input
+                                                type="text"
+                                                value={orderForm.phone2}
+                                                onChange={e => setOrderForm({ ...orderForm, phone2: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Total Price</label>
+                                            <input
+                                                type="number"
+                                                value={orderForm.total_price}
+                                                onChange={e => setOrderForm({ ...orderForm, total_price: parseFloat(e.target.value) })}
+                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="pt-6 flex gap-4">
+                                        <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase bg-white/5 rounded-2xl">Abort</button>
+                                        <button type="submit" className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Create Order</button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </div>
+                    )
+                }
+            </AnimatePresence >
+        </div >
     );
 }

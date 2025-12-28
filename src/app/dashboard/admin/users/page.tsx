@@ -7,7 +7,7 @@ import {
     Users, PencilSimple, Trash, Warning,
     CheckCircle, XCircle, Spinner, CaretLeft, CaretRight, X,
     CaretDown, CaretUp, WhatsappLogo, PaperPlaneRight,
-    Shield, Envelope
+    Shield, Envelope, Robot
 } from '@phosphor-icons/react';
 import CustomSelect from '@/components/ui/CustomSelect';
 
@@ -15,6 +15,7 @@ export default function AdminUsersPage() {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingUser, setEditingUser] = useState<any>(null);
+    const [plans, setPlans] = useState<any[]>([]);
     const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
     // Filter/Pagination
@@ -25,7 +26,17 @@ export default function AdminUsersPage() {
 
     useEffect(() => {
         loadUsers();
+        loadPlans();
     }, [page, dateRange]);
+
+    const loadPlans = async () => {
+        try {
+            const data = await fetchWithAuth('/admin/plans');
+            setPlans(data.data.plans);
+        } catch (error) {
+            console.error('Failed to load plans', error);
+        }
+    };
 
     const loadUsers = async () => {
         setLoading(true);
@@ -83,7 +94,11 @@ export default function AdminUsersPage() {
                     max_instances: parseInt(editingUser.max_instances),
                     max_seats: parseInt(editingUser.max_seats),
                     is_active: !!editingUser.is_active,
-                    subscription_end_date: editingUser.subscription_end_date
+                    subscription_end_date: editingUser.subscription_end_date,
+                    ai_enabled: !!editingUser.ai_enabled,
+                    ai_reply_limit: parseInt(editingUser.ai_reply_limit) || 0,
+                    ai_knowledge_limit: parseInt(editingUser.ai_knowledge_limit) || 0,
+                    ai_model_id: editingUser.ai_model_id || 'gemini-3-flash'
                 })
             });
             setEditingUser(null);
@@ -396,30 +411,21 @@ export default function AdminUsersPage() {
                                         label="Service Tier"
                                         value={editingUser.plan?.name || editingUser.plan || 'free'}
                                         onChange={val => {
-                                            // Auto-fill logic based on plan choice
-                                            let limits = {
-                                                monthly_message_limit: 1000,
-                                                max_instances: 1,
-                                                max_seats: 1
-                                            };
-
-                                            if (val === 'pro') {
-                                                limits = { monthly_message_limit: 10000, max_instances: 5, max_seats: 5 };
-                                            } else if (val === 'enterprise') {
-                                                limits = { monthly_message_limit: 100000, max_instances: 20, max_seats: 20 };
-                                            }
+                                            const selectedPlan = plans.find(p => p.name === val);
 
                                             setEditingUser({
                                                 ...editingUser,
                                                 plan: val,
-                                                ...limits
+                                                monthly_message_limit: selectedPlan?.monthly_message_limit || editingUser.monthly_message_limit,
+                                                max_instances: selectedPlan?.max_instances || editingUser.max_instances,
+                                                max_seats: selectedPlan?.max_seats || editingUser.max_seats,
+                                                ai_enabled: selectedPlan?.ai_enabled ?? editingUser.ai_enabled,
+                                                ai_reply_limit: selectedPlan?.ai_reply_limit || editingUser.ai_reply_limit,
+                                                ai_knowledge_limit: selectedPlan?.ai_knowledge_limit || editingUser.ai_knowledge_limit,
+                                                ai_model_id: selectedPlan?.ai_model_id || editingUser.ai_model_id
                                             });
                                         }}
-                                        options={[
-                                            { value: 'free', label: 'FREE NODE' },
-                                            { value: 'pro', label: 'PRO NODE' },
-                                            { value: 'enterprise', label: 'ENTERPRISE CLUSTER' }
-                                        ]}
+                                        options={plans.map(p => ({ value: p.name, label: p.name.toUpperCase() }))}
                                     />
 
                                     <div className="space-y-2">
@@ -448,6 +454,46 @@ export default function AdminUsersPage() {
                                             onChange={e => setEditingUser({ ...editingUser, max_seats: e.target.value })}
                                             className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
                                         />
+                                    </div>
+
+                                    {/* AI Overrides */}
+                                    <div className="col-span-full pt-4 border-t border-white/5 space-y-4">
+                                        <div className="flex items-center justify-between bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                                            <div className="flex items-center gap-3">
+                                                <Robot size={20} className="text-primary" />
+                                                <span className="text-xs font-black uppercase tracking-widest text-white">AI Neural Connection</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditingUser({ ...editingUser, ai_enabled: !editingUser.ai_enabled })}
+                                                className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${editingUser.ai_enabled ? 'bg-primary' : 'bg-gray-700'}`}
+                                            >
+                                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 ${editingUser.ai_enabled ? 'left-7' : 'left-1'}`}></div>
+                                            </button>
+                                        </div>
+
+                                        {editingUser.ai_enabled && (
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">AI Reply Quota</label>
+                                                    <input
+                                                        type="number"
+                                                        value={editingUser.ai_reply_limit || 0}
+                                                        onChange={e => setEditingUser({ ...editingUser, ai_reply_limit: e.target.value })}
+                                                        className="w-full bg-black/20 border border-primary/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary transition font-bold"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">Knowledge Cap</label>
+                                                    <input
+                                                        type="number"
+                                                        value={editingUser.ai_knowledge_limit || 0}
+                                                        onChange={e => setEditingUser({ ...editingUser, ai_knowledge_limit: e.target.value })}
+                                                        className="w-full bg-black/20 border border-primary/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary transition font-bold"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
