@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const User = sequelize.define('User', {
     id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
@@ -101,7 +101,7 @@ const User = sequelize.define('User', {
         allowNull: true // Can be null if not generated yet, but usually generated on msg
     },
     referred_by: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: true,
         references: {
             model: 'users',

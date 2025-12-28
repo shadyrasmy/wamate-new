@@ -8,7 +8,7 @@ const { sequelize } = require('../config/db');
  */
 const LidMapping = sequelize.define('LidMapping', {
     id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
@@ -23,7 +23,7 @@ const LidMapping = sequelize.define('LidMapping', {
         comment: 'The Linked ID (e.g., 98765432@lid)'
     },
     instance_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: false,
         comment: 'The ID of the instance that discovered this mapping'
     }

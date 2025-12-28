@@ -3,12 +3,12 @@ const { sequelize } = require('../config/db');
 
 const Lead = sequelize.define('Lead', {
     id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
     user_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: false,
         references: {
             model: 'users',
@@ -16,7 +16,7 @@ const Lead = sequelize.define('Lead', {
         }
     },
     contact_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: true,
         references: {
             model: 'contacts',

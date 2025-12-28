@@ -3,7 +3,7 @@ const { sequelize } = require('../config/db');
 
 const Contact = sequelize.define('Contact', {
     id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
@@ -32,7 +32,7 @@ const Contact = sequelize.define('Contact', {
         defaultValue: false
     },
     assigned_seat_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: true,
         references: {
             model: 'seats',
@@ -40,11 +40,11 @@ const Contact = sequelize.define('Contact', {
         }
     },
     user_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: true
     },
     instance_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: true
     },
     ai_replies_enabled: {
