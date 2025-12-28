@@ -78,7 +78,12 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
             if (isNaN(timeObj.getTime())) timeObj = new Date();
 
             setChats(prev => {
-                const existing = prev.findIndex(c => c.jid === jid || (c.lid && c.lid === jid));
+                const existing = prev.findIndex(c =>
+                    c.jid === jid ||
+                    (c.lid && c.lid === jid) ||
+                    (msg.lid && c.jid === msg.lid) ||
+                    (msg.lid && c.lid === msg.lid)
+                );
                 let newChat;
 
                 if (existing !== -1) {

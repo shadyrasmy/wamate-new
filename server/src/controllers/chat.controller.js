@@ -1,4 +1,4 @@
-const { Message, WhatsAppInstance, Contact, User, Lead, Order } = require('../models');
+const { Message, WhatsAppInstance, Contact, User, Lead, Order, LidMapping } = require('../models');
 const whatsappService = require('../services/whatsapp.service');
 const { AppError } = require('../middlewares/error.middleware');
 const { Op } = require('sequelize');
@@ -86,6 +86,16 @@ exports.getRecentChats = async (req, res, next) => {
                     lidToPhoneMap[c.lid] = c.jid;
                     // Also store name lookup by LID
                     contactNameMap[c.lid] = { name: c.name || c.push_name, profile_pic: c.profile_pic };
+                }
+            });
+
+            // NEW: Also fetch mappings from LidMapping table for the current instances
+            const dbMappings = await LidMapping.findAll({
+                where: { instance_id: instanceIds }
+            });
+            dbMappings.forEach(m => {
+                if (!lidToPhoneMap[m.lid]) {
+                    lidToPhoneMap[m.lid] = m.jid;
                 }
             });
 

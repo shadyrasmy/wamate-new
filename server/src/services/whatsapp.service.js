@@ -10,7 +10,7 @@ const { Boom } = require('@hapi/boom');
 const pino = require('pino');
 const path = require('path');
 const fs = require('fs');
-const { User, WhatsAppInstance, SiteConfig, Contact, Message, Lead, Order } = require('../models');
+const { User, WhatsAppInstance, SiteConfig, Contact, Message, Lead, Order, LidMapping } = require('../models');
 const { Op } = require('sequelize');
 const QueueService = require('./queue.service');
 const aiService = require('./ai.service');
@@ -169,6 +169,13 @@ class WhatsAppService {
                     const lid = lidValue.includes('@') ? lidValue : `${lidValue}@lid`;
 
                     console.log(`[WA] Processing LID Mapping: ${phoneJid} <-> ${lid}`);
+
+                    // NEW: Persist mapping to lid_mappings table
+                    await LidMapping.upsert({
+                        jid: phoneJid,
+                        lid: lid,
+                        instance_id: instance.id
+                    }).catch(err => console.error('[WA] Error upserting LidMapping:', err));
 
                     const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId } });
                     if (!instance) return;
@@ -492,6 +499,22 @@ class WhatsAppService {
                     } catch (e) { return null; }
                 };
 
+                // NEW: If this is an LID, check if we have a persistent mapping to a Phone JID
+                if (jid.endsWith('@lid') || (lid && lid.endsWith('@lid'))) {
+                    const lookupLid = jid.endsWith('@lid') ? jid : lid;
+                    try {
+                        const mapping = await LidMapping.findOne({
+                            where: { lid: lookupLid, instance_id: instance.id }
+                        });
+                        if (mapping) {
+                            console.log(`[WA] Found persistent mapping for message: ${lookupLid} -> ${mapping.jid}`);
+                            rawJid = mapping.jid;
+                        }
+                    } catch (err) {
+                        console.error('[WA] Error looking up LidMapping in saveMessage:', err);
+                    }
+                }
+
                 // Find candidates for merging
                 let candidates = await Contact.findAll({
                     where: {
@@ -566,13 +589,18 @@ class WhatsAppService {
                     profilePicUrl = await getProfilePic(jid);
                 }
 
+                // FIX: If fromMe is true, DO NOT update the contact name to the pushName (which is the user's own name)
+                const newName = fromMe
+                    ? (existingContact?.name || jid.split('@')[0])
+                    : (msg.pushName || existingContact?.name || jid.split('@')[0]);
+
                 await Contact.upsert({
                     jid: jid,
                     lid: lid || existingContact?.lid,
                     user_id: instance.user_id,
                     instance_id: instance.id,
-                    name: (isGroup ? (existingContact?.name || jid.split('@')[0]) : (msg.pushName || existingContact?.name || jid.split('@')[0])),
-                    push_name: isGroup ? null : (msg.pushName || existingContact?.push_name),
+                    name: isGroup ? (existingContact?.name || jid.split('@')[0]) : newName,
+                    push_name: fromMe ? existingContact?.push_name : (isGroup ? null : (msg.pushName || existingContact?.push_name)),
                     is_group: isGroup,
                     profile_pic: profilePicUrl,
                     last_active: new Date()
@@ -627,6 +655,7 @@ class WhatsAppService {
                 senderName: savedMsg.sender_name,
                 senderJid: savedMsg.sender_jid,
                 chatJid: savedMsg.jid, // CRITICAL: The actual conversation JID (remote)
+                lid: lid || existingContact?.lid, // Pass LID for frontend matching
                 quotedMessage: savedMsg.quotedMessage ? {
                     id: savedMsg.quotedMessage.message_id,
                     content: savedMsg.quotedMessage.content

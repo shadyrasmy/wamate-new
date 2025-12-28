@@ -12,6 +12,7 @@ const Lead = require('./Lead');
 const Order = require('./Order');
 const Knowledge = require('./Knowledge');
 const Bot = require('./Bot');
+const LidMapping = require('./LidMapping');
 const { sequelize } = require('../config/db');
 
 // User -> Instances
@@ -103,6 +104,10 @@ Bot.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 WhatsAppInstance.hasMany(Bot, { foreignKey: 'instance_id', as: 'instance_bots' });
 Bot.belongsTo(WhatsAppInstance, { foreignKey: 'instance_id', as: 'instance' });
 
+// Instance -> LidMappings
+WhatsAppInstance.hasMany(LidMapping, { foreignKey: 'instance_id', as: 'lid_mappings' });
+LidMapping.belongsTo(WhatsAppInstance, { foreignKey: 'instance_id', as: 'instance' });
+
 // Export everything
 module.exports = {
     sequelize,
@@ -120,5 +125,6 @@ module.exports = {
     Lead,
     Order,
     Knowledge,
-    Bot
+    Bot,
+    LidMapping
 };
