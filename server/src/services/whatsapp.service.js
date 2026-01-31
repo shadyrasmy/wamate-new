@@ -80,7 +80,20 @@ class WhatsAppService {
 
                 if (connection === 'close') {
                     const statusCode = (lastDisconnect?.error instanceof Boom)?.output?.statusCode;
-                    const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+                    const errorMessage = lastDisconnect?.error?.message || '';
+
+                    // Detect session corruption (Bad MAC = session keys mismatch)
+                    const isSessionCorrupted = errorMessage.includes('Bad MAC') ||
+                        errorMessage.includes('prekey bundle') ||
+                        errorMessage.includes('decryption-failed');
+
+                    if (isSessionCorrupted) {
+                        console.error(`[WA] ⚠️ Session ${instanceId} appears CORRUPTED (Bad MAC)`);
+                        console.error('[WA] Consider deleting session folder and re-scanning QR');
+                        retryCounts.set(instanceId, MAX_RETRIES); // Stop retrying corrupted sessions
+                    }
+
+                    const shouldReconnect = statusCode !== DisconnectReason.loggedOut && !isSessionCorrupted;
 
                     console.log(`[WA] Connection closed for ${instanceId}. Reconnecting: ${shouldReconnect}`);
 
@@ -151,10 +164,11 @@ class WhatsAppService {
                 }
             });
 
-            // Handle LID-Phone mapping updates (THE KEY FIX for JID-LID connection!)
+            // Handle LID-Phone mapping updates (WITH DUPLICATE VALIDATION)
             sock.ev.on('lid-mapping.update', async (mapping) => {
                 try {
-                    console.log(`[DEBUG] LID Mapping Update: `, JSON.stringify(mapping));
+                    console.log(`[DEBUG] 🔄 LID Mapping Event Fired!`);
+                    console.log(`[DEBUG] Full mapping data:`, JSON.stringify(mapping));
 
                     // Extract pn (phone number) and lid from the mapping
                     const pn = mapping?.pn || mapping?.pnUser;
@@ -189,6 +203,21 @@ class WhatsAppService {
 
                     const phoneContact = candidates.find(c => c.jid === phoneJid);
                     const lidContact = candidates.find(c => c.jid === lid && c.id !== phoneContact?.id);
+
+                    // 🚨 VALIDATION: Check if this LID is already assigned to a DIFFERENT phone number
+                    const lidOwnerCheck = await Contact.findOne({
+                        where: {
+                            lid: lid,
+                            jid: { [Op.ne]: phoneJid },
+                            jid: { [Op.notLike]: '%@lid' } // Must be a phone number, not another LID
+                        }
+                    });
+
+                    if (lidOwnerCheck) {
+                        console.log(`[WA] ⚠️  CONFLICT DETECTED: LID ${lid} is already assigned to ${lidOwnerCheck.jid}`);
+                        console.log(`[WA]    Baileys is trying to assign it to ${phoneJid} - REJECTING to prevent cross-contamination`);
+                        return; // Skip this mapping - it's corrupted data from Baileys
+                    }
 
                     if (phoneContact && lidContact) {
                         // MERGE: We have both - merge LID contact into phone contact
@@ -438,6 +467,14 @@ class WhatsAppService {
             } else if (m.stickerMessage) {
                 textContent = '👾 Sticker';
                 mediaUrl = await this.downloadMedia(m.stickerMessage, 'sticker');
+            } else if (m.documentMessage) {
+                // Handle documents (PDF, Excel, Word, etc.)
+                const fileName = m.documentMessage.fileName || 'Document';
+                textContent = `📄 ${fileName}`;
+                const mediaData = await this.downloadMedia(m.documentMessage, 'document', true);
+                mediaUrl = mediaData.url;
+                msg.mediaBuffer = mediaData.buffer;
+                msg.mimeType = m.documentMessage.mimetype;
             } else if (m.albumMessage) {
                 // Handle album (usually contains multiple images, we'll try to extract context or generic)
                 textContent = m.albumMessage.caption || '📸 Album';
@@ -566,17 +603,67 @@ class WhatsAppService {
                     profilePicUrl = await getProfilePic(jid);
                 }
 
-                await Contact.upsert({
+                const contactData = {
                     jid: jid,
                     lid: lid || existingContact?.lid,
                     user_id: instance.user_id,
                     instance_id: instance.id,
-                    name: (isGroup ? (existingContact?.name || jid.split('@')[0]) : (msg.pushName || existingContact?.name || jid.split('@')[0])),
-                    push_name: isGroup ? null : (msg.pushName || existingContact?.push_name),
                     is_group: isGroup,
                     profile_pic: profilePicUrl,
                     last_active: new Date()
-                });
+                };
+
+                // Only update name if it's an incoming message or if the contact has no name yet
+                if (!fromMe || !existingContact?.name) {
+                    contactData.name = (isGroup ? (existingContact?.name || jid.split('@')[0]) : (msg.pushName || existingContact?.name || jid.split('@')[0]));
+                    contactData.push_name = isGroup ? null : (msg.pushName || existingContact?.push_name);
+                }
+
+                await Contact.upsert(contactData);
+
+                // 🔄 SMART AUTO-MERGE: If this is a LID contact with a profile pic, check for duplicates
+                if (jid.endsWith('@lid') && profilePicUrl && !isGroup) {
+                    console.log(`[WA] 🔍 New LID contact with photo - checking for duplicates: ${jid}`);
+
+                    // Look for other contacts with same profile photo
+                    const duplicates = await Contact.findAll({
+                        where: {
+                            profile_pic: profilePicUrl,
+                            user_id: instance.user_id,
+                            instance_id: instance.id,
+                            id: { [Op.ne]: existingContact?.id || 'none' }
+                        }
+                    });
+
+                    // Find the phone contact (prefer phone over LID)
+                    const phoneContact = duplicates.find(d => !d.jid.endsWith('@lid'));
+
+                    if (phoneContact) {
+                        console.log(`[WA] 🎯 Auto-merge opportunity: LID ${jid} matches phone ${phoneContact.jid}`);
+                        console.log(`[WA]    Updating phone contact with LID mapping...`);
+
+                        // Update the phone contact with the LID
+                        if (!phoneContact.lid) {
+                            phoneContact.lid = jid;
+                            await phoneContact.save();
+                            console.log(`[WA] ✅ Auto-merged! Phone contact now has LID.`);
+                        }
+
+                        // Migrate any messages from LID to phone
+                        const msgCount = await Message.count({ where: { jid: jid, instance_id: instance.id } });
+                        if (msgCount > 0) {
+                            await Message.update(
+                                { jid: phoneContact.jid },
+                                { where: { jid: jid, instance_id: instance.id } }
+                            );
+                            console.log(`[WA] 📨 Migrated ${msgCount} messages from LID to phone contact`);
+                        }
+
+                        // Delete the LID-only contact
+                        await Contact.destroy({ where: { jid: jid, user_id: instance.user_id } });
+                        console.log(`[WA] 🗑️  Deleted duplicate LID contact`);
+                    }
+                }
 
                 // 2. Individual Sender Contact (if in group)
                 if (isGroup && participant) {
@@ -601,21 +688,27 @@ class WhatsAppService {
                 console.error('[DEBUG] Error upserting contact:', err);
             }
 
-            // Save Message
-            const [savedMsg, created] = await Message.upsert({
-                instance_id: instance.id,
-                user_id: instance.user_id,
-                message_id: msg.key.id,
-                jid,
-                from_me: fromMe,
-                type: messageType,
-                content: textContent,
-                media_url: mediaUrl,
-                timestamp: new Date((msg.messageTimestamp || Date.now() / 1000) * 1000),
-                sender_jid: participant || (fromMe ? 'me' : jid),
-                sender_name: fromMe ? 'Me' : (msg.pushName || null),
-                quoted_message_id: quotedMessageId
-            });
+            // Save Message with graceful error handling
+            let savedMsg;
+            try {
+                [savedMsg] = await Message.upsert({
+                    instance_id: instance.id,
+                    user_id: instance.user_id,
+                    message_id: msg.key.id,
+                    jid,
+                    from_me: fromMe,
+                    type: messageType,
+                    content: textContent,
+                    media_url: mediaUrl,
+                    timestamp: new Date((msg.messageTimestamp || Date.now() / 1000) * 1000),
+                    sender_jid: participant || (fromMe ? 'me' : jid),
+                    sender_name: fromMe ? 'Me' : (msg.pushName || null),
+                    quoted_message_id: quotedMessageId
+                });
+            } catch (dbErr) {
+                console.error('[WA] ⚠️ DB save failed, skipping message:', dbErr.message);
+                return; // Don't crash the pipeline - continue processing other messages
+            }
 
             // Emit for real-time UI
             const parsedMsg = {
@@ -728,13 +821,21 @@ class WhatsAppService {
 
     async downloadMedia(message, type, returnBuffer = false) {
         try {
+            // Validate media key exists to prevent download storms
+            if (!message?.mediaKey) {
+                console.log('[WA] ⚠️ Empty media key - skipping download');
+                return returnBuffer ? { url: null, buffer: null } : null;
+            }
+
             const stream = await downloadContentFromMessage(message, type);
             let buffer = Buffer.from([]);
             for await (const chunk of stream) {
                 buffer = Buffer.concat([buffer, chunk]);
             }
 
-            const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${type === 'image' ? 'jpg' : (type === 'video' ? 'mp4' : (type === 'sticker' ? 'webp' : (type === 'audio' ? 'ogg' : 'bin')))}`;
+            // Determine file extension based on type
+            const ext = type === 'image' ? 'jpg' : (type === 'video' ? 'mp4' : (type === 'sticker' ? 'webp' : (type === 'audio' ? 'ogg' : (type === 'document' ? (message.fileName?.split('.').pop() || 'pdf') : 'bin'))));
+            const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${ext}`;
             const filePath = path.join(this.uploadDir, fileName);
             fs.writeFileSync(filePath, buffer);
 

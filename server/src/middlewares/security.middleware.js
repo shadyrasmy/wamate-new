@@ -7,6 +7,10 @@ const setupSecurity = (app) => {
     app.use(helmet());
 
     // 2. CORS configuration
+    const envAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS
+        ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(o => o.trim())
+        : [];
+
     const allowedOrigins = [
         'http://localhost:3000',
         'http://localhost:3001',
@@ -14,7 +18,8 @@ const setupSecurity = (app) => {
         process.env.FRONTEND_URL,
         process.env.PUBLIC_URL,
         'https://beta.wamateai.online',
-        'https://apibeta.wamateai.online'
+        'https://apibeta.wamateai.online',
+        ...envAllowedOrigins
     ];
     const corsOptions = {
         origin: function (origin, callback) {

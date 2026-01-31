@@ -10,10 +10,16 @@ const sequelize = new Sequelize(
         dialect: 'mysql',
         logging: false,
         pool: {
-            max: 20, // Reduced to prevent hitting 'max_user_connections' limits in dev/shared hosting
+            max: 10, // Reduced to prevent connection exhaustion during retry storms
             min: 0,
             acquire: 30000,
             idle: 10000
+        },
+        retry: {
+            max: 3 // Limit DB operation retries
+        },
+        dialectOptions: {
+            connectTimeout: 10000 // 10s connection timeout
         }
     }
 );

@@ -20,9 +20,14 @@ class QueueService {
 
             limiter.on('failed', async (error, jobInfo) => {
                 console.warn(`[Queue] Job ${jobInfo.options.id} failed: ${error}`);
-                if (jobInfo.retryCount < 2) { // Retry twice
-                    return 1000; // Wait 1s before retry
+                if (jobInfo.retryCount < 3) {
+                    // Exponential backoff: 2s, 4s, 8s
+                    const delay = Math.pow(2, jobInfo.retryCount + 1) * 1000;
+                    console.log(`[Queue] Retrying in ${delay}ms (attempt ${jobInfo.retryCount + 1}/3)`);
+                    return delay;
                 }
+                console.error(`[Queue] Job failed permanently after ${jobInfo.retryCount} retries`);
+                return null; // Stop retrying
             });
 
             instanceLimiters.set(instanceId, limiter);

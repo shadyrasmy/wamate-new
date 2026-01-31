@@ -64,8 +64,9 @@ export default function AdminPlansPage() {
         try {
             await fetchWithAuth(`/admin/plans/${planId}`, { method: 'DELETE' });
             loadPlans();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Delete failed', error);
+            alert(error.message || 'Failed to delete plan. It may be assigned to users.');
         }
     };
 

@@ -401,11 +401,12 @@ exports.uploadMedia = async (req, res, next) => {
 
 exports.getAssignedChats = async (req, res, next) => {
     try {
-        const { Contact, Message } = require('../models');
+        const { Contact, Message, WhatsAppInstance } = require('../models');
 
-        // Find contacts assigned to this seat
+        // Find contacts assigned to this seat - include instance for frontend
         const contacts = await Contact.findAll({
             where: { assigned_seat_id: req.user.id },
+            include: [{ model: WhatsAppInstance, as: 'instance', attributes: ['instance_id', 'name'] }],
             order: [['updatedAt', 'DESC']]
         });
 

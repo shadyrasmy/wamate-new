@@ -52,7 +52,7 @@ exports.register = async (req, res, next) => {
             }
         }
 
-        // 4. Create User (Unverified)
+        // 4. Create User (Unverified) - with 14-day trial
         const user = await User.create({
             name,
             email,
@@ -63,7 +63,8 @@ exports.register = async (req, res, next) => {
             verification_token: verificationToken,
             referral_code: myReferralCode,
             referred_by: referredBy,
-            referral_balance: 0.00
+            referral_balance: 0.00,
+            subscription_end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14-day trial
         });
 
         // 5. Send Verification Email

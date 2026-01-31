@@ -131,7 +131,7 @@ export default function SeatDashboard() {
                 {selectedChat ? (
                     <ChatWindow
                         chat={selectedChat}
-                        instanceId={selectedChat.instance_id}
+                        instanceId={selectedChat.instance?.instance_id || selectedChat.instanceId}
                     />
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
