@@ -67,7 +67,9 @@ export default function OrdersPage() {
     const handleExport = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/export?status=${filter}`, {
+            // Use the centralized API_URL which handles the env var logic
+            const { API_URL } = await import('@/lib/api');
+            const res = await fetch(`${API_URL}/orders/export?status=${filter}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const blob = await res.blob();
@@ -283,8 +285,8 @@ export default function OrdersPage() {
                                             key={s}
                                             onClick={() => setEditingOrder({ ...editingOrder, status: s })}
                                             className={`px-3 py-2 rounded-lg text-xs font-bold border transition ${editingOrder.status === s
-                                                    ? 'bg-blue-600 text-white border-blue-500'
-                                                    : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                                                ? 'bg-blue-600 text-white border-blue-500'
+                                                : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
                                                 }`}
                                         >
                                             {s}

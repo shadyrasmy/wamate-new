@@ -3,12 +3,12 @@ const { sequelize } = require('../config/db');
 
 const Seat = sequelize.define('Seat', {
     id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
     user_id: { // Owner of the seat
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: false
     },
     name: {
@@ -41,7 +41,7 @@ const Seat = sequelize.define('Seat', {
         allowNull: true
     },
     instance_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: true
     }
 }, {

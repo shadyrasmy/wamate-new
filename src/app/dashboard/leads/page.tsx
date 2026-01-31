@@ -49,7 +49,9 @@ export default function LeadsPage() {
         try {
             // Need to fetch blob manually since fetchWithAuth parses JSON
             const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/leads/export?status=${filter}`, {
+            // Use the centralized API_URL which handles the env var logic
+            const { API_URL } = await import('@/lib/api');
+            const res = await fetch(`${API_URL}/leads/export?status=${filter}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const blob = await res.blob();
@@ -97,8 +99,8 @@ export default function LeadsPage() {
                         key={status}
                         onClick={() => { setFilter(status); setPage(1); }}
                         className={`px-4 py-2 rounded-xl text-sm font-bold border transition whitespace-nowrap ${filter === status
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
                             }`}
                     >
                         {status}

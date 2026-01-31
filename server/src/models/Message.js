@@ -3,7 +3,7 @@ const { sequelize } = require('../config/db');
 
 const Message = sequelize.define('Message', {
     id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
@@ -52,7 +52,7 @@ const Message = sequelize.define('Message', {
         allowNull: true
     },
     user_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(36),
         allowNull: true // Optional for now during transition
     }
 }, {
