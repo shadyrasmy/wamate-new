@@ -21,21 +21,25 @@ const setupSecurity = (app) => {
         'https://apibeta.wamateai.online',
         ...envAllowedOrigins
     ];
+    const validAllowedOrigins = allowedOrigins.filter(Boolean);
+    console.log('[Security] Initializing CORS with allowed origins:', validAllowedOrigins);
+
     const corsOptions = {
         origin: function (origin, callback) {
             // Allow requests with no origin (like mobile apps or curl requests)
             if (!origin) return callback(null, true);
-            // Filter out undefined/null from allowedOrigins before checking
-            const validAllowedOrigins = allowedOrigins.filter(Boolean);
+
             if (validAllowedOrigins.indexOf(origin) !== -1) {
                 callback(null, true);
             } else {
-                console.log('Blocked CORS:', origin);
-                callback(new Error('Not allowed by CORS')); // Block if not in allowed list
+                console.warn(`[CORS] Blocked origin: ${origin}. Not in allowed list:`, validAllowedOrigins);
+                // Passing false instead of Error prevents Express from crashing the preflight response
+                // without headers, which leads to clearer "Blocked by CORS" messages in browser.
+                callback(null, false);
             }
         },
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
         credentials: true,
         maxAge: 86400 // 24 hours
     };
