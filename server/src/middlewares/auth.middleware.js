@@ -35,8 +35,28 @@ exports.protect = async (req, res, next) => {
             req.user = user;
             return next();
         } catch (err) {
+            // 2.5 Try Supabase Token Verification (Dual Auth)
+            // Import dynamically to avoid circular issues if any, keeping it clean
+            const { verifySupabaseToken } = require('../services/supabase.service');
+            const supabaseUser = await verifySupabaseToken(token);
+
+            if (supabaseUser) {
+                // Valid Supabase Token -> Sync User Local
+                const { syncUserFromSupabase } = require('../services/user.service');
+                try {
+                    // Sync without password update (we don't have password here)
+                    const user = await syncUserFromSupabase(supabaseUser);
+                    if (user) {
+                        req.user = user;
+                        return next();
+                    }
+                } catch (syncErr) {
+                    console.error('[Auth Middleware] Sync failed:', syncErr.message);
+                }
+            }
+
             // 4. Fallback to Static Access Token (UUID) for API Integrations
-            if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+            if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError' || supabaseUser === null) {
                 const { User } = require('../models');
                 const user = await User.findOne({ where: { access_token: token } });
 
@@ -46,7 +66,7 @@ exports.protect = async (req, res, next) => {
                 }
             }
 
-            // If both fail, return original JWT error messages
+            // If both fail, return original JWT error messages (or generic if it was Supabase check that failed)
             if (err.name === 'JsonWebTokenError') return next(new AppError('Invalid token. Check your credentials.', 401));
             if (err.name === 'TokenExpiredError') return next(new AppError('Token expired. Use a permanent access_token for integrations.', 401));
 

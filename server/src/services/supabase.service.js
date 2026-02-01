@@ -38,6 +38,29 @@ const authenticateWithSupabase = async (email, password) => {
     }
 };
 
+/**
+ * Verifies a Supabase JWT.
+ * @param {string} token 
+ * @returns {Promise<Object|null>} Decoded user object if valid, null if invalid
+ */
+const verifySupabaseToken = async (token) => {
+    if (!supabase) return null;
+
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+
+        if (error || !user) {
+            return null;
+        }
+
+        return user;
+    } catch (err) {
+        console.error('[Supabase Auth] Token verification failed:', err.message);
+        return null;
+    }
+};
+
 module.exports = {
-    authenticateWithSupabase
+    authenticateWithSupabase,
+    verifySupabaseToken
 };
