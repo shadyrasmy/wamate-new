@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
     const searchParams = useSearchParams();
     const [token, setToken] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
-    const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+    const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
     const [isTokenValid, setIsTokenValid] = useState(true);
 
     useEffect(() => {
@@ -127,5 +127,13 @@ export default function ResetPasswordPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-foreground font-bold p-10">Loading...</div>}>
+            <ResetPasswordContent />
+        </Suspense>
     );
 }

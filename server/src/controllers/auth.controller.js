@@ -264,12 +264,8 @@ exports.forgotPassword = async (req, res, next) => {
 
             console.log(`[Auth] Password reset email requested. Target Base URL: ${baseUrl}`);
 
-            // Try to use template first
-            await emailService.sendTemplate(user.email, 'password_reset', {
-                name: user.name,
-                reset_link: resetLink,
-                code: resetToken
-            });
+            // Try to use template first, with fallback in service
+            await emailService.sendPasswordResetEmail(user, resetLink, resetToken);
         } catch (emailError) {
             console.error('[Auth] Failed to send password reset email:', emailError.message);
             // Still return success to prevent email enumeration

@@ -69,6 +69,32 @@ class EmailService {
         }
     }
 
+    async sendPasswordResetEmail(user, resetLink, code) {
+        try {
+            // Try to use template first
+            await this.sendTemplate(user.email, 'password_reset', {
+                name: user.name,
+                reset_link: resetLink,
+                code: code
+            });
+        } catch (error) {
+            console.warn('[EmailService] Template send failed, falling back to hardcoded:', error.message);
+            // Fallback
+            const html = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2>Password Reset Request</h2>
+                    <p>Hi ${user.name},</p>
+                    <p>We received a request to reset your password. Click the button below to create a new password:</p>
+                    <p><a href="${resetLink}" style="background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
+                    <p>Or use this reset code: <strong>${code}</strong></p>
+                    <p>This link will expire in 1 hour.</p>
+                    <p>If you didn't request this, you can ignore this email.</p>
+                </div>
+            `;
+            await this.sendMail(user.email, 'Password Reset Request - WaMate', html);
+        }
+    }
+
     async sendTemplate(to, templateKey, variables = {}) {
         const template = await EmailTemplate.findOne({ where: { key: templateKey, is_active: true } });
         if (!template) throw new Error(`Template '${templateKey}' not found`);
