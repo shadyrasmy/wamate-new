@@ -69,6 +69,22 @@ const DEFAULT_TEMPLATES = [
     <p><a href="{{dashboard_link}}" style="background-color: #EF4444; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reactivate Subscription</a></p>
 </div>`,
         variables: ['{{name}}', '{{dashboard_link}}']
+    },
+    {
+        key: 'password_reset',
+        name: 'Password Reset',
+        subject: 'Password Reset Request - WaMate',
+        body: `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+    <h2 style="color: #4F46E5;">Password Reset Request</h2>
+    <p>Hi {{name}},</p>
+    <p>We received a request to reset your password. Click the button below to create a new password:</p>
+    <p><a href="{{reset_link}}" style="background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
+    <p>Or use this reset code: <strong>{{code}}</strong></p>
+    <p>This link will expire in 1 hour.</p>
+    <p>If you didn't request this, you can ignore this email.</p>
+</div>`,
+        variables: ['{{name}}', '{{reset_link}}', '{{code}}']
     }
 ];
 

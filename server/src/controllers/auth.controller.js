@@ -221,3 +221,115 @@ exports.getMe = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.forgotPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return next(new AppError('Please provide your email address', 400));
+        }
+
+        // 1. Check if user exists
+        const user = await User.findOne({ where: { email } });
+
+        // Always return success to prevent email enumeration
+        if (!user) {
+            return res.status(200).json({
+                status: 'success',
+                message: 'If an account with that email exists, a password reset link has been sent.'
+            });
+        }
+
+        // 2. Generate reset token
+        const resetToken = createVerificationToken();
+        const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+        // 3. Save token to user
+        user.password_reset_token = resetToken;
+        user.password_reset_expires = resetExpires;
+        await user.save();
+
+        // 4. Send reset email
+        try {
+            let rawBaseUrl = process.env.PUBLIC_URL || process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+
+            // Fix missing protocol if user provided just domain
+            if (rawBaseUrl && !rawBaseUrl.startsWith('http')) {
+                rawBaseUrl = `https://${rawBaseUrl}`;
+            }
+
+            const baseUrl = rawBaseUrl;
+            const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
+
+            console.log(`[Auth] Password reset email requested. Target Base URL: ${baseUrl}`);
+
+            // Try to use template first
+            await emailService.sendTemplate(user.email, 'password_reset', {
+                name: user.name,
+                reset_link: resetLink,
+                code: resetToken
+            });
+        } catch (emailError) {
+            console.error('[Auth] Failed to send password reset email:', emailError.message);
+            // Still return success to prevent email enumeration
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'If an account with that email exists, a password reset link has been sent.'
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.resetPassword = async (req, res, next) => {
+    try {
+        const { token, password } = req.body;
+
+        if (!token || !password) {
+            return next(new AppError('Please provide both token and new password', 400));
+        }
+
+        // 1. Find user with valid reset token
+        const user = await User.findOne({
+            where: {
+                password_reset_token: token,
+                password_reset_expires: {
+                    [require('sequelize').Op.gt]: new Date()
+                }
+            }
+        });
+
+        if (!user) {
+            return next(new AppError('Invalid or expired reset token', 400));
+        }
+
+        // 2. Hash new password
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        // 3. Update user password and clear reset token
+        user.password = hashedPassword;
+        user.password_reset_token = null;
+        user.password_reset_expires = null;
+        await user.save();
+
+        // 4. Send confirmation email
+        try {
+            await emailService.sendTemplate(user.email, 'welcome', {
+                name: user.name,
+                dashboard_link: `${process.env.PUBLIC_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`
+            });
+        } catch (error) {
+            console.warn('Failed to send password reset confirmation email:', error.message);
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Password has been reset successfully. You can now log in with your new password.'
+        });
+    } catch (err) {
+        next(err);
+    }
+};
