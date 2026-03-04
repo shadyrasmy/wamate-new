@@ -8,7 +8,7 @@ const sequelize = new Sequelize(
     {
         host: process.env.DB_HOST || 'localhost',
         dialect: 'mysql',
-        logging: false,
+        logging: (msg) => console.log(`[Sequelize] ${msg}`), // Explicit logging
         pool: {
             max: 10, // Reduced to prevent connection exhaustion during retry storms
             min: 0,

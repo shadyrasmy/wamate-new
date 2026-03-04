@@ -51,6 +51,7 @@ const setupSecurity = (app) => {
         max: 100, // Limit each IP to 100 requests per windowMs
         standardHeaders: true,
         legacyHeaders: false,
+        validate: { trustProxy: false }, // Disable validation check for trust proxy
         message: {
             status: 'error',
             message: 'Too many requests from this IP, please try again after 15 minutes'
