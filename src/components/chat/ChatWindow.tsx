@@ -12,6 +12,7 @@ import { fetchWithAuth, SOCKET_URL } from '@/lib/api';
 import { io } from 'socket.io-client';
 
 import EmojiPicker, { Theme } from 'emoji-picker-react';
+import { OrderPanel } from './OrderPanel';
 
 interface ChatWindowProps {
     chat: any | null;
@@ -43,6 +44,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
     // AI/Commerce States
     const [showLeadModal, setShowLeadModal] = useState(false);
     const [showOrderModal, setShowOrderModal] = useState(false);
+    const [showOrderPanel, setShowOrderPanel] = useState(false);
     const [leadForm, setLeadForm] = useState({
         name: chat?.name || '',
         intent: 'sales',
@@ -343,264 +345,176 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
     }
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-background relative">
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] invert" />
+        <div className="flex flex-row h-full w-full relative">
+            {/* Main Chat Area */}
+            <div className={`flex flex-col flex-1 h-full relative transition-all duration-300 ${showOrderPanel ? 'w-full lg:w-[calc(100%-384px)]' : 'w-full'}`}>
+                {/* Header */}
+                <div className="h-16 lg:h-20 px-4 lg:px-8 bg-carbon/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center z-20 sticky top-0">
+                    <div className="flex items-center gap-3 lg:gap-5">
+                        {onBack && (
+                            <button
+                                onClick={onBack}
+                                className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-gray-400 hover:text-white transition border border-white/5 mr-1"
+                            >
+                                <CaretLeft size={20} weight="bold" />
+                            </button>
+                        )}
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-gradient-to-tr from-primary to-secondary p-[1px] flex-shrink-0">
+                            <div className="w-full h-full bg-carbon rounded-2xl flex items-center justify-center text-white font-black text-xl overflow-hidden relative">
+                                {chat.profilePicUrl ? (
+                                    <img src={chat.profilePicUrl} alt={chat.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    chat.name?.charAt(0) || <UserCircle size={24} />
+                                )}
+                            </div>
+                        </div>
+                        <div className="min-w-0">
+                            <h3 className="font-bold text-white text-base lg:text-lg flex items-center gap-2 truncate">
+                                {chat.name}
+                                <Circle size={6} weight="fill" className="text-green-500 animate-pulse flex-shrink-0" />
+                            </h3>
+                            <p className="text-[8px] lg:text-[10px] text-gray-500 font-black uppercase tracking-widest opacity-60 truncate">{chat.jid}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 lg:gap-2">
+                        {(user?.role === 'admin' || user?.ai_enabled || user?.plan?.ai_enabled) && (
+                            <>
+                                <button
+                                    onClick={handleToggleAI}
+                                    title={aiRepliesEnabled ? 'Silence AI' : 'Active AI'}
+                                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${aiRepliesEnabled ? 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20' : 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'}`}
+                                >
+                                    <Robot size={22} weight={aiRepliesEnabled ? "fill" : "bold"} />
+                                </button>
 
-            {/* Header */}
-            <div className="h-16 lg:h-20 px-4 lg:px-8 bg-carbon/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center z-20 sticky top-0">
-                <div className="flex items-center gap-3 lg:gap-5">
-                    {onBack && (
-                        <button
-                            onClick={onBack}
-                            className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-gray-400 hover:text-white transition border border-white/5 mr-1"
-                        >
-                            <CaretLeft size={20} weight="bold" />
+                                <button
+                                    onClick={() => setShowOrderPanel(!showOrderPanel)}
+                                    title="CRM / Orders"
+                                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${showOrderPanel ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border-white/5'}`}
+                                >
+                                    <ShoppingCart size={22} weight={showOrderPanel ? "fill" : "bold"} />
+                                </button>
+
+                                <div className="w-[1px] h-8 bg-white/5 mx-1" />
+                            </>
+                        )}
+
+                        <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5">
+                            <DotsThreeVertical size={24} weight="bold" />
                         </button>
-                    )}
-                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-gradient-to-tr from-primary to-secondary p-[1px] flex-shrink-0">
-                        <div className="w-full h-full bg-carbon rounded-2xl flex items-center justify-center text-white font-black text-xl overflow-hidden relative">
-                            {chat.profilePicUrl ? (
-                                <img src={chat.profilePicUrl} alt={chat.name} className="w-full h-full object-cover" />
+                    </div>
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto custom-scroll p-6 lg:p-10 z-10 space-y-4">
+                    {loading && <div className="flex justify-center py-10"><Spinner size={32} className="animate-spin text-primary" /></div>}
+                    {messages.map((msg) => (
+                        <MessageBubble
+                            key={msg.id}
+                            {...msg}
+                            senderProfilePic={msg.senderProfilePic || (!msg.isMe ? chat.profilePicUrl : undefined)}
+                            onReply={() => setReplyingTo(msg)}
+                        />
+                    ))}
+                    <div ref={messagesEndRef} />
+                </div>
+
+                {/* Progress Bar */}
+                {uploadProgress !== null && (
+                    <div className="absolute top-16 lg:top-20 left-0 right-0 z-30 px-8 py-2 bg-primary/20 backdrop-blur-md border-b border-primary/30 flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
+                        <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)] transition-all duration-300"
+                                style={{ width: `${uploadProgress}%` }}
+                            />
+                        </div>
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest">{uploadProgress}%</span>
+                        <button onClick={() => setUploadProgress(null)} className="text-white/50 hover:text-white transition">
+                            <X size={14} weight="bold" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Input Area */}
+                <div className="p-4 lg:p-6 bg-transparent z-10 relative">
+                    <div className="max-w-4xl mx-auto flex items-end gap-4">
+                        {replyingTo && (
+                            <div className="absolute bottom-full left-0 right-0 mb-4 px-4 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between group animate-in slide-in-from-bottom-2">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="w-1 bg-primary h-8 rounded-full shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
+                                    <div className="overflow-hidden">
+                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Replying to</p>
+                                        <p className="text-sm text-gray-400 truncate font-medium italic">"{replyingTo.content}"</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setReplyingTo(null)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-white transition-colors"
+                                >
+                                    <X size={18} weight="bold" />
+                                </button>
+                            </div>
+                        )}
+
+                        {showEmoji && (
+                            <div ref={emojiRef} className="absolute bottom-32 left-8 z-50 shadow-2xl rounded-3xl border border-white/10 overflow-hidden scale-90 origin-bottom-left">
+                                <EmojiPicker
+                                    theme={Theme.DARK}
+                                    onEmojiClick={onEmojiClick}
+                                    width={320}
+                                    height={400}
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-1 glass-card p-2 rounded-2xl border-white/5 shadow-2xl">
+                            <button
+                                onClick={() => setShowEmoji(!showEmoji)}
+                                className={`w-10 h-10 flex items-center justify-center rounded-xl transition ${showEmoji ? 'text-primary bg-primary/10' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                <Smiley size={24} weight="bold" />
+                            </button>
+
+                            <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
+                            <button
+                                onClick={handleAttach}
+                                className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-300 transition"
+                            >
+                                <Paperclip size={24} weight="bold" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 glass-card rounded-[2rem] border-white/5 flex items-center px-6 py-1 min-h-[56px] shadow-2xl focus-within:border-primary/30 transition">
+                            <input
+                                type="text"
+                                className="flex-1 focus:outline-none text-white bg-transparent font-medium py-3"
+                                placeholder="Compose encrypted message..."
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                onFocus={() => setShowEmoji(false)}
+                            />
+                        </div>
+
+                        <div className="flex-shrink-0">
+                            {input.trim() ? (
+                                <button
+                                    onClick={handleSend}
+                                    className="w-14 h-14 bg-primary text-white rounded-[1.5rem] flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-xl shadow-primary/20 group"
+                                >
+                                    <PaperPlaneRight size={24} weight="fill" className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" />
+                                </button>
                             ) : (
-                                chat.name?.charAt(0) || <UserCircle size={24} />
+                                <button className="w-14 h-14 glass-card border-white/5 text-gray-500 rounded-[1.5rem] flex items-center justify-center hover:text-gray-300 transition">
+                                    <Microphone size={24} weight="bold" />
+                                </button>
                             )}
                         </div>
                     </div>
-                    <div className="min-w-0">
-                        <h3 className="font-bold text-white text-base lg:text-lg flex items-center gap-2 truncate">
-                            {chat.name}
-                            <Circle size={6} weight="fill" className="text-green-500 animate-pulse flex-shrink-0" />
-                        </h3>
-                        <p className="text-[8px] lg:text-[10px] text-gray-500 font-black uppercase tracking-widest opacity-60 truncate">{chat.jid}</p>
-                    </div>
                 </div>
-                <div className="flex items-center gap-1.5 lg:gap-2">
-                    {(user?.role === 'admin' || user?.ai_enabled || user?.plan?.ai_enabled) && (
-                        <>
-                            <button
-                                onClick={handleToggleAI}
-                                title={aiRepliesEnabled ? 'Silence AI' : 'Active AI'}
-                                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${aiRepliesEnabled ? 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20' : 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'}`}
-                            >
-                                <Robot size={22} weight={aiRepliesEnabled ? "fill" : "bold"} />
-                            </button>
-
-                            <div className="w-[1px] h-8 bg-white/5 mx-1" />
-
-                            <button
-                                onClick={() => {
-                                    setLeadForm({ ...leadForm, name: chat?.name || '' });
-                                    setShowLeadModal(true);
-                                }}
-                                title="Create Sales Lead"
-                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 transition-all border border-orange-500/20"
-                            >
-                                <Target size={22} weight="bold" />
-                            </button>
-                            <button
-                                onClick={() => setShowOrderModal(true)}
-                                title="New Order Pipeline"
-                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-500 transition-all border border-green-500/20"
-                            >
-                                <ShoppingCart size={22} weight="bold" />
-                            </button>
-
-                            <div className="w-[1px] h-8 bg-white/5 mx-1" />
-                        </>
-                    )}
-
-                    <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5">
-                        <DotsThreeVertical size={24} weight="bold" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto custom-scroll p-6 lg:p-10 z-10 space-y-4">
-                {loading && <div className="flex justify-center py-10"><Spinner size={32} className="animate-spin text-primary" /></div>}
-                {messages.map((msg) => (
-                    <MessageBubble
-                        key={msg.id}
-                        {...msg}
-                        senderProfilePic={msg.senderProfilePic || (!msg.isMe ? chat.profilePicUrl : undefined)}
-                        onReply={() => setReplyingTo(msg)}
-                    />
-                ))}
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Progress Bar */}
-            {uploadProgress !== null && (
-                <div className="absolute top-16 lg:top-20 left-0 right-0 z-30 px-8 py-2 bg-primary/20 backdrop-blur-md border-b border-primary/30 flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
-                    <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)] transition-all duration-300"
-                            style={{ width: `${uploadProgress}%` }}
-                        />
-                    </div>
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{uploadProgress}%</span>
-                    <button onClick={() => setUploadProgress(null)} className="text-white/50 hover:text-white transition">
-                        <X size={14} weight="bold" />
-                    </button>
-                </div>
-            )}
-
-            {/* Input Area */}
-            <div className="p-4 lg:p-6 bg-transparent z-10 relative">
-                <div className="max-w-4xl mx-auto flex items-end gap-4">
-                    {replyingTo && (
-                        <div className="absolute bottom-full left-0 right-0 mb-4 px-4 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between group animate-in slide-in-from-bottom-2">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="w-1 bg-primary h-8 rounded-full shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
-                                <div className="overflow-hidden">
-                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Replying to</p>
-                                    <p className="text-sm text-gray-400 truncate font-medium italic">"{replyingTo.content}"</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setReplyingTo(null)}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-white transition-colors"
-                            >
-                                <X size={18} weight="bold" />
-                            </button>
-                        </div>
-                    )}
-
-                    {showEmoji && (
-                        <div ref={emojiRef} className="absolute bottom-32 left-8 z-50 shadow-2xl rounded-3xl border border-white/10 overflow-hidden scale-90 origin-bottom-left">
-                            <EmojiPicker
-                                theme={Theme.DARK}
-                                onEmojiClick={onEmojiClick}
-                                width={320}
-                                height={400}
-                            />
-                        </div>
-                    )}
-
-                    <div className="flex items-center gap-1 glass-card p-2 rounded-2xl border-white/5 shadow-2xl">
-                        <button
-                            onClick={() => setShowEmoji(!showEmoji)}
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl transition ${showEmoji ? 'text-primary bg-primary/10' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <Smiley size={24} weight="bold" />
-                        </button>
-
-                        <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
-                        <button
-                            onClick={handleAttach}
-                            className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-300 transition"
-                        >
-                            <Paperclip size={24} weight="bold" />
-                        </button>
-                    </div>
-
-                    <div className="flex-1 glass-card rounded-[2rem] border-white/5 flex items-center px-6 py-1 min-h-[56px] shadow-2xl focus-within:border-primary/30 transition">
-                        <input
-                            type="text"
-                            className="flex-1 focus:outline-none text-white bg-transparent font-medium py-3"
-                            placeholder="Compose encrypted message..."
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            onFocus={() => setShowEmoji(false)}
-                        />
-                    </div>
-
-                    <div className="flex-shrink-0">
-                        {input.trim() ? (
-                            <button
-                                onClick={handleSend}
-                                className="w-14 h-14 bg-primary text-white rounded-[1.5rem] flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-xl shadow-primary/20 group"
-                            >
-                                <PaperPlaneRight size={24} weight="fill" className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" />
-                            </button>
-                        ) : (
-                            <button className="w-14 h-14 glass-card border-white/5 text-gray-500 rounded-[1.5rem] flex items-center justify-center hover:text-gray-300 transition">
-                                <Microphone size={24} weight="bold" />
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
-            {/* Modals */}
-            <AnimatePresence>
-                {showLeadModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80 backdrop-blur-xl">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="glass-card w-full max-w-md rounded-[2.5rem] p-10 border-white/10"
-                        >
-                            <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
-                                <Target size={28} className="text-orange-500" />
-                                Convert to Lead
-                            </h3>
-                            <form onSubmit={handleLeadSubmit} className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Contact Name</label>
-                                    <input
-                                        type="text"
-                                        value={leadForm.name}
-                                        onChange={e => setLeadForm({ ...leadForm, name: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Governorate / State</label>
-                                    <input
-                                        type="text"
-                                        value={leadForm.governorate}
-                                        onChange={e => setLeadForm({ ...leadForm, governorate: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
-                                        placeholder="e.g. Cairo"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">City</label>
-                                        <input
-                                            type="text"
-                                            value={leadForm.city}
-                                            onChange={e => setLeadForm({ ...leadForm, city: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Alt Phone</label>
-                                        <input
-                                            type="text"
-                                            value={leadForm.phone2}
-                                            onChange={e => setLeadForm({ ...leadForm, phone2: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Intent</label>
-                                    <select
-                                        value={leadForm.intent}
-                                        onChange={e => setLeadForm({ ...leadForm, intent: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold focus:outline-none"
-                                    >
-                                        <option value="sales">Sales Opportunity</option>
-                                        <option value="inquiry">General Inquiry</option>
-                                        <option value="support">Technical Support</option>
-                                    </select>
-                                </div>
-                                <div className="pt-6 flex gap-4">
-                                    <button type="button" onClick={() => setShowLeadModal(false)} className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase bg-white/5 rounded-2xl">Abort</button>
-                                    <button type="submit" className="flex-1 bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Save Lead</button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )
-                }
-
-                {
-                    showOrderModal && (
+                {/* Modals */}
+                <AnimatePresence>
+                    {showLeadModal && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80 backdrop-blur-xl">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -609,80 +523,172 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                 className="glass-card w-full max-w-md rounded-[2.5rem] p-10 border-white/10"
                             >
                                 <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
-                                    <ShoppingCart size={28} className="text-green-500" />
-                                    Create Order
+                                    <Target size={28} className="text-orange-500" />
+                                    Convert to Lead
                                 </h3>
-                                <form onSubmit={handleOrderSubmit} className="space-y-4">
+                                <form onSubmit={handleLeadSubmit} className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Order Items</label>
-                                        <textarea
-                                            value={orderForm.items}
-                                            onChange={e => setOrderForm({ ...orderForm, items: e.target.value })}
-                                            className="w-full h-32 bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
-                                            placeholder="e.g. 2x Nitro Coffee, 1x Bagel"
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Contact Name</label>
+                                        <input
+                                            type="text"
+                                            value={leadForm.name}
+                                            onChange={e => setLeadForm({ ...leadForm, name: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
                                             required
                                         />
                                     </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Governorate / State</label>
+                                        <input
+                                            type="text"
+                                            value={leadForm.governorate}
+                                            onChange={e => setLeadForm({ ...leadForm, governorate: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                            placeholder="e.g. Cairo"
+                                        />
+                                    </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Governorate</label>
-                                            <input
-                                                type="text"
-                                                value={orderForm.governorate}
-                                                onChange={e => setOrderForm({ ...orderForm, governorate: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
-                                            />
-                                        </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">City</label>
                                             <input
                                                 type="text"
-                                                value={orderForm.city}
-                                                onChange={e => setOrderForm({ ...orderForm, city: e.target.value })}
+                                                value={leadForm.city}
+                                                onChange={e => setLeadForm({ ...leadForm, city: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Alt Phone</label>
+                                            <input
+                                                type="text"
+                                                value={leadForm.phone2}
+                                                onChange={e => setLeadForm({ ...leadForm, phone2: e.target.value })}
                                                 className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
                                             />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Address</label>
-                                        <input
-                                            type="text"
-                                            value={orderForm.address}
-                                            onChange={e => setOrderForm({ ...orderForm, address: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Alt Phone</label>
-                                            <input
-                                                type="text"
-                                                value={orderForm.phone2}
-                                                onChange={e => setOrderForm({ ...orderForm, phone2: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Total Price</label>
-                                            <input
-                                                type="number"
-                                                value={orderForm.total_price}
-                                                onChange={e => setOrderForm({ ...orderForm, total_price: parseFloat(e.target.value) })}
-                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
-                                                required
-                                            />
-                                        </div>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Intent</label>
+                                        <select
+                                            value={leadForm.intent}
+                                            onChange={e => setLeadForm({ ...leadForm, intent: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold focus:outline-none"
+                                        >
+                                            <option value="sales">Sales Opportunity</option>
+                                            <option value="inquiry">General Inquiry</option>
+                                            <option value="support">Technical Support</option>
+                                        </select>
                                     </div>
                                     <div className="pt-6 flex gap-4">
-                                        <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase bg-white/5 rounded-2xl">Abort</button>
-                                        <button type="submit" className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Create Order</button>
+                                        <button type="button" onClick={() => setShowLeadModal(false)} className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase bg-white/5 rounded-2xl">Abort</button>
+                                        <button type="submit" className="flex-1 bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Save Lead</button>
                                     </div>
                                 </form>
                             </motion.div>
                         </div>
                     )
-                }
-            </AnimatePresence >
-        </div >
+                    }
+
+                    {
+                        showOrderModal && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80 backdrop-blur-xl">
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    className="glass-card w-full max-w-md rounded-[2.5rem] p-10 border-white/10"
+                                >
+                                    <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
+                                        <ShoppingCart size={28} className="text-green-500" />
+                                        Create Order
+                                    </h3>
+                                    <form onSubmit={handleOrderSubmit} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Order Items</label>
+                                            <textarea
+                                                value={orderForm.items}
+                                                onChange={e => setOrderForm({ ...orderForm, items: e.target.value })}
+                                                className="w-full h-32 bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                placeholder="e.g. 2x Nitro Coffee, 1x Bagel"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Governorate</label>
+                                                <input
+                                                    type="text"
+                                                    value={orderForm.governorate}
+                                                    onChange={e => setOrderForm({ ...orderForm, governorate: e.target.value })}
+                                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">City</label>
+                                                <input
+                                                    type="text"
+                                                    value={orderForm.city}
+                                                    onChange={e => setOrderForm({ ...orderForm, city: e.target.value })}
+                                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Address</label>
+                                            <input
+                                                type="text"
+                                                value={orderForm.address}
+                                                onChange={e => setOrderForm({ ...orderForm, address: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Alt Phone</label>
+                                                <input
+                                                    type="text"
+                                                    value={orderForm.phone2}
+                                                    onChange={e => setOrderForm({ ...orderForm, phone2: e.target.value })}
+                                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Total Price</label>
+                                                <input
+                                                    type="number"
+                                                    value={orderForm.total_price}
+                                                    onChange={e => setOrderForm({ ...orderForm, total_price: parseFloat(e.target.value) })}
+                                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="pt-6 flex gap-4">
+                                            <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase bg-white/5 rounded-2xl">Abort</button>
+                                            <button type="submit" className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Create Order</button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            </div>
+                        )
+                    }
+                </AnimatePresence >
+
+                {/* Order Panel Sidebar */}
+                {showOrderPanel && (
+                    <div className="absolute inset-0 lg:static lg:inset-auto z-40 bg-carbon/95 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none flex lg:w-96 flex-shrink-0 animate-in fade-in slide-in-from-right-4">
+                        <div className="w-full h-full p-4 lg:p-0 flex flex-col items-center sm:items-stretch justify-center sm:justify-start">
+                            {/* Mobile close button */}
+                            <div className="lg:hidden w-full flex justify-end mb-4">
+                                <button onClick={() => setShowOrderPanel(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-white">
+                                    <X size={20} weight="bold" />
+                                </button>
+                            </div>
+                            <OrderPanel contactPhone={chat.jid} contactName={chat.name || ''} />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }

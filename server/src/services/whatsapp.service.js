@@ -458,27 +458,27 @@ class WhatsAppService {
                 textContent = m.extendedTextMessage.text;
             } else if (m.imageMessage) {
                 textContent = m.imageMessage.caption || '📷 Image';
-                const mediaData = await this.downloadMedia(m.imageMessage, 'image', true);
+                const mediaData = await this.downloadMedia(instanceId, m.imageMessage, 'image', true, msg);
                 mediaUrl = mediaData.url;
                 msg.mediaBuffer = mediaData.buffer;
                 msg.mimeType = m.imageMessage.mimetype;
             } else if (m.videoMessage) {
                 textContent = m.videoMessage.caption || '🎥 Video';
-                mediaUrl = await this.downloadMedia(m.videoMessage, 'video');
+                mediaUrl = await this.downloadMedia(instanceId, m.videoMessage, 'video', false, msg);
             } else if (m.audioMessage) {
                 textContent = '🎤 Audio';
-                const mediaData = await this.downloadMedia(m.audioMessage, 'audio', true);
+                const mediaData = await this.downloadMedia(instanceId, m.audioMessage, 'audio', true, msg);
                 mediaUrl = mediaData.url;
                 msg.mediaBuffer = mediaData.buffer;
                 msg.mimeType = m.audioMessage.mimetype;
             } else if (m.stickerMessage) {
                 textContent = '👾 Sticker';
-                mediaUrl = await this.downloadMedia(m.stickerMessage, 'sticker');
+                mediaUrl = await this.downloadMedia(instanceId, m.stickerMessage, 'sticker', false, msg);
             } else if (m.documentMessage) {
                 // Handle documents (PDF, Excel, Word, etc.)
                 const fileName = m.documentMessage.fileName || 'Document';
                 textContent = `📄 ${fileName}`;
-                const mediaData = await this.downloadMedia(m.documentMessage, 'document', true);
+                const mediaData = await this.downloadMedia(instanceId, m.documentMessage, 'document', true, msg);
                 mediaUrl = mediaData.url;
                 msg.mediaBuffer = mediaData.buffer;
                 msg.mimeType = m.documentMessage.mimetype;
@@ -844,7 +844,7 @@ class WhatsAppService {
         });
     }
 
-    async downloadMedia(message, type, returnBuffer = false) {
+    async downloadMedia(instanceId, message, type, returnBuffer = false, fullMsg = null) {
         try {
             // Validate media key exists to prevent download storms
             if (!message?.mediaKey) {
@@ -852,7 +852,28 @@ class WhatsAppService {
                 return returnBuffer ? { url: null, buffer: null } : null;
             }
 
-            const stream = await downloadContentFromMessage(message, type);
+            let stream;
+            try {
+                stream = await downloadContentFromMessage(message, type);
+            } catch (dlError) {
+                console.log(`[WA] Media download failed, attempting updateMediaMessage (14-day expiry): ${dlError.message}`);
+                // Try to update the media message if it expired (WhatsApp 14 day limit)
+                const sock = sessions.get(instanceId);
+                if (sock && fullMsg) {
+                    try {
+                        const updatedMsg = await sock.updateMediaMessage(fullMsg);
+                        const newMsgContent = updatedMsg.message[Object.keys(updatedMsg.message)[0]];
+                        stream = await downloadContentFromMessage(newMsgContent, type);
+                        console.log(`[WA] Successfully recovered expired media via updateMediaMessage`);
+                    } catch (updateError) {
+                        console.error('[WA] Failed to recover expired media:', updateError.message);
+                        throw updateError;
+                    }
+                } else {
+                    throw dlError;
+                }
+            }
+
             let buffer = Buffer.from([]);
             for await (const chunk of stream) {
                 buffer = Buffer.concat([buffer, chunk]);
@@ -862,7 +883,7 @@ class WhatsAppService {
             const ext = type === 'image' ? 'jpg' : (type === 'video' ? 'mp4' : (type === 'sticker' ? 'webp' : (type === 'audio' ? 'ogg' : (type === 'document' ? (message.fileName?.split('.').pop() || 'pdf') : 'bin'))));
             const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${ext}`;
             const filePath = path.join(this.uploadDir, fileName);
-            fs.writeFileSync(filePath, buffer);
+            await fs.promises.writeFile(filePath, buffer);
 
             const publicUrl = `${process.env.PUBLIC_URL || ''}/public/uploads/${fileName}`;
             return returnBuffer ? { url: publicUrl, buffer } : publicUrl;

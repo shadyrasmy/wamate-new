@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
-import { Checks, FileText, PlayCircle, Microphone, Spinner, ArrowBendUpLeft, Play, Pause } from '@phosphor-icons/react';
+import { Checks, FileText, PlayCircle, Microphone, Spinner, ArrowBendUpLeft, Play, Pause, DownloadSimple } from '@phosphor-icons/react';
 
 interface MessageProps {
     id: string;
@@ -74,6 +74,35 @@ export default function MessageBubble({
         setIsPlaying(!isPlaying);
     };
 
+    const toggleAudio = () => {
+        if (!audioRef.current) return;
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+    };
+
+    const formatTime = (timeInSeconds: number) => {
+        if (!timeInSeconds || isNaN(timeInSeconds)) return "0:00";
+        const minutes = Math.floor(timeInSeconds / 60);
+        const seconds = Math.floor(timeInSeconds % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const formatMessageText = (text: string) => {
+        if (!text) return "";
+        let formattedText = text;
+        // Basic WhatsApp formatting
+        formattedText = formattedText.replace(/\*(.*?)\*/g, "<strong>$1</strong>"); // Bold
+        formattedText = formattedText.replace(/_(.*?)_/g, "<em>$1</em>"); // Italic
+        formattedText = formattedText.replace(/~(.*?)~/g, "<del>$1</del>"); // Strikethrough
+        formattedText = formattedText.replace(/```([\s\S]*?)```/g, "<code>$1</code>"); // Monospace
+
+        return <span dangerouslySetInnerHTML={{ __html: formattedText }} />;
+    };
+
     if (type === 'reaction') return null;
 
     const isGroup = jid?.endsWith('@g.us');
@@ -98,7 +127,7 @@ export default function MessageBubble({
                 </div>
             )}
 
-            <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[30%] w-fit`}>
+            <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[70%] w-fit`}>
                 {/* Sender Name (Group Chat) - Moved inside the stack */}
                 {showSender && (
                     <div className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 ml-1 opacity-80">
@@ -116,49 +145,37 @@ export default function MessageBubble({
 
                 <div
                     className={`relative px-4 py-2 shadow-xl rounded-2xl text-[14px] leading-relaxed transition-all 
-                    ${isMe
-                            ? 'bg-gradient-to-br from-primary to-primary-dark text-white rounded-tr-none shadow-primary/10 border border-white/10'
-                            : 'bg-[#1a162d] text-gray-200 rounded-tl-none border border-white/5 backdrop-blur-sm shadow-black/20'
-                        }`}
+                        ${isMe
+                            ? 'bg-gradient-to-br from-primary to-primary-dark text-white shadow-primary/20 rounded-tr-sm'
+                            : 'bg-white/10 text-gray-100 shadow-black/10 rounded-tl-sm border border-white/5'
+                        }
+                    `}
                 >
-                    {/* Media Content */}
-                    {type === 'image' && (
-                        <div className="mb-3 rounded-2xl overflow-hidden border border-white/10 group cursor-zoom-in bg-black/20 min-w-[200px]">
-                            {mediaUrl ? (
-                                <img src={mediaUrl} alt="Payload" className="w-full h-auto object-cover max-h-72 group-hover:scale-105 transition duration-700 ease-out" />
-                            ) : (
-                                <div className="w-full h-48 flex flex-col items-center justify-center text-gray-500 gap-3">
-                                    <Spinner className="animate-spin" size={20} />
-                                    <span className="text-[9px] font-black uppercase tracking-widest">Awaiting Buffer...</span>
-                                </div>
-                            )}
-                        </div>
+                    {type === 'text' && (
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]" style={{ wordBreak: 'break-word' }}>
+                            {formatMessageText(content)}
+                        </p>
                     )}
 
-                    {type === 'video' && (
-                        <div className="mb-3 rounded-2xl overflow-hidden border border-white/10 bg-black/40 min-w-[200px]">
-                            {mediaUrl ? (
-                                <video src={mediaUrl} controls className="w-full h-auto max-h-72" />
-                            ) : (
-                                <div className="w-full h-48 flex flex-col items-center justify-center text-gray-500 gap-3">
-                                    <PlayCircle size={32} weight="duotone" className="opacity-20" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest">Syncing Stream...</span>
-                                </div>
-                            )}
+                    {type === 'image' && mediaUrl && (
+                        <div className="mb-2 relative rounded-xl overflow-hidden cursor-pointer group" onClick={() => window.open(mediaUrl, '_blank')}>
+                            <img src={mediaUrl} alt="Message attachment" className="max-w-full h-auto max-h-64 object-contain transition-transform duration-300 group-hover:scale-105" />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                                <span className="text-white text-xs font-bold uppercase tracking-widest px-3 py-1.5 bg-white/20 rounded-full">Open Original</span>
+                            </div>
                         </div>
                     )}
 
                     {type === 'audio' && (
-                        <div className={`mb-3 flex items-center gap-4 p-3 rounded-2xl border-white/5 min-w-[240px] ${isMe ? 'bg-white/10' : 'bg-white/5'}`}>
+                        <div className={`mb-2 flex items-center gap-3 p-3 rounded-2xl min-w-[200px] sm:min-w-[240px] border ${isMe ? 'bg-black/20 border-white/10' : 'bg-white/5 border-white/5 shadow-inner'}`}>
                             <button
-                                onClick={togglePlay}
-                                disabled={!mediaUrl}
-                                className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg flex-shrink-0 hover:scale-105 active:scale-95 transition group disabled:opacity-50"
+                                onClick={toggleAudio}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-lg ${isMe ? 'bg-white text-primary' : 'bg-primary text-white'}`}
                             >
                                 {isPlaying ? (
-                                    <Pause size={24} weight="fill" className="text-white" />
+                                    <Pause size={20} weight="fill" />
                                 ) : (
-                                    <Play size={24} weight="fill" className="text-white translate-x-0.5" />
+                                    <Play size={20} weight="fill" className="translate-x-0.5" />
                                 )}
                             </button>
                             <div className="flex-1 space-y-2">
@@ -186,45 +203,53 @@ export default function MessageBubble({
                                     <span className="text-[9px] font-bold text-gray-500 italic uppercase">Syncing voice...</span>
                                 )}
                             </div>
-                        </div>
+                        </div >
                     )}
 
-                    {type === 'document' && (
-                        <div className={`mb-3 p-4 rounded-2xl flex items-center gap-4 border border-white/10 ${isMe ? 'bg-white/10' : 'bg-white/5'}`}>
-                            <FileText size={32} weight="duotone" className="text-primary" />
-                            <div className="flex-1 min-w-0 text-white">
-                                <a href={mediaUrl} target="_blank" rel="noopener noreferrer">
-                                    <div className="text-xs font-bold truncate">Application/File</div>
-                                    <div className="text-[9px] opacity-50 uppercase font-black">Download Asset</div>
-                                </a>
-                            </div>
-                        </div>
-                    )}
-
-                    {type === 'sticker' && (
-                        <div className="mb-3 rounded-2xl overflow-hidden group cursor-pointer max-w-[150px]">
-                            {mediaUrl ? (
-                                <img src={mediaUrl} alt="Sticker" className="w-full h-auto object-cover hover:scale-105 transition duration-300" />
-                            ) : (
-                                <div className="p-4 flex flex-col items-center justify-center text-gray-500 gap-2 bg-white/5">
-                                    <Spinner className="animate-spin" size={20} />
-                                    <span className="text-[9px] font-black uppercase tracking-widest">Sticker...</span>
+                    {
+                        type === 'document' && (
+                            <div className={`mb-3 p-4 rounded-2xl flex items-center gap-4 border border-white/10 ${isMe ? 'bg-white/10' : 'bg-white/5'}`}>
+                                <FileText size={32} weight="duotone" className="text-primary" />
+                                <div className="flex-1 min-w-0 text-white">
+                                    <a href={mediaUrl} target="_blank" rel="noopener noreferrer">
+                                        <div className="text-xs font-bold truncate">Application/File</div>
+                                        <div className="text-[9px] opacity-50 uppercase font-black">Download Asset</div>
+                                    </a>
                                 </div>
-                            )}
-                        </div>
-                    )}
+                            </div>
+                        )
+                    }
+
+                    {
+                        type === 'sticker' && (
+                            <div className="mb-3 rounded-2xl overflow-hidden group cursor-pointer max-w-[150px]">
+                                {mediaUrl ? (
+                                    <img src={mediaUrl} alt="Sticker" className="w-full h-auto object-cover hover:scale-105 transition duration-300" />
+                                ) : (
+                                    <div className="p-4 flex flex-col items-center justify-center text-gray-500 gap-2 bg-white/5">
+                                        <Spinner className="animate-spin" size={20} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Sticker...</span>
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    }
 
                     {/* Text Content */}
-                    {content && type !== 'image' && type !== 'video' && type !== 'audio' && type !== 'document' && type !== 'sticker' && (
-                        <p className={`font-medium ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words`}>
-                            {content}
-                        </p>
-                    )}
-                    {(type === 'image' || type === 'video') && content && content !== '📷 Image' && content !== '🎥 Video' && (
-                        <p className={`font-medium mt-2 ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words`}>
-                            {content}
-                        </p>
-                    )}
+                    {
+                        content && type !== 'image' && type !== 'video' && type !== 'audio' && type !== 'document' && type !== 'sticker' && (
+                            <p className={`font-medium ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}>
+                                {formatMessageText(content)}
+                            </p>
+                        )
+                    }
+                    {
+                        (type === 'image' || type === 'video') && content && content !== '📷 Image' && content !== '🎥 Video' && (
+                            <p className={`font-medium mt-2 ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}>
+                                {formatMessageText(content)}
+                            </p>
+                        )
+                    }
 
                     {/* Metadata */}
                     <div className={`flex items-center justify-end gap-2 mt-2 text-[9px] font-black uppercase tracking-tighter ${isMe ? 'text-white/60' : 'text-gray-500'}`}>
@@ -237,18 +262,20 @@ export default function MessageBubble({
                             />
                         )}
                     </div>
-                </div>
+                </div >
 
                 {/* Reactions */}
-                {reactions.length > 0 && (
-                    <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                        {reactions.map((r, i) => (
-                            <span key={i} className="bg-[#1a162d] border border-white/5 backdrop-blur-md rounded-full px-2 py-1 text-[10px] shadow-lg">
-                                {r}
-                            </span>
-                        ))}
-                    </div>
-                )}
+                {
+                    reactions.length > 0 && (
+                        <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                            {reactions.map((r, i) => (
+                                <span key={i} className="bg-[#1a162d] border border-white/5 backdrop-blur-md rounded-full px-2 py-1 text-[10px] shadow-lg">
+                                    {r}
+                                </span>
+                            ))}
+                        </div>
+                    )
+                }
 
                 {/* Quick Actions */}
                 <div className={`absolute top-0 ${isMe ? '-left-10' : '-right-10'} opacity-0 group-hover:opacity-100 transition-opacity`}>
@@ -260,8 +287,8 @@ export default function MessageBubble({
                         <ArrowBendUpLeft size={16} weight="bold" />
                     </button>
                 </div>
-            </div>
-        </motion.div>
+            </div >
+        </motion.div >
     );
 }
 
