@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, PlayCircle, WhatsappLogo, Lightning, ChartLineUp } from '@phosphor-icons/react';
+import { ArrowRight, PlayCircle, WhatsappLogo, Lightning } from '@phosphor-icons/react';
 import Link from 'next/link';
 
 export default function HeroSection({ content }: { content?: any }) {
@@ -39,21 +39,21 @@ export default function HeroSection({ content }: { content?: any }) {
                     transition={{ duration: 0.8 }}
                     className="text-center lg:text-left"
                 >
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-primary mb-6">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-control border border-control-border text-xs font-medium text-primary mb-6">
                         <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                         Ultimate WhatsApp CRM
                     </div>
-                    <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6">
+                    <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-foreground">
                         {c.title}
                     </h1>
-                    <p className="text-lg text-gray-400 mb-8 max-w-xl mx-auto lg:mx-0">
+                    <p className="text-lg text-muted mb-8 max-w-xl mx-auto lg:mx-0">
                         {c.subtitle}
                     </p>
                     <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                        <Link href="/register" className="px-8 py-4 bg-white text-black rounded-full font-bold hover:bg-gray-100 transition flex items-center gap-2 shadow-xl shadow-white/10">
+                        <Link href="/register" className="px-8 py-4 bg-primary text-white rounded-full font-bold hover:bg-primary-dark transition flex items-center gap-2 shadow-xl shadow-primary/20">
                             {c.cta_primary} <ArrowRight weight="bold" />
                         </Link>
-                        <button className="px-8 py-4 carbon-card rounded-full font-bold hover:bg-white/5 transition flex items-center gap-2 border border-white/5 group">
+                        <button className="px-8 py-4 carbon-card rounded-full font-bold hover:bg-control transition flex items-center gap-2 border border-border text-foreground group">
                             <PlayCircle size={24} weight="fill" className="text-primary group-hover:scale-110 transition" />
                             {c.cta_secondary}
                         </button>
@@ -72,16 +72,16 @@ export default function HeroSection({ content }: { content?: any }) {
                     <motion.div
                         animate={{ y: [0, -20, 0] }}
                         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        className="relative z-20 w-32 h-32 bg-[#25D366] rounded-[2.5rem] flex items-center justify-center shadow-[0_0_80px_rgba(37,211,102,0.4)]"
+                        className="relative z-20 w-32 h-32 bg-wa-green rounded-[2.5rem] flex items-center justify-center shadow-[0_0_80px_rgba(37,211,102,0.4)]"
                     >
                         <WhatsappLogo size={64} weight="fill" className="text-white" />
                     </motion.div>
 
                     {/* Orbiting Rings */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-[300px] h-[300px] border border-white/5 rounded-full absolute"></div>
-                        <div className="w-[450px] h-[450px] border border-white/5 rounded-full absolute"></div>
-                        <div className="w-[600px] h-[600px] border border-white/[0.02] rounded-full absolute"></div>
+                        <div className="w-[300px] h-[300px] border border-border rounded-full absolute"></div>
+                        <div className="w-[450px] h-[450px] border border-border rounded-full absolute"></div>
+                        <div className="w-[600px] h-[600px] border border-border/50 rounded-full absolute"></div>
                     </div>
 
                     {/* Orbiting Elements */}
@@ -97,10 +97,10 @@ export default function HeroSection({ content }: { content?: any }) {
                                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                                 className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
                             >
-                                <div className="p-3 carbon-card glass-card rounded-2xl flex items-center gap-3 w-44 border-white/10 shadow-2xl">
+                                <div className="p-3 carbon-card glass-card rounded-2xl flex items-center gap-3 w-44 border-border shadow-2xl">
                                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold">AG</div>
                                     <div className="text-[10px]">
-                                        <div className="font-bold">Agent assigned</div>
+                                        <div className="font-bold text-foreground">Agent assigned</div>
                                         <div className="text-gray-400">Just now • Fast reply</div>
                                     </div>
                                 </div>
@@ -118,13 +118,13 @@ export default function HeroSection({ content }: { content?: any }) {
                                 transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
                                 className="absolute bottom-0 right-1/2 translate-x-1/2 translate-y-1/2 pointer-events-auto"
                             >
-                                <div className="p-3 carbon-card glass-card rounded-2xl flex items-center gap-3 border-white/10 shadow-2xl">
+                                <div className="p-3 carbon-card glass-card rounded-2xl flex items-center gap-3 border-border shadow-2xl">
                                     <div className="w-10 h-10 rounded-xl bg-secondary/20 flex items-center justify-center text-secondary">
                                         <Lightning size={20} weight="bold" />
                                     </div>
                                     <div className="text-[10px]">
-                                        <div className="font-bold">Auto-resolved</div>
-                                        <div className="text-gray-400">Round Robin</div>
+                                        <div className="font-bold text-foreground">Auto-resolved</div>
+                                        <div className="text-muted">Round Robin</div>
                                     </div>
                                 </div>
                             </motion.div>

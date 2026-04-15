@@ -25,38 +25,38 @@ function SuccessContent() {
     }, [router]);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-6">
-            <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center">
+        <div className="min-h-screen bg-background flex items-center justify-center p-6 text-foreground">
+            <div className="carbon-card border border-border rounded-3xl shadow-2xl p-10 max-w-md w-full text-center">
                 {/* Success Icon */}
                 <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <CheckCircle size={56} className="text-green-600" weight="fill" />
                 </div>
 
-                <h1 className="text-3xl font-bold text-gray-900 mb-3">
+                <h1 className="text-3xl font-bold text-foreground mb-3">
                     Payment Successful!
                 </h1>
 
-                <p className="text-gray-600 mb-8">
+                <p className="theme-copy mb-8">
                     Your subscription has been upgraded. You now have access to all your new plan features.
                 </p>
 
                 {/* Info Box */}
-                <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8">
-                    <p className="text-sm text-green-800">
+                <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-8">
+                    <p className="text-sm text-green-500">
                         <strong>Thank you for your purchase!</strong><br />
                         A confirmation email has been sent to your registered email address.
                     </p>
                 </div>
 
                 {/* Redirect Notice */}
-                <p className="text-sm text-gray-500 mb-6">
-                    Redirecting to dashboard in <span className="font-bold text-gray-700">{countdown}</span> seconds...
+                <p className="text-sm text-muted mb-6">
+                    Redirecting to dashboard in <span className="font-bold text-foreground">{countdown}</span> seconds...
                 </p>
 
                 {/* Manual Navigation */}
                 <Link
                     href="/dashboard/plans"
-                    className="inline-flex items-center justify-center gap-2 bg-black text-white px-6 py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors"
+                    className="theme-button-primary inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium"
                 >
                     Go to Dashboard
                     <ArrowRight size={18} weight="bold" />
@@ -68,7 +68,7 @@ function SuccessContent() {
 
 export default function PaymentSuccessPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+        <Suspense fallback={<div className="min-h-screen bg-background text-foreground flex items-center justify-center">Loading...</div>}>
             <SuccessContent />
         </Suspense>
     );

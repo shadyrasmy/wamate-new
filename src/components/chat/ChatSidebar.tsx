@@ -213,7 +213,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                     <div className="flex gap-2">
                         <button
                             onClick={() => setShowNewChat(true)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white transition border border-white/5"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-control hover:bg-control-hover text-foreground transition border border-control-border"
                         >
                             <Plus size={18} weight="bold" />
                         </button>
@@ -221,16 +221,16 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
+                <div className="flex bg-control p-1 rounded-2xl border border-control-border">
                     <button
                         onClick={() => setActiveTab('chats')}
-                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'chats' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'chats' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-muted hover:text-foreground'}`}
                     >
                         Conversations
                     </button>
                     <button
                         onClick={() => setActiveTab('contacts')}
-                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'contacts' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'contacts' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-muted hover:text-foreground'}`}
                     >
                         Global Contacts
                     </button>
@@ -238,13 +238,13 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
 
                 {/* Search */}
                 <div className="relative">
-                    <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                    <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
                     <input
                         type="text"
                         placeholder={`Search ${activeTab === 'chats' ? 'conversations' : 'contacts'}...`}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-white/[0.03] border border-white/5 rounded-2xl text-sm text-white focus:outline-none focus:border-primary/50 transition-all font-sans"
+                        className="w-full pl-12 pr-4 py-3 bg-input border border-input-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-primary/50 transition-all font-sans"
                     />
                 </div>
             </div>
@@ -257,11 +257,11 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                     </div>
                 ) : filteredList.length === 0 ? (
                     <div className="text-center p-12">
-                        <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-white/5">
-                            <ChatCircleDots size={32} weight="duotone" className="text-gray-500" />
+                        <div className="w-16 h-16 bg-control rounded-3xl flex items-center justify-center mx-auto mb-4 border border-control-border">
+                            <ChatCircleDots size={32} weight="duotone" className="text-muted" />
                         </div>
-                        <p className="text-gray-500 text-sm font-medium">No results found.</p>
-                        <p className="text-xs text-gray-600 mt-1 uppercase font-black tracking-widest">Initialization Required</p>
+                        <p className="text-muted text-sm font-medium">No results found.</p>
+                        <p className="text-xs text-muted mt-1 uppercase font-black tracking-widest">Initialization Required</p>
                     </div>
                 ) : (
                     <div className="space-y-1">
@@ -270,11 +270,11 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                                 key={item.jid}
                                 onClick={() => handleSelect(item)}
                                 className={`flex items-center gap-4 p-4 cursor-pointer transition-all rounded-2xl group ${activeJid === item.jid
-                                    ? 'bg-primary/10 border border-primary/20 shadow-lg shadow-black/20'
-                                    : 'border border-transparent hover:bg-white/5'}`}
+                                    ? 'bg-primary/10 border border-primary/20 shadow-lg shadow-primary/10'
+                                    : 'border border-transparent hover:bg-control'}`}
                             >
                                 <div className="relative">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-white/5 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white border border-white/10 group-hover:scale-105 transition-transform overflow-hidden">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-control-hover to-control flex-shrink-0 flex items-center justify-center text-sm font-bold text-foreground border border-control-border group-hover:scale-105 transition-transform overflow-hidden">
                                         {item.profilePicUrl ? (
                                             <img src={item.profilePicUrl} alt={item.name} className="w-full h-full object-cover" />
                                         ) : (
@@ -286,17 +286,17 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-baseline mb-0.5">
-                                        <span className={`font-bold truncate text-[13px] transition-colors ${activeJid === item.jid ? 'text-white' : 'text-gray-300'}`}>
+                                        <span className={`font-bold truncate text-[13px] transition-colors ${activeJid === item.jid ? 'text-foreground' : 'text-muted-soft'}`}>
                                             {item.name || item.jid || item.phone || 'Unknown User'}
                                         </span>
                                         {activeTab === 'chats' && item.time && (
-                                            <span className="text-[9px] font-black text-gray-600 uppercase tracking-tighter">
+                                            <span className="text-[9px] font-black text-muted uppercase tracking-tighter">
                                                 {new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         )}
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <p className="text-[11px] text-gray-500 truncate pr-2 group-hover:text-gray-400 transition-colors">
+                                        <p className="text-[11px] text-muted truncate pr-2 group-hover:text-muted-soft transition-colors">
                                             {activeTab === 'chats' ? (item.lastMessage || <span className="italic opacity-50">Secure Channel Established</span>) : item.jid}
                                         </p>
                                         {activeTab === 'chats' && item.unread > 0 && (
@@ -315,11 +315,11 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
             {/* New Chat Backdrop */}
             {showNewChat && (
                 <div
-                    className="absolute inset-0 bg-carbon/95 backdrop-blur-sm z-50 flex flex-col p-8"
+                    className="absolute inset-0 bg-overlay backdrop-blur-sm z-50 flex flex-col p-8"
                     onClick={() => setShowNewChat(false)}
                 >
                     <div
-                        className="bg-carbon p-8 rounded-[2.5rem] border border-white/10 shadow-2xl"
+                        className="bg-carbon p-8 rounded-[2.5rem] border border-border shadow-2xl"
                         onClick={e => e.stopPropagation()}
                     >
                         <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
@@ -328,9 +328,9 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                         </h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block">Phone Identifier</label>
+                                <label className="text-[10px] font-black text-muted uppercase tracking-widest mb-2 block">Phone Identifier</label>
                                 <input
-                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition"
+                                    className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground focus:outline-none focus:border-primary/50 transition"
                                     placeholder="e.g. 15551234567"
                                     value={newChatPhone}
                                     onChange={e => setNewChatPhone(e.target.value)}
@@ -340,7 +340,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                             <div className="flex gap-4 pt-4">
                                 <button
                                     onClick={() => setShowNewChat(false)}
-                                    className="flex-1 py-4 text-gray-500 font-bold text-sm uppercase tracking-widest"
+                                    className="flex-1 py-4 text-muted font-bold text-sm uppercase tracking-widest"
                                 >
                                     Abort
                                 </button>

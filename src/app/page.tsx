@@ -40,7 +40,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-background text-white overflow-x-hidden relative">
+    <main className="min-h-screen bg-background text-foreground overflow-x-hidden relative">
       {isAdmin && (
         <a
           href="/dashboard/admin/settings?tab=landing"

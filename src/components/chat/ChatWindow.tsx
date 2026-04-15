@@ -10,8 +10,9 @@ import {
 import MessageBubble from './MessageBubble';
 import { fetchWithAuth, SOCKET_URL } from '@/lib/api';
 import { io } from 'socket.io-client';
+import { useUI } from '@/context/UIContext';
 
-import EmojiPicker, { Theme } from 'emoji-picker-react';
+import EmojiPicker, { Theme as EmojiTheme } from 'emoji-picker-react';
 import { OrderPanel } from './OrderPanel';
 
 interface ChatWindowProps {
@@ -21,6 +22,7 @@ interface ChatWindowProps {
 }
 
 export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps) {
+    const { theme: uiTheme } = useUI();
     const [messages, setMessages] = useState<any[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -340,29 +342,29 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                         <PaperPlaneRight size={48} weight="fill" className="text-primary opacity-50" />
                     </div>
                     <h2 className="text-4xl font-black mb-4 tracking-tight">Active Pulse.</h2>
-                    <p className="max-w-xs mx-auto text-gray-500 font-medium leading-relaxed">Select a conversation to begin broadcasting messages across the global edge.</p>
+                    <p className="max-w-xs mx-auto text-muted font-medium leading-relaxed">Select a conversation to begin broadcasting messages across the global edge.</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-row h-full w-full relative">
+        <div className="flex h-full w-full relative overflow-hidden">
             {/* Main Chat Area */}
-            <div className={`flex flex-col flex-1 h-full relative transition-all duration-300 ${showOrderPanel ? 'w-full lg:w-[calc(100%-384px)]' : 'w-full'}`}>
+            <div className="flex min-w-0 flex-1 h-full flex-col relative transition-all duration-300">
                 {/* Header */}
-                <div className="h-16 lg:h-20 px-4 lg:px-8 bg-carbon/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center z-20 sticky top-0">
-                    <div className="flex items-center gap-3 lg:gap-5">
+                <div className="h-16 lg:h-20 px-4 lg:px-8 bg-carbon/80 backdrop-blur-xl border-b border-border flex justify-between items-center z-20 sticky top-0">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 lg:gap-5">
                         {onBack && (
                             <button
                                 onClick={onBack}
-                                className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-gray-400 hover:text-white transition border border-white/5 mr-1"
+                                className="md:hidden w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-control text-muted hover:text-foreground transition border border-control-border mr-1"
                             >
                                 <CaretLeft size={20} weight="bold" />
                             </button>
                         )}
-                        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-gradient-to-tr from-primary to-secondary p-[1px] flex-shrink-0">
-                            <div className="w-full h-full bg-carbon rounded-2xl flex items-center justify-center text-white font-black text-xl overflow-hidden relative">
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-gradient-to-tr from-primary to-secondary p-[1px] shrink-0">
+                            <div className="w-full h-full bg-carbon rounded-2xl flex items-center justify-center text-foreground font-black text-xl overflow-hidden relative">
                                 {chat.profilePicUrl ? (
                                     <img src={chat.profilePicUrl} alt={chat.name} className="w-full h-full object-cover" />
                                 ) : (
@@ -371,19 +373,19 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                             </div>
                         </div>
                         <div className="min-w-0">
-                            <h3 className="font-bold text-white text-base lg:text-lg flex items-center gap-2 truncate">
+                            <h3 className="font-bold text-foreground text-base lg:text-lg flex items-center gap-2 truncate">
                                 {chat.name}
                                 <Circle size={6} weight="fill" className="text-green-500 animate-pulse flex-shrink-0" />
                             </h3>
-                            <p className="text-[8px] lg:text-[10px] text-gray-500 font-black uppercase tracking-widest opacity-60 truncate">{chat.jid}</p>
+                            <p className="text-[8px] lg:text-[10px] text-muted font-black uppercase tracking-widest opacity-70 truncate">{chat.jid}</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1.5 lg:gap-2">
+                    <div className="ml-3 flex shrink-0 items-center gap-1.5 lg:gap-2">
                         {canUseAI && (
                             <button
                                 onClick={handleToggleAI}
                                 title={aiRepliesEnabled ? 'Silence AI' : 'Active AI'}
-                                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${aiRepliesEnabled ? 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20' : 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'}`}
+                                className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-xl transition-all border ${aiRepliesEnabled ? 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20' : 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'}`}
                             >
                                 <Robot size={22} weight={aiRepliesEnabled ? "fill" : "bold"} />
                             </button>
@@ -392,7 +394,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                         <button
                             onClick={() => setShowLeadModal(true)}
                             title="Create Lead"
-                            className="w-10 h-10 flex items-center justify-center rounded-xl transition-all border bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border-orange-500/20"
+                            className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl transition-all border bg-orange-500/15 hover:bg-orange-500/25 text-orange-500 border-orange-500/25 shadow-sm shadow-orange-500/10"
                         >
                             <Target size={20} weight="bold" />
                         </button>
@@ -400,7 +402,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                         <button
                             onClick={() => setShowOrderModal(true)}
                             title="Create Order"
-                            className="w-10 h-10 flex items-center justify-center rounded-xl transition-all border bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/20"
+                            className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl transition-all border bg-green-500/15 hover:bg-green-500/25 text-green-500 border-green-500/25 shadow-sm shadow-green-500/10"
                         >
                             <ShoppingCart size={20} weight="bold" />
                         </button>
@@ -408,14 +410,14 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                         <button
                             onClick={() => setShowOrderPanel(!showOrderPanel)}
                             title="Open CRM / Orders"
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${showOrderPanel ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border-white/5'}`}
+                            className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-xl transition-all border ${showOrderPanel ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-control hover:bg-control-hover text-muted hover:text-foreground border-control-border'}`}
                         >
                             <Package size={20} weight={showOrderPanel ? "fill" : "bold"} />
                         </button>
 
-                        <div className="w-[1px] h-8 bg-white/5 mx-1" />
+                        <div className="w-[1px] h-8 shrink-0 bg-border mx-1" />
 
-                        <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5">
+                        <button className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-control hover:bg-control-hover text-muted hover:text-foreground transition-all border border-control-border">
                             <DotsThreeVertical size={24} weight="bold" />
                         </button>
                     </div>
@@ -438,7 +440,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                 {/* Progress Bar */}
                 {uploadProgress !== null && (
                     <div className="absolute top-16 lg:top-20 left-0 right-0 z-30 px-8 py-2 bg-primary/20 backdrop-blur-md border-b border-primary/30 flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
-                        <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-surface-muted rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)] transition-all duration-300"
                                 style={{ width: `${uploadProgress}%` }}
@@ -455,17 +457,17 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                 <div className="p-4 lg:p-6 bg-transparent z-10 relative">
                     <div className="max-w-4xl mx-auto flex items-end gap-4">
                         {replyingTo && (
-                            <div className="absolute bottom-full left-0 right-0 mb-4 px-4 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between group animate-in slide-in-from-bottom-2">
+                            <div className="absolute bottom-full left-0 right-0 mb-4 px-4 py-3 bg-control backdrop-blur-xl border border-control-border rounded-2xl flex items-center justify-between group animate-in slide-in-from-bottom-2">
                                 <div className="flex items-center gap-3 overflow-hidden">
                                     <div className="w-1 bg-primary h-8 rounded-full shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
                                     <div className="overflow-hidden">
                                         <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Replying to</p>
-                                        <p className="text-sm text-gray-400 truncate font-medium italic">&quot;{replyingTo.content}&quot;</p>
+                                        <p className="text-sm text-muted truncate font-medium italic">&quot;{replyingTo.content}&quot;</p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => setReplyingTo(null)}
-                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-white transition-colors"
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-control-hover text-muted hover:text-foreground transition-colors"
                                 >
                                     <X size={18} weight="bold" />
                                 </button>
@@ -473,9 +475,9 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                         )}
 
                         {showEmoji && (
-                            <div ref={emojiRef} className="absolute bottom-32 left-8 z-50 shadow-2xl rounded-3xl border border-white/10 overflow-hidden scale-90 origin-bottom-left">
+                            <div ref={emojiRef} className="absolute bottom-32 left-8 z-50 shadow-2xl rounded-3xl border border-border overflow-hidden scale-90 origin-bottom-left">
                                 <EmojiPicker
-                                    theme={Theme.DARK}
+                                    theme={uiTheme === 'nova-light' ? EmojiTheme.LIGHT : EmojiTheme.DARK}
                                     onEmojiClick={onEmojiClick}
                                     width={320}
                                     height={400}
@@ -483,10 +485,10 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                             </div>
                         )}
 
-                        <div className="flex items-center gap-1 glass-card p-2 rounded-2xl border-white/5 shadow-2xl">
+                        <div className="flex items-center gap-1 glass-card p-2 rounded-2xl border-border shadow-2xl">
                             <button
                                 onClick={() => setShowEmoji(!showEmoji)}
-                                className={`w-10 h-10 flex items-center justify-center rounded-xl transition ${showEmoji ? 'text-primary bg-primary/10' : 'text-gray-500 hover:text-gray-300'}`}
+                                className={`w-10 h-10 flex items-center justify-center rounded-xl transition ${showEmoji ? 'text-primary bg-primary/10' : 'text-muted hover:text-foreground'}`}
                             >
                                 <Smiley size={24} weight="bold" />
                             </button>
@@ -494,16 +496,16 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                             <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
                             <button
                                 onClick={handleAttach}
-                                className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-300 transition"
+                                className="w-10 h-10 flex items-center justify-center rounded-xl text-muted hover:text-foreground transition"
                             >
                                 <Paperclip size={24} weight="bold" />
                             </button>
                         </div>
 
-                        <div className="flex-1 glass-card rounded-[2rem] border-white/5 flex items-center px-6 py-1 min-h-[56px] shadow-2xl focus-within:border-primary/30 transition">
+                        <div className="flex-1 glass-card rounded-[2rem] border-border flex items-center px-6 py-1 min-h-[56px] shadow-2xl focus-within:border-primary/30 transition">
                             <input
                                 type="text"
-                                className="flex-1 focus:outline-none text-white bg-transparent font-medium py-3"
+                                className="flex-1 focus:outline-none text-foreground bg-transparent font-medium py-3 placeholder:text-muted"
                                 placeholder="Compose encrypted message..."
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
@@ -521,7 +523,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                     <PaperPlaneRight size={24} weight="fill" className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" />
                                 </button>
                             ) : (
-                                <button className="w-14 h-14 glass-card border-white/5 text-gray-500 rounded-[1.5rem] flex items-center justify-center hover:text-gray-300 transition">
+                                <button className="w-14 h-14 glass-card border-border text-muted rounded-[1.5rem] flex items-center justify-center hover:text-foreground transition">
                                     <Microphone size={24} weight="bold" />
                                 </button>
                             )}
@@ -531,12 +533,12 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                 {/* Modals */}
                 <AnimatePresence>
                     {showLeadModal && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80 backdrop-blur-xl">
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-overlay backdrop-blur-xl">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                className="glass-card w-full max-w-md rounded-[2.5rem] p-10 border-white/10"
+                                className="glass-card w-full max-w-md rounded-[2.5rem] p-10 border-border"
                             >
                                 <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
                                     <Target size={28} className="text-orange-500" />
@@ -544,51 +546,51 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                 </h3>
                                 <form onSubmit={handleLeadSubmit} className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Contact Name</label>
+                                        <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Contact Name</label>
                                         <input
                                             type="text"
                                             value={leadForm.name}
                                             onChange={e => setLeadForm({ ...leadForm, name: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                            className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
                                             required
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Governorate / State</label>
+                                        <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Governorate / State</label>
                                         <input
                                             type="text"
                                             value={leadForm.governorate}
                                             onChange={e => setLeadForm({ ...leadForm, governorate: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                            className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
                                             placeholder="e.g. Cairo"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">City</label>
+                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">City</label>
                                             <input
                                                 type="text"
                                                 value={leadForm.city}
                                                 onChange={e => setLeadForm({ ...leadForm, city: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Alt Phone</label>
+                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Alt Phone</label>
                                             <input
                                                 type="text"
                                                 value={leadForm.phone2}
                                                 onChange={e => setLeadForm({ ...leadForm, phone2: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
                                             />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Intent</label>
+                                        <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Intent</label>
                                         <select
                                             value={leadForm.intent}
                                             onChange={e => setLeadForm({ ...leadForm, intent: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold focus:outline-none"
+                                            className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold focus:outline-none"
                                         >
                                             <option value="sales">Sales Opportunity</option>
                                             <option value="inquiry">General Inquiry</option>
@@ -596,7 +598,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                         </select>
                                     </div>
                                     <div className="pt-6 flex gap-4">
-                                        <button type="button" onClick={() => setShowLeadModal(false)} className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase bg-white/5 rounded-2xl">Abort</button>
+                                        <button type="button" onClick={() => setShowLeadModal(false)} className="flex-1 py-4 text-muted font-bold text-xs uppercase bg-control rounded-2xl">Abort</button>
                                         <button type="submit" className="flex-1 bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Save Lead</button>
                                     </div>
                                 </form>
@@ -607,12 +609,12 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
 
                     {
                         showOrderModal && (
-                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80 backdrop-blur-xl">
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-overlay backdrop-blur-xl">
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                    className="glass-card w-full max-w-md rounded-[2.5rem] p-10 border-white/10"
+                                    className="glass-card w-full max-w-md rounded-[2.5rem] p-10 border-border"
                                 >
                                     <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
                                         <ShoppingCart size={28} className="text-green-500" />
@@ -620,67 +622,67 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                     </h3>
                                     <form onSubmit={handleOrderSubmit} className="space-y-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Order Items</label>
+                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Order Items</label>
                                             <textarea
                                                 value={orderForm.items}
                                                 onChange={e => setOrderForm({ ...orderForm, items: e.target.value })}
-                                                className="w-full h-32 bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                className="w-full h-32 bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
                                                 placeholder="e.g. 2x Nitro Coffee, 1x Bagel"
                                                 required
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Governorate</label>
+                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Governorate</label>
                                                 <input
                                                     type="text"
                                                     value={orderForm.governorate}
                                                     onChange={e => setOrderForm({ ...orderForm, governorate: e.target.value })}
-                                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                    className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">City</label>
+                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">City</label>
                                                 <input
                                                     type="text"
                                                     value={orderForm.city}
                                                     onChange={e => setOrderForm({ ...orderForm, city: e.target.value })}
-                                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                    className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Address</label>
+                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Full Address</label>
                                             <input
                                                 type="text"
                                                 value={orderForm.address}
                                                 onChange={e => setOrderForm({ ...orderForm, address: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Alt Phone</label>
+                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Alt Phone</label>
                                                 <input
                                                     type="text"
                                                     value={orderForm.phone2}
                                                     onChange={e => setOrderForm({ ...orderForm, phone2: e.target.value })}
-                                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                    className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Total Price</label>
+                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Total Price</label>
                                                 <input
                                                     type="number"
                                                     value={orderForm.total_price}
                                                     onChange={e => setOrderForm({ ...orderForm, total_price: parseFloat(e.target.value) })}
-                                                    className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold"
+                                                    className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
                                                     required
                                                 />
                                             </div>
                                         </div>
                                         <div className="pt-6 flex gap-4">
-                                            <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase bg-white/5 rounded-2xl">Abort</button>
+                                            <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 py-4 text-muted font-bold text-xs uppercase bg-control rounded-2xl">Abort</button>
                                             <button type="submit" className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Create Order</button>
                                         </div>
                                     </form>
@@ -690,21 +692,22 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                     }
                 </AnimatePresence >
 
-                {/* Order Panel Sidebar */}
-                {showOrderPanel && (
-                    <div className="absolute inset-0 lg:static lg:inset-auto z-40 bg-carbon/95 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none flex lg:w-96 flex-shrink-0 animate-in fade-in slide-in-from-right-4">
-                        <div className="w-full h-full p-4 lg:p-0 flex flex-col items-center sm:items-stretch justify-center sm:justify-start">
-                            {/* Mobile close button */}
-                            <div className="lg:hidden w-full flex justify-end mb-4">
-                                <button onClick={() => setShowOrderPanel(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-white">
-                                    <X size={20} weight="bold" />
-                                </button>
-                            </div>
-                            <OrderPanel contactPhone={chat.jid} contactName={chat.name || ''} />
-                        </div>
-                    </div>
-                )}
             </div>
+
+            {/* Order Panel Sidebar */}
+            {showOrderPanel && (
+                <div className="absolute inset-0 z-40 flex bg-overlay backdrop-blur-xl animate-in fade-in slide-in-from-right-4 xl:static xl:z-auto xl:w-96 xl:flex-shrink-0 xl:bg-transparent xl:backdrop-blur-none xl:animate-none">
+                    <div className="w-full h-full p-4 xl:p-0 xl:pl-4 flex flex-col items-center sm:items-stretch justify-center sm:justify-start">
+                        {/* Overlay close button */}
+                        <div className="xl:hidden w-full flex justify-end mb-4">
+                            <button onClick={() => setShowOrderPanel(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-control text-foreground">
+                                <X size={20} weight="bold" />
+                            </button>
+                        </div>
+                        <OrderPanel contactPhone={chat.jid} contactName={chat.name || ''} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

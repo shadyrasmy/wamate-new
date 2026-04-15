@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { OrderRepository } from "@/lib/OrderRepository";
 import { supabase } from "@/lib/supabase";
 import type { Order, CartItem, ProductVariant } from "@/lib/types/order";
@@ -29,7 +29,7 @@ import {
 
 // Native Tailwind replacements for ShadCN components
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
-    <div className={`rounded-2xl border border-white/5 bg-[#1a162d]/80 backdrop-blur-md shadow-xl ${className}`}>
+    <div className={`glass-card rounded-2xl border border-border backdrop-blur-md shadow-xl text-foreground ${className}`}>
         {children}
     </div>
 );
@@ -37,7 +37,7 @@ const GlassCard = ({ children, className = "" }: { children: React.ReactNode, cl
 const CarbonCard = ({ children, className = "", onClick }: { children: React.ReactNode, className?: string, onClick?: () => void }) => (
     <div
         onClick={onClick}
-        className={`rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/10 transition-colors ${onClick ? 'cursor-pointer' : ''} ${className}`}
+        className={`rounded-xl border border-border bg-control p-3 hover:bg-control-hover transition-colors text-foreground ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
         {children}
     </div>
@@ -48,7 +48,7 @@ const Badge = ({ children, color = "primary", className = "" }: { children: Reac
     if (color === "green") colorStyle = "bg-green-500/20 text-green-400 border-green-500/30";
     if (color === "red") colorStyle = "bg-red-500/20 text-red-400 border-red-500/30";
     if (color === "yellow") colorStyle = "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    if (color === "gray") colorStyle = "bg-gray-500/20 text-gray-400 border-gray-500/30";
+    if (color === "gray") colorStyle = "bg-control text-muted border-control-border";
 
     if (color.startsWith("#")) {
         return (
@@ -75,8 +75,8 @@ const Button = ({
     const sizeStyle = size === "sm" ? "px-3 py-1.5 text-xs" : size === "icon" ? "p-2" : "px-4 py-2 text-sm";
 
     let variantStyle = "bg-gradient-to-r from-primary to-primary-dark text-white shadow-primary/20 hover:shadow-primary/40 shadow-lg";
-    if (variant === "outline") variantStyle = "border border-white/20 bg-transparent text-white hover:bg-white/10";
-    if (variant === "ghost") variantStyle = "bg-transparent text-gray-300 hover:text-white hover:bg-white/10";
+    if (variant === "outline") variantStyle = "border border-control-border bg-transparent text-foreground hover:bg-control";
+    if (variant === "ghost") variantStyle = "bg-transparent text-muted hover:text-foreground hover:bg-control";
     if (variant === "danger") variantStyle = "bg-red-500/20 text-red-400 hover:bg-red-500/30";
 
     return (
@@ -92,13 +92,13 @@ const Input = ({ value, onChange, placeholder, type = "text", className = "", ..
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all ${className}`}
+        className={`w-full bg-input border border-input-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all ${className}`}
         {...props}
     />
 );
 
 const Label = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
-    <label className={`text-[11px] font-black uppercase tracking-widest text-gray-400 mb-1 block ${className}`}>
+    <label className={`text-[11px] font-black uppercase tracking-widest text-muted mb-1 block ${className}`}>
         {children}
     </label>
 );
@@ -110,11 +110,11 @@ const Select = ({ value, onChange, options, placeholder = "Select...", disabled 
                 value={value || ""}
                 onChange={(e) => onChange(e.target.value)}
                 disabled={disabled}
-                className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary/50 appearance-none disabled:opacity-50"
+                className="w-full bg-input border border-input-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 appearance-none disabled:opacity-50"
             >
-                <option value="" disabled className="bg-[#1a162d] text-gray-400">{placeholder}</option>
+                <option value="" disabled className="bg-surface-dark text-muted">{placeholder}</option>
                 {options.map((opt: any) => (
-                    <option key={opt.value} value={opt.value} className="bg-[#1a162d] text-white">
+                    <option key={opt.value} value={opt.value} className="bg-surface-dark text-foreground">
                         {opt.label}
                     </option>
                 ))}
@@ -333,15 +333,15 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
     // --- RENDER ORDER LIST ---
     if (!selectedOrderId) {
         return (
-            <GlassCard className="flex flex-col h-full w-full max-w-sm rounded-none sm:rounded-2xl sm:my-4 sm:mr-4 border-r-0 sm:border-r border-white/10 overflow-hidden">
+            <GlassCard className="flex flex-col h-full w-full max-w-sm rounded-none sm:rounded-2xl sm:my-4 sm:mr-4 border-r-0 sm:border-r border-border overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/20">
+                <div className="flex items-center justify-between p-4 border-b border-border bg-surface-inset">
                     <div className="min-w-0 flex-1">
-                        <h4 className="font-bold text-sm flex items-center gap-2 text-white">
+                        <h4 className="font-bold text-sm flex items-center gap-2 text-foreground">
                             <ShoppingCart size={18} weight="fill" className="text-primary" />
                             Orders
                         </h4>
-                        <p className="text-[11px] text-gray-400 truncate mt-0.5">{contactName || contactPhone}</p>
+                        <p className="text-[11px] text-muted truncate mt-0.5">{contactName || contactPhone}</p>
                     </div>
                     <Button variant="ghost" size="icon" onClick={fetchOrders} disabled={isLoading}>
                         <ArrowsClockwise size={16} weight="bold" className={isLoading ? "animate-spin" : ""} />
@@ -352,21 +352,21 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                     {isLoading ? (
                         <div className="space-y-3">
                             {[1, 2, 3].map(i => (
-                                <div key={i} className="h-28 bg-white/5 rounded-xl animate-pulse" />
+                                <div key={i} className="h-28 bg-control rounded-xl animate-pulse" />
                             ))}
                         </div>
                     ) : error ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center h-full">
                             <Warning size={40} weight="duotone" className="text-red-500 mb-3 opacity-80" />
                             <p className="text-sm font-bold text-red-400">Failed to load CRM</p>
-                            <p className="text-xs text-gray-500 mt-1">{error}</p>
+                            <p className="text-xs text-muted mt-1">{error}</p>
                             <Button variant="outline" size="sm" className="mt-4" onClick={fetchOrders}>Retry</Button>
                         </div>
                     ) : orders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center h-full opacity-60">
-                            <Package size={48} weight="duotone" className="text-gray-500 mb-4" />
-                            <p className="text-sm font-bold text-gray-300">No History Found</p>
-                            <p className="text-xs text-gray-500 mt-1">No orders match this phone number in the database.</p>
+                            <Package size={48} weight="duotone" className="text-muted mb-4" />
+                            <p className="text-sm font-bold text-muted-soft">No History Found</p>
+                            <p className="text-xs text-muted mt-1">No orders match this phone number in the database.</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -374,23 +374,23 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                                 <CarbonCard key={order.id} onClick={() => setSelectedOrderId(order.id)} className="space-y-3 relative group">
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="min-w-0">
-                                            <span className="font-bold text-sm text-white truncate block">
+                                            <span className="font-bold text-sm text-foreground truncate block">
                                                 {order.full_name || "Unknown Customer"}
                                             </span>
-                                            <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest mt-0.5 block">
+                                            <span className="text-[10px] text-muted uppercase font-black tracking-widest mt-0.5 block">
                                                 {new Date(order.created_at).toLocaleDateString()}
                                             </span>
                                         </div>
-                                        <CaretRight size={16} weight="bold" className="text-gray-600 group-hover:text-primary transition-colors shrink-0" />
+                                        <CaretRight size={16} weight="bold" className="text-muted group-hover:text-primary transition-colors shrink-0" />
                                     </div>
 
                                     {order.cart_items && order.cart_items.length > 0 && (
-                                        <p className="text-xs text-gray-400 truncate">
+                                        <p className="text-xs text-muted truncate">
                                             {order.cart_items.map(i => i.product ? (i.product as any).name : "Item").join(", ")}
                                         </p>
                                     )}
 
-                                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm font-black text-primary">{formatCurrency(order.total_cost)}</span>
                                             <Badge color={getPaymentBadgeColor(order.payment_status)}>
@@ -422,15 +422,15 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
     if (!order) return null;
 
     return (
-        <GlassCard className="flex flex-col h-full w-full max-w-sm rounded-none sm:rounded-2xl sm:my-4 sm:mr-4 border-r-0 sm:border-r border-white/10 overflow-hidden relative">
+        <GlassCard className="flex flex-col h-full w-full max-w-sm rounded-none sm:rounded-2xl sm:my-4 sm:mr-4 border-r-0 sm:border-r border-border overflow-hidden relative">
             {/* Header */}
-            <div className="flex items-center gap-3 p-4 border-b border-white/10 bg-black/20 shrink-0">
-                <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2 bg-white/5" onClick={() => setSelectedOrderId(null)}>
+            <div className="flex items-center gap-3 p-4 border-b border-border bg-surface-inset shrink-0">
+                <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2 bg-control" onClick={() => setSelectedOrderId(null)}>
                     <ArrowLeft size={16} weight="bold" />
                 </Button>
                 <div className="min-w-0 flex-1">
-                    <h4 className="font-bold text-sm text-white truncate">Order Details</h4>
-                    <p className="text-[11px] text-gray-400 font-medium truncate uppercase tracking-widest mt-0.5">
+                    <h4 className="font-bold text-sm text-foreground truncate">Order Details</h4>
+                    <p className="text-[11px] text-muted font-medium truncate uppercase tracking-widest mt-0.5">
                         {order.full_name || contactName}
                     </p>
                 </div>
@@ -445,19 +445,19 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                 <CarbonCard className="space-y-3">
                     <Label className="flex items-center gap-1.5"><User size={12} weight="bold" /> Customer</Label>
                     <div className="space-y-2">
-                        <div className="flex items-start gap-2 text-sm text-white">
-                            <User size={16} weight="duotone" className="text-gray-500 shrink-0 mt-0.5" />
+                        <div className="flex items-start gap-2 text-sm text-foreground">
+                            <User size={16} weight="duotone" className="text-muted shrink-0 mt-0.5" />
                             <span className="font-medium">{order.full_name || "—"}</span>
                         </div>
-                        <div className="flex items-start gap-2 text-sm text-white">
-                            <Phone size={16} weight="duotone" className="text-gray-500 shrink-0 mt-0.5" />
+                        <div className="flex items-start gap-2 text-sm text-foreground">
+                            <Phone size={16} weight="duotone" className="text-muted shrink-0 mt-0.5" />
                             <span className="font-medium">{order.phone || "—"}</span>
                         </div>
                         {(order.address || order.government) && (
-                            <div className="flex items-start gap-2 text-sm text-white">
-                                <MapPin size={16} weight="duotone" className="text-gray-500 shrink-0 mt-0.5" />
-                                <span className="font-medium text-gray-300 leading-snug">
-                                    {order.address} {order.government && <span className="text-gray-500">({order.government})</span>}
+                            <div className="flex items-start gap-2 text-sm text-foreground">
+                                <MapPin size={16} weight="duotone" className="text-muted shrink-0 mt-0.5" />
+                                <span className="font-medium text-muted-soft leading-snug">
+                                    {order.address} {order.government && <span className="text-muted">({order.government})</span>}
                                 </span>
                             </div>
                         )}
@@ -467,16 +467,16 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                 {/* Financials */}
                 <CarbonCard className="space-y-3">
                     <Label className="flex items-center gap-1.5"><CreditCard size={12} weight="bold" /> Financials</Label>
-                    <div className="grid grid-cols-2 gap-y-2 text-sm border-b border-white/5 pb-3 mb-3">
-                        <div className="text-gray-400">Subtotal:</div>
-                        <div className="text-right text-white font-medium">{formatCurrency(order.cost)}</div>
-                        <div className="text-gray-400">Shipping:</div>
-                        <div className="text-right text-white font-medium">{formatCurrency(order.shipping_cost)}</div>
-                        <div className="text-gray-400 font-bold mt-1">Total:</div>
+                    <div className="grid grid-cols-2 gap-y-2 text-sm border-b border-border pb-3 mb-3">
+                        <div className="text-muted">Subtotal:</div>
+                        <div className="text-right text-foreground font-medium">{formatCurrency(order.cost)}</div>
+                        <div className="text-muted">Shipping:</div>
+                        <div className="text-right text-foreground font-medium">{formatCurrency(order.shipping_cost)}</div>
+                        <div className="text-muted font-bold mt-1">Total:</div>
                         <div className="text-right text-primary font-black text-base mt-1">{formatCurrency(order.total_cost)}</div>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Payment Status</span>
+                        <span className="text-xs text-muted font-bold uppercase tracking-wider">Payment Status</span>
                         <Badge color={getPaymentBadgeColor(order.payment_status)}>{order.payment_status || "unpaid"}</Badge>
                     </div>
                 </CarbonCard>
@@ -487,17 +487,17 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                         <Label className="flex items-center gap-1.5"><Package size={12} weight="bold" /> Items ({order.cart_items.length})</Label>
                         <div className="space-y-3">
                             {order.cart_items.map((item, idx) => (
-                                <div key={item.id || idx} className="flex justify-between items-start pt-3 border-t border-white/5 first:border-t-0 first:pt-0">
+                                <div key={item.id || idx} className="flex justify-between items-start pt-3 border-t border-border first:border-t-0 first:pt-0">
                                     <div className="min-w-0 pr-4">
-                                        <p className="font-bold text-sm text-white leading-tight">
+                                        <p className="font-bold text-sm text-foreground leading-tight">
                                             {item.product ? (item.product as any).name : `Product ${idx + 1}`}
                                         </p>
-                                        <p className="text-[11px] text-gray-500 mt-1 uppercase tracking-widest font-bold">
+                                        <p className="text-[11px] text-muted mt-1 uppercase tracking-widest font-bold">
                                             {formatCurrency(item.price)} × {item.quantity}
                                         </p>
                                     </div>
                                     <div className="text-right shrink-0">
-                                        <p className="font-black text-sm text-gray-300">{formatCurrency(item.price * item.quantity)}</p>
+                                        <p className="font-black text-sm text-muted-soft">{formatCurrency(item.price * item.quantity)}</p>
                                     </div>
                                 </div>
                             ))}
@@ -510,8 +510,8 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                     <CarbonCard className="space-y-3">
                         <Label className="flex items-center gap-1.5"><Note size={12} weight="bold" /> Notes</Label>
                         {order.notes && (
-                            <div className="bg-white/5 rounded-lg p-2 text-sm text-gray-300">
-                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest block mb-1">Customer Notes</span>
+                            <div className="bg-control rounded-lg p-2 text-sm text-muted-soft">
+                                <span className="text-[10px] text-muted font-bold uppercase tracking-widest block mb-1">Customer Notes</span>
                                 {order.notes}
                             </div>
                         )}
@@ -531,7 +531,7 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                         {/* Status Change */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <span className="text-xs text-gray-400">Order Status</span>
+                                <span className="text-xs text-muted">Order Status</span>
                                 <Select
                                     value={order.custom_status || order.status}
                                     onChange={(val: string) => handleStatusChange(order.id, val)}
@@ -540,7 +540,7 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                                 />
                             </div>
                             <div className="space-y-1">
-                                <span className="text-xs text-gray-400">Delivery Status</span>
+                                <span className="text-xs text-muted">Delivery Status</span>
                                 <Select
                                     value={order.delivery_status || ""}
                                     onChange={(val: string) => handleDeliveryChange(order.id, val)}
@@ -557,8 +557,8 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                         </div>
 
                         {/* Send to Delivery */}
-                        <div className="space-y-1 pt-2 border-t border-white/5">
-                            <span className="text-xs text-gray-400 flex items-center gap-1"><PaperPlaneRight size={14} /> Send to Delivery</span>
+                        <div className="space-y-1 pt-2 border-t border-border">
+                            <span className="text-xs text-muted flex items-center gap-1"><PaperPlaneRight size={14} /> Send to Delivery</span>
                             <div className="flex gap-2">
                                 <Select
                                     value=""
@@ -578,7 +578,7 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
 
                         {/* Add Note */}
                         <div className="space-y-1">
-                            <span className="text-xs text-gray-400">Add Customer Note</span>
+                            <span className="text-xs text-muted">Add Customer Note</span>
                             <div className="flex gap-2">
                                 <Input
                                     value={noteText}
@@ -594,7 +594,7 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
 
                         {/* Add Internal Comment */}
                         <div className="space-y-1">
-                            <span className="text-xs text-gray-400">Add Internal Comment</span>
+                            <span className="text-xs text-muted">Add Internal Comment</span>
                             <div className="flex gap-2">
                                 <Input
                                     value={commentText}

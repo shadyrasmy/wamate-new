@@ -68,9 +68,9 @@ function RegisterContent() {
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="carbon-card p-10 lg:p-14 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden"
+                className="carbon-card p-10 lg:p-14 rounded-[3rem] border border-border shadow-2xl relative overflow-hidden"
             >
-                <div className="absolute top-0 left-0 w-32 h-32 bg-white/[0.02] rounded-br-[100px] pointer-events-none" />
+                <div className="absolute top-0 left-0 w-32 h-32 bg-surface-soft rounded-br-[100px] pointer-events-none" />
 
                 {/* Success State - Check Your Email */}
                 {registrationSuccess ? (
@@ -83,19 +83,19 @@ function RegisterContent() {
                         >
                             <CheckCircle size={40} weight="fill" className="text-green-500" />
                         </motion.div>
-                        <h2 className="text-3xl font-black text-white tracking-tight mb-4">Check Your Email!</h2>
-                        <p className="text-gray-400 font-medium text-sm mb-2">
+                        <h2 className="text-3xl font-black text-foreground tracking-tight mb-4">Check Your Email!</h2>
+                        <p className="theme-copy-strong font-medium text-sm mb-2">
                             We've sent a verification link to:
                         </p>
                         <p className="text-primary font-bold text-lg mb-6">{formData.email}</p>
-                        <p className="text-gray-500 font-medium text-xs mb-8">
+                        <p className="theme-copy font-medium text-xs mb-8">
                             Click the link in your email to verify your account. If you don't see it, check your spam folder.
                         </p>
                         <Link href="/login">
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className="px-8 py-4 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition flex items-center gap-3 text-sm uppercase tracking-[0.2em]"
+                                className="theme-button-primary px-8 py-4 font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition flex items-center gap-3 text-sm uppercase tracking-[0.2em]"
                             >
                                 Go to Login
                                 <ArrowRight size={18} weight="bold" />
@@ -113,8 +113,8 @@ function RegisterContent() {
                                     <ShieldCheck size={32} weight="fill" className="text-primary" />
                                 </motion.div>
                                 <div>
-                                    <h2 className="text-3xl font-black text-white tracking-tight">Create Account</h2>
-                                    <p className="text-gray-500 font-medium text-sm">Join the next-gen messaging platform.</p>
+                                    <h2 className="text-3xl font-black text-foreground tracking-tight">Create Account</h2>
+                                    <p className="theme-copy font-medium text-sm">Join the next-gen messaging platform.</p>
                                 </div>
                             </div>
                         </div>
@@ -138,20 +138,20 @@ function RegisterContent() {
                                 <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-2xl flex items-start gap-3">
                                     <Gift className="text-green-500 shrink-0 mt-0.5" size={20} weight="fill" />
                                     <div>
-                                        <p className="text-sm font-bold text-white">Referral Applied!</p>
-                                        <p className="text-xs text-gray-400">You are registering with code <span className="font-mono text-green-400">{formData.referralCode}</span>.</p>
+                                        <p className="text-sm font-bold text-foreground">Referral Applied!</p>
+                                        <p className="text-xs text-muted">You are registering with code <span className="font-mono text-green-400">{formData.referralCode}</span>.</p>
                                     </div>
                                 </div>
                             )}
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Full Name</label>
+                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">Full Name</label>
                                 <div className="relative group">
-                                    <User className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                    <User className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition" size={20} />
                                     <input
                                         type="text"
                                         required
                                         placeholder="Enter your name"
-                                        className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                        className="theme-input-solid w-full pl-14 pr-6 py-5 rounded-2xl font-bold focus:outline-none focus:border-primary/50 focus:bg-surface-soft transition"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     />
@@ -159,14 +159,14 @@ function RegisterContent() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Email Address</label>
+                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">Email Address</label>
                                 <div className="relative group">
-                                    <EnvelopeSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                    <EnvelopeSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition" size={20} />
                                     <input
                                         type="email"
                                         required
                                         placeholder="your@email.com"
-                                        className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                        className="theme-input-solid w-full pl-14 pr-6 py-5 rounded-2xl font-bold focus:outline-none focus:border-primary/50 focus:bg-surface-soft transition"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     />
@@ -174,14 +174,14 @@ function RegisterContent() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Phone Number</label>
+                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">Phone Number</label>
                                 <div className="relative group">
-                                    <WhatsappLogo className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                    <WhatsappLogo className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition" size={20} />
                                     <input
                                         type="text"
                                         required
                                         placeholder="+1 234 567 890"
-                                        className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                        className="theme-input-solid w-full pl-14 pr-6 py-5 rounded-2xl font-bold focus:outline-none focus:border-primary/50 focus:bg-surface-soft transition"
                                         value={formData.phone_number}
                                         onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
                                     />
@@ -189,14 +189,14 @@ function RegisterContent() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Secure Password</label>
+                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">Secure Password</label>
                                 <div className="relative group">
-                                    <LockSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                    <LockSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition" size={20} />
                                     <input
                                         type="password"
                                         required
                                         placeholder="Enter your password"
-                                        className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                        className="theme-input-solid w-full pl-14 pr-6 py-5 rounded-2xl font-bold focus:outline-none focus:border-primary/50 focus:bg-surface-soft transition"
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     />
@@ -208,7 +208,7 @@ function RegisterContent() {
                                 disabled={loading}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3 text-sm uppercase tracking-[0.2em]"
+                                className="theme-button-primary w-full py-5 font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3 text-sm uppercase tracking-[0.2em]"
                             >
                                 {loading ? (
                                     <>
@@ -225,9 +225,9 @@ function RegisterContent() {
                         </form>
 
                         <div className="mt-12 flex flex-col items-center gap-6">
-                            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest text-center">
+                            <p className="text-[11px] font-medium text-muted uppercase tracking-widest text-center">
                                 Already have an account? {' '}
-                                <Link href="/login" className="text-primary font-black hover:text-white transition">
+                                <Link href="/login" className="text-primary font-black hover:text-primary-dark transition">
                                     Login Here
                                 </Link>
                             </p>
@@ -236,7 +236,7 @@ function RegisterContent() {
                 )}
             </motion.div>
 
-            <p className="mt-10 text-center text-[10px] font-black text-gray-700 uppercase tracking-[0.3em]">
+            <p className="mt-10 text-center text-[10px] font-black text-muted uppercase tracking-[0.3em]">
                 End-to-End Encryption Enabled // No-Log Policy
             </p>
         </div>

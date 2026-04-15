@@ -70,10 +70,10 @@ export default function LoginPage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="carbon-card p-10 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden"
+                    className="carbon-card p-10 rounded-[2.5rem] border border-border shadow-2xl relative overflow-hidden"
                 >
                     {/* Interior Decorative Element */}
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/[0.02] rounded-bl-[80px] pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-surface-soft rounded-bl-[80px] pointer-events-none" />
 
                     <div className="flex flex-col items-center mb-10">
                         <motion.div
@@ -82,8 +82,8 @@ export default function LoginPage() {
                         >
                             <WhatsappLogo size={32} weight="fill" className="text-primary" />
                         </motion.div>
-                        <h2 className="text-3xl font-black text-white text-center tracking-tight mb-2">Access Grid</h2>
-                        <p className="text-gray-500 font-medium text-center text-xs max-w-[240px]">Synchronize your communications across the global neural network.</p>
+                        <h2 className="text-3xl font-black text-foreground text-center tracking-tight mb-2">Access Grid</h2>
+                        <p className="theme-copy font-medium text-center text-xs max-w-[240px]">Synchronize your communications across the global neural network.</p>
                     </div>
 
                     <AnimatePresence mode="wait">
@@ -102,14 +102,14 @@ export default function LoginPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Identity Hub</label>
+                            <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">Identity Hub</label>
                             <div className="relative group">
-                                <EnvelopeSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                <EnvelopeSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition" size={20} />
                                 <input
                                     type="email"
                                     required
                                     placeholder="Enter verified email"
-                                    className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                    className="theme-input-solid w-full pl-14 pr-6 py-5 rounded-2xl font-bold focus:outline-none focus:border-primary/50 focus:bg-surface-soft transition"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 />
@@ -117,14 +117,14 @@ export default function LoginPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">Secure Cipher</label>
+                            <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">Secure Cipher</label>
                             <div className="relative group">
-                                <LockSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" size={20} />
+                                <LockSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition" size={20} />
                                 <input
                                     type="password"
                                     required
                                     placeholder="Enter unique cipher"
-                                    className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 focus:bg-white/[0.05] transition placeholder:text-gray-700"
+                                    className="theme-input-solid w-full pl-14 pr-6 py-5 rounded-2xl font-bold focus:outline-none focus:border-primary/50 focus:bg-surface-soft transition"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 />
@@ -132,7 +132,7 @@ export default function LoginPage() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <Link href="/forgot-password" className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-white transition">
+                            <Link href="/forgot-password" className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-primary-dark transition">
                                 Recovery Protocol?
                             </Link>
                         </div>
@@ -142,7 +142,7 @@ export default function LoginPage() {
                             disabled={loading}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3 text-sm uppercase tracking-[0.2em]"
+                            className="theme-button-primary w-full py-5 font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3 text-sm uppercase tracking-[0.2em]"
                         >
                             {loading ? (
                                 <>
@@ -160,13 +160,13 @@ export default function LoginPage() {
 
                     <div className="mt-12 flex flex-col items-center gap-6">
                         <div className="flex items-center gap-4 w-full opacity-20">
-                            <div className="h-[1px] flex-1 bg-white" />
+                            <div className="h-[1px] flex-1 bg-border" />
                             <Circle size={8} weight="fill" />
-                            <div className="h-[1px] flex-1 bg-white" />
+                            <div className="h-[1px] flex-1 bg-border" />
                         </div>
-                        <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">
+                        <p className="text-[11px] font-medium text-muted uppercase tracking-widest">
                             New user? {' '}
-                            <Link href="/register" className="text-primary font-black hover:text-white transition">
+                            <Link href="/register" className="text-primary font-black hover:text-primary-dark transition">
                                 Create Identity
                             </Link>
                         </p>
@@ -174,7 +174,7 @@ export default function LoginPage() {
                 </motion.div>
 
                 {/* Footer Attribution */}
-                <p className="mt-10 text-center text-[10px] font-black text-gray-700 uppercase tracking-[0.3em]">
+                <p className="mt-10 text-center text-[10px] font-black text-muted uppercase tracking-[0.3em]">
                     WaMate OS v2.4 // Advanced Transmission System
                 </p>
             </div>

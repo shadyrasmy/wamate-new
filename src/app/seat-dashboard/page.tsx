@@ -74,32 +74,32 @@ export default function SeatDashboard() {
         }
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#efeae2]"><Spinner className="animate-spin text-wa-green" size={40} /></div>;
+    if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><Spinner className="animate-spin text-wa-green" size={40} /></div>;
 
     return (
-        <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
+        <div className="flex h-screen bg-background overflow-hidden font-sans text-foreground">
             {/* Sidebar (List of Assigned Chats) */}
-            <aside className="w-80 bg-white border-r border-gray-200 flex flex-col">
-                <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+            <aside className="w-80 bg-surface border-r border-border flex flex-col">
+                <div className="p-4 bg-surface-dark border-b border-border flex justify-between items-center">
                     <div>
-                        <h1 className="font-bold text-gray-700 flex items-center gap-2">
+                        <h1 className="font-bold text-foreground flex items-center gap-2">
                             <ChatCircleText size={24} className="text-wa-green" />
                             My Chats
                         </h1>
                         <div className="flex items-center gap-2 mt-1 cursor-pointer" onClick={toggleStatus}>
                             <div className={`w-2 h-2 rounded-full ${seat?.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                            <span className="text-xs text-gray-500 uppercase font-semibold">{seat?.status || 'Offline'}</span>
+                            <span className="text-xs text-muted uppercase font-semibold">{seat?.status || 'Offline'}</span>
                         </div>
                     </div>
 
-                    <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-full transition" title="Logout">
+                    <button onClick={handleLogout} className="p-2 text-muted hover:text-red-500 hover:bg-red-500/10 rounded-full transition" title="Logout">
                         <SignOut size={20} />
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
                     {chats.length === 0 ? (
-                        <div className="p-8 text-center text-gray-400 text-sm">
+                        <div className="p-8 text-center text-muted text-sm">
                             No chats assigned yet.
                         </div>
                     ) : (
@@ -107,17 +107,17 @@ export default function SeatDashboard() {
                             <div
                                 key={chat.jid}
                                 onClick={() => setSelectedChat(chat)}
-                                className={`px-4 py-3 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50
-                                    ${selectedChat?.jid === chat.jid ? 'bg-green-50' : ''}
+                                className={`px-4 py-3 cursor-pointer border-b border-border transition-colors hover:bg-control
+                                    ${selectedChat?.jid === chat.jid ? 'bg-primary/10' : ''}
                                 `}
                             >
                                 <div className="flex justify-between items-center mb-1">
-                                    <h3 className="font-semibold text-gray-900 truncate">{chat.name || chat.push_name || chat.jid}</h3>
-                                    <span className="text-xs text-gray-400">
+                                    <h3 className="font-semibold text-foreground truncate">{chat.name || chat.push_name || chat.jid}</h3>
+                                    <span className="text-xs text-muted">
                                         {chat.lastMessage ? new Date(chat.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                     </span>
                                 </div>
-                                <p className="text-sm text-gray-500 truncate">
+                                <p className="text-sm text-muted truncate">
                                     {chat.lastMessage?.content || 'No messages'}
                                 </p>
                             </div>
@@ -127,16 +127,16 @@ export default function SeatDashboard() {
             </aside>
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col h-full bg-[#efeae2] relative">
+            <div className="flex-1 flex flex-col h-full bg-background relative">
                 {selectedChat ? (
                     <ChatWindow
                         chat={selectedChat}
                         instanceId={selectedChat.instance?.instance_id || selectedChat.instanceId}
                     />
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-                        <div className="w-24 h-24 bg-gray-200 rounded-full mb-4 flex items-center justify-center">
-                            <ChatCircleText size={48} className="text-gray-400" opacity={0.5} />
+                    <div className="flex-1 flex flex-col items-center justify-center text-muted">
+                        <div className="w-24 h-24 bg-control rounded-full mb-4 flex items-center justify-center">
+                            <ChatCircleText size={48} className="text-muted" opacity={0.5} />
                         </div>
                         <p>Select a chat to start responding.</p>
                     </div>

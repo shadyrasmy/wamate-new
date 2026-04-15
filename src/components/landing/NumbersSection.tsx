@@ -21,7 +21,7 @@ export default function NumbersSection({ content }: { content?: any }) {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h3 className="text-4xl lg:text-7xl font-black mb-10 text-white opacity-20 select-none tracking-widest uppercase">{c.title}</h3>
+                    <h3 className="text-4xl lg:text-7xl font-black mb-10 text-foreground/20 select-none tracking-widest uppercase">{c.title}</h3>
                     <div className="grid md:grid-cols-3 gap-12 w-full max-w-4xl">
                         {[
                             { val: c.stat1_title, label: c.stat1_label },
@@ -29,7 +29,7 @@ export default function NumbersSection({ content }: { content?: any }) {
                             { val: c.stat3_title, label: c.stat3_label }
                         ].map((stat, i) => (
                             <div key={i}>
-                                <div className="text-4xl lg:text-5xl font-bold mb-2 text-white">{stat.val}</div>
+                                <div className="text-4xl lg:text-5xl font-bold mb-2 text-foreground">{stat.val}</div>
                                 <div className="text-[10px] text-primary font-black uppercase tracking-widest">{stat.label}</div>
                             </div>
                         ))}

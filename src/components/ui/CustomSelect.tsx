@@ -36,7 +36,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = '
     return (
         <div className="space-y-2 relative" ref={containerRef}>
             {label && (
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">
+                <label className="theme-label ml-1 block">
                     {label}
                 </label>
             )}
@@ -46,13 +46,13 @@ export default function CustomSelect({ options, value, onChange, placeholder = '
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-full bg-surface border border-border p-4 rounded-2xl flex items-center justify-between transition-all duration-300 hover:border-primary/50 text-foreground group ${isOpen ? 'ring-2 ring-primary/20 border-primary' : ''}`}
             >
-                <span className={`text-sm font-bold ${!selectedOption ? 'text-gray-500' : ''}`}>
+                <span className={`text-sm font-bold ${!selectedOption ? 'text-muted' : ''}`}>
                     {selectedOption ? selectedOption.label : placeholder}
                 </span>
                 <CaretDown
                     size={18}
                     weight="bold"
-                    className={`text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : ''}`}
+                    className={`text-muted transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : ''}`}
                 />
             </button>
 
@@ -76,7 +76,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = '
                                     }}
                                     className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${value === option.value
                                             ? 'bg-primary text-white'
-                                            : 'hover:bg-primary/10 text-gray-400 hover:text-foreground'
+                                            : 'hover:bg-primary/10 text-muted hover:text-foreground'
                                         }`}
                                 >
                                     <span className="text-sm font-bold tracking-tight">

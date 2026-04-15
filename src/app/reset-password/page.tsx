@@ -76,7 +76,7 @@ function ResetPasswordContent() {
         <div className="min-h-screen bg-background flex items-center justify-center text-foreground p-10">
             <div className="max-w-md w-full text-center space-y-8">
                 <h1 className="text-4xl font-black tracking-tighter uppercase italic">Reset Cipher</h1>
-                <p className="text-gray-500 font-medium">Enter your new transmission cipher to restore access to your identity.</p>
+                <p className="theme-copy font-medium">Enter your new transmission cipher to restore access to your identity.</p>
 
                 {message && (
                     <div className={`p-4 rounded-xl ${messageType === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
@@ -93,7 +93,7 @@ function ResetPasswordContent() {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             minLength={6}
-                            className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
+                            className="theme-input-solid w-full p-5 rounded-2xl focus:outline-none focus:border-primary/50 transition font-bold"
                         />
                         <input
                             type="password"
@@ -102,12 +102,12 @@ function ResetPasswordContent() {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             required
                             minLength={6}
-                            className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
+                            className="theme-input-solid w-full p-5 rounded-2xl focus:outline-none focus:border-primary/50 transition font-bold"
                         />
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-5 bg-primary rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="theme-button-primary w-full py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? 'Processing...' : 'Reset Cipher'}
                         </button>
@@ -116,14 +116,14 @@ function ResetPasswordContent() {
 
                 {messageType === 'success' && (
                     <div className="pt-6">
-                        <a href="/login" className="inline-block py-5 px-8 bg-primary rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] transition">
+                        <a href="/login" className="theme-button-primary inline-block py-5 px-8 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] transition">
                             Proceed to Login
                         </a>
                     </div>
                 )}
 
                 <div className="pt-6">
-                    <a href="/forgot-password" className="text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-white transition">Request New Cipher</a>
+                    <a href="/forgot-password" className="text-[10px] font-black uppercase tracking-widest text-muted hover:text-foreground transition">Request New Cipher</a>
                 </div>
             </div>
         </div>

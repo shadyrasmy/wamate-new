@@ -63,7 +63,7 @@ export default function DashboardHome() {
             <div className="flex h-[calc(100vh-80px)] items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <Spinner size={32} className="animate-spin text-primary" />
-                    <span className="text-gray-500 font-bold uppercase tracking-widest text-xs">Loading Pulse...</span>
+                    <span className="text-muted font-bold uppercase tracking-widest text-xs">Loading Pulse...</span>
                 </div>
             </div>
         );
@@ -98,7 +98,7 @@ export default function DashboardHome() {
                             <h2 className="text-2xl font-black text-foreground capitalize">{userPlan} Plan</h2>
                             <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/20">Active Node</span>
                         </div>
-                        <p className="text-gray-500 font-medium">Your current operational capacity and grid parameters.</p>
+                        <p className="text-muted font-medium">Your current operational capacity and grid parameters.</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4 w-full md:w-auto">
@@ -112,7 +112,7 @@ export default function DashboardHome() {
                     )}
                     <button
                         onClick={() => window.location.href = '/dashboard/plans'}
-                        className="flex-1 md:flex-none px-8 py-3.5 bg-white/5 border border-white/10 text-gray-400 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-white/10 transition"
+                        className="flex-1 md:flex-none px-8 py-3.5 bg-control border border-control-border text-muted text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-control-hover transition"
                     >
                         View Parameters
                     </button>
@@ -135,7 +135,7 @@ export default function DashboardHome() {
                         <div className={`w-12 h-12 ${card.bg} rounded-xl flex items-center justify-center ${card.color} mb-6`}>
                             <card.icon size={24} weight="bold" />
                         </div>
-                        <div className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">{card.label}</div>
+                        <div className="text-muted text-[10px] font-black uppercase tracking-widest mb-1">{card.label}</div>
                         <div className="text-3xl font-black text-foreground">{card.value}</div>
                     </motion.div>
                 ))}
@@ -151,7 +151,7 @@ export default function DashboardHome() {
                     <div className="flex justify-between items-center mb-10">
                         <div>
                             <h3 className="text-2xl font-black text-foreground">{t('traffic_pulse')}</h3>
-                            <p className="text-gray-500 font-medium">{t('outbound_msg_vol')}</p>
+                            <p className="text-muted font-medium">{t('outbound_msg_vol')}</p>
                         </div>
                         <button className="flex items-center gap-2 px-5 py-2 glass-card rounded-xl text-[10px] font-black border-border hover:border-primary/50 transition uppercase tracking-widest">
                             {t('view_logs')} <CaretRight weight="bold" />
@@ -163,8 +163,8 @@ export default function DashboardHome() {
                         <svg viewBox="0 0 800 200" className="w-full h-full">
                             <defs>
                                 <linearGradient id="g-purple-dash" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
-                                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+                                    <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.2" />
+                                    <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
                                 </linearGradient>
                             </defs>
                             <motion.path
@@ -172,13 +172,16 @@ export default function DashboardHome() {
                                 animate={{ pathLength: 1 }}
                                 transition={{ duration: 2 }}
                                 d="M0,150 L100,120 L200,80 L300,140 L400,30 L500,110 L600,40 L700,90 L800,20"
-                                stroke="#8b5cf6" strokeWidth="4" strokeLinecap="round" fill="none"
+                                stroke="var(--primary)" strokeWidth="4" strokeLinecap="round" fill="none"
                             />
                             <path d="M0,150 L100,120 L200,80 L300,140 L400,30 L500,110 L600,40 L700,90 L800,20 L800,200 L0,200 Z" fill="url(#g-purple-dash)" />
                         </svg>
 
                         {/* Decorative Points */}
-                        <div className="absolute top-[20px] right-[10%] w-3 h-3 bg-primary rounded-full shadow-[0_0_15px_#8b5cf6]"></div>
+                        <div
+                            className="absolute top-[20px] right-[10%] w-3 h-3 bg-primary rounded-full"
+                            style={{ boxShadow: '0 0 15px var(--primary)' }}
+                        ></div>
                     </div>
                 </motion.div>
 
@@ -190,7 +193,7 @@ export default function DashboardHome() {
                         className="bg-surface rounded-3xl p-8 border border-border shadow-sm"
                     >
                         <div className="flex justify-between items-center mb-8">
-                            <h4 className="font-black text-gray-500 text-[10px] uppercase tracking-widest">{t('system_engine')}</h4>
+                            <h4 className="font-black text-muted text-[10px] uppercase tracking-widest">{t('system_engine')}</h4>
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#22c55e]"></div>
                         </div>
                         <div className="space-y-6">
@@ -219,7 +222,7 @@ export default function DashboardHome() {
                         <div className="relative z-10 flex justify-between items-center">
                             <div>
                                 <h4 className="text-xl font-black mb-1 text-foreground">{t('upgrade')}</h4>
-                                <p className="text-gray-500 text-sm font-medium">{t('need_more_credits')}</p>
+                                <p className="text-muted text-sm font-medium">{t('need_more_credits')}</p>
                             </div>
                             <ArrowUpRight size={24} weight="bold" className="text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition" />
                         </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Check, CaretDown, CaretUp, Info, Lightning } from '@phosphor-icons/react';
+import { CaretDown, Info, Lightning } from '@phosphor-icons/react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -49,18 +49,18 @@ const endpoints = [
 export default function ApiDocs() {
     return (
         <div className="space-y-10">
-            <div className="carbon-card p-10 rounded-[2.5rem] border-primary/20 bg-gradient-to-br from-primary/5 to-transparent relative overflow-hidden">
+            <div className="carbon-card theme-panel-accent p-10 rounded-[2.5rem] border-primary/20 relative overflow-hidden">
                 <div className="flex items-start gap-6 relative z-10">
                     <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/30 text-primary shrink-0">
                         <Lightning size={32} weight="fill" />
                     </div>
                     <div className="space-y-4">
-                        <h3 className="text-2xl font-black text-white">Initialization Protocol</h3>
-                        <p className="text-gray-400 font-medium leading-relaxed">
+                        <h3 className="text-2xl font-black text-foreground">Initialization Protocol</h3>
+                        <p className="theme-copy-strong font-medium leading-relaxed">
                             All API requests must include your valid <strong className="text-primary">Bearer Token</strong> in the request headers.
                             Unauthorized requests will be rejected by the edge gateway.
                         </p>
-                        <div className="bg-black/40 border border-white/5 p-5 rounded-2xl font-mono text-sm text-green-400 shadow-inner inline-block">
+                        <div className="bg-surface-dark border border-border p-5 rounded-2xl font-mono text-sm text-green-400 shadow-inner inline-block">
                             Authorization: Bearer YOUR_ACCESS_TOKEN
                         </div>
                     </div>
@@ -68,7 +68,7 @@ export default function ApiDocs() {
             </div>
 
             <div className="space-y-6">
-                <h3 className="text-xl font-black uppercase tracking-widest text-gray-500 ml-2">REST Endpoints</h3>
+                <h3 className="text-xl font-black uppercase tracking-widest text-muted ml-2">REST Endpoints</h3>
                 <div className="space-y-4">
                     {endpoints.map((ep, i) => (
                         <EndpointCard key={i} endpoint={ep} />
@@ -83,7 +83,7 @@ function EndpointCard({ endpoint }: { endpoint: any }) {
     const [open, setOpen] = useState(false);
 
     return (
-        <div className={`carbon-card rounded-[2rem] border-white/5 overflow-hidden transition-all duration-500 ${open ? 'border-primary/30 shadow-2xl shadow-primary/5' : 'hover:border-white/10'}`}>
+        <div className={`carbon-card rounded-[2rem] border border-border overflow-hidden transition-all duration-500 ${open ? 'border-primary/30 shadow-2xl shadow-primary/5' : 'hover:border-border-strong'}`}>
             <button
                 onClick={() => setOpen(!open)}
                 className="w-full flex items-center justify-between p-8 text-left transition"
@@ -95,26 +95,26 @@ function EndpointCard({ endpoint }: { endpoint: any }) {
                         `}>
                             {endpoint.method}
                         </span>
-                        <span className="font-mono text-white font-bold opacity-80">{endpoint.path}</span>
+                        <span className="font-mono text-foreground font-bold opacity-90">{endpoint.path}</span>
                     </div>
-                    <span className="text-gray-500 font-black text-[11px] uppercase tracking-wider">{endpoint.title}</span>
+                    <span className="text-muted font-black text-[11px] uppercase tracking-wider">{endpoint.title}</span>
                 </div>
-                <div className={`w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>
+                <div className={`w-8 h-8 rounded-full bg-control border border-border flex items-center justify-center text-muted transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>
                     <CaretDown size={16} weight="bold" />
                 </div>
             </button>
 
             {open && (
-                <div className="px-8 pb-10 border-t border-white/5 pt-8 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                <div className="px-8 pb-10 border-t border-border pt-8 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex items-start gap-4">
                         <div className="mt-1 text-primary"><Info size={20} weight="bold" /></div>
-                        <p className="text-gray-400 font-medium text-sm leading-relaxed">{endpoint.description}</p>
+                        <p className="theme-copy-strong font-medium text-sm leading-relaxed">{endpoint.description}</p>
                     </div>
 
                     {endpoint.params && (
                         <div className="space-y-4">
-                            <h4 className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">Query String Parameters</h4>
-                            <div className="bg-black/40 p-4 rounded-xl border border-white/5 font-mono text-sm text-primary/80">
+                            <h4 className="text-[10px] font-black uppercase text-muted tracking-widest ml-1">Query String Parameters</h4>
+                            <div className="bg-surface-dark p-4 rounded-xl border border-border font-mono text-sm text-primary/80">
                                 {endpoint.params}
                             </div>
                         </div>
@@ -122,8 +122,8 @@ function EndpointCard({ endpoint }: { endpoint: any }) {
 
                     {endpoint.body && (
                         <div className="space-y-4">
-                            <h4 className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">JSON Payload Schema</h4>
-                            <div className="rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+                            <h4 className="text-[10px] font-black uppercase text-muted tracking-widest ml-1">JSON Payload Schema</h4>
+                            <div className="rounded-2xl overflow-hidden border border-border shadow-2xl">
                                 <SyntaxHighlighter
                                     language="json"
                                     style={vscDarkPlus}
@@ -132,7 +132,7 @@ function EndpointCard({ endpoint }: { endpoint: any }) {
                                         margin: '0',
                                         padding: '1.5rem',
                                         fontSize: '13px',
-                                        background: 'rgba(0,0,0,0.4)'
+                                        background: 'var(--surface-dark)'
                                     }}
                                 >
                                     {JSON.stringify(endpoint.body, null, 2)}

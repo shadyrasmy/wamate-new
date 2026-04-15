@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { API_URL } from '@/lib/api';
@@ -9,24 +9,18 @@ import {
     CheckCircle,
     XCircle,
     Spinner,
-    EnvelopeSimple,
     ArrowRight
 } from '@phosphor-icons/react';
 
 function VerifyEmailContent() {
     const searchParams = useSearchParams();
-    const router = useRouter();
     const token = searchParams.get('token');
 
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-    const [message, setMessage] = useState('');
+    const [status, setStatus] = useState<'loading' | 'success' | 'error'>(token ? 'loading' : 'error');
+    const [message, setMessage] = useState(token ? '' : 'Verification token is missing. Please check your email link.');
 
     useEffect(() => {
-        if (!token) {
-            setStatus('error');
-            setMessage('Verification token is missing. Please check your email link.');
-            return;
-        }
+        if (!token) return;
 
         const verifyEmail = async () => {
             try {
@@ -40,7 +34,7 @@ function VerifyEmailContent() {
                     setStatus('error');
                     setMessage(data.message || 'Verification failed. The link may be invalid or expired.');
                 }
-            } catch (error) {
+            } catch {
                 setStatus('error');
                 setMessage('An error occurred while verifying your email. Please try again.');
             }
@@ -60,9 +54,9 @@ function VerifyEmailContent() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="carbon-card p-10 lg:p-14 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden text-center"
+                    className="carbon-card p-10 lg:p-14 rounded-[3rem] border border-border shadow-2xl relative overflow-hidden text-center"
                 >
-                    <div className="absolute top-0 left-0 w-32 h-32 bg-white/[0.02] rounded-br-[100px] pointer-events-none" />
+                    <div className="absolute top-0 left-0 w-32 h-32 bg-surface-soft rounded-br-[100px] pointer-events-none" />
 
                     {status === 'loading' && (
                         <div className="flex flex-col items-center gap-6">
@@ -74,8 +68,8 @@ function VerifyEmailContent() {
                                 <Spinner size={40} className="text-primary" />
                             </motion.div>
                             <div>
-                                <h2 className="text-2xl font-black text-white mb-2">Verifying Email</h2>
-                                <p className="text-gray-500 font-medium text-sm">Please wait while we verify your account...</p>
+                                <h2 className="text-2xl font-black text-foreground mb-2">Verifying Email</h2>
+                                <p className="theme-copy font-medium text-sm">Please wait while we verify your account...</p>
                             </div>
                         </div>
                     )}
@@ -91,14 +85,14 @@ function VerifyEmailContent() {
                                 <CheckCircle size={40} weight="fill" className="text-green-500" />
                             </motion.div>
                             <div>
-                                <h2 className="text-2xl font-black text-white mb-2">Email Verified!</h2>
-                                <p className="text-gray-500 font-medium text-sm">{message}</p>
+                                <h2 className="text-2xl font-black text-foreground mb-2">Email Verified!</h2>
+                                <p className="theme-copy font-medium text-sm">{message}</p>
                             </div>
                             <Link href="/login">
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
-                                    className="mt-4 px-8 py-4 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition flex items-center gap-3 text-sm uppercase tracking-[0.2em]"
+                                    className="theme-button-primary mt-4 px-8 py-4 font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition flex items-center gap-3 text-sm uppercase tracking-[0.2em]"
                                 >
                                     Continue to Login
                                     <ArrowRight size={18} weight="bold" />
@@ -118,15 +112,15 @@ function VerifyEmailContent() {
                                 <XCircle size={40} weight="fill" className="text-red-500" />
                             </motion.div>
                             <div>
-                                <h2 className="text-2xl font-black text-white mb-2">Verification Failed</h2>
-                                <p className="text-gray-500 font-medium text-sm">{message}</p>
+                                <h2 className="text-2xl font-black text-foreground mb-2">Verification Failed</h2>
+                                <p className="theme-copy font-medium text-sm">{message}</p>
                             </div>
                             <div className="flex flex-col gap-3 mt-4">
                                 <Link href="/login">
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className="px-8 py-4 bg-white/5 text-white font-bold rounded-2xl border border-white/10 hover:bg-white/10 transition flex items-center gap-3 text-sm uppercase tracking-widest"
+                                        className="theme-button-secondary px-8 py-4 font-bold rounded-2xl flex items-center gap-3 text-sm uppercase tracking-widest"
                                     >
                                         Go to Login
                                     </motion.button>
@@ -135,7 +129,7 @@ function VerifyEmailContent() {
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className="px-8 py-4 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 transition flex items-center gap-3 text-sm uppercase tracking-[0.2em]"
+                                        className="theme-button-primary px-8 py-4 font-black rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 transition flex items-center gap-3 text-sm uppercase tracking-[0.2em]"
                                     >
                                         Register Again
                                         <ArrowRight size={18} weight="bold" />
@@ -146,7 +140,7 @@ function VerifyEmailContent() {
                     )}
                 </motion.div>
 
-                <p className="mt-10 text-center text-[10px] font-black text-gray-700 uppercase tracking-[0.3em]">
+                <p className="mt-10 text-center text-[10px] font-black text-muted uppercase tracking-[0.3em]">
                     Secure Email Verification // WaMate
                 </p>
             </div>

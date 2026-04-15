@@ -99,7 +99,7 @@ export default function MessageBubble({
         .replace(/'/g, '&#39;');
 
     const formatInlineText = (text: string) => text
-        .replace(/```([\s\S]*?)```/g, '<code class="rounded bg-black/20 px-1.5 py-0.5">$1</code>')
+        .replace(/```([\s\S]*?)```/g, '<code class="rounded bg-surface-inset px-1.5 py-0.5">$1</code>')
         .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
         .replace(/_(.*?)_/g, '<em>$1</em>')
         .replace(/~(.*?)~/g, '<del>$1</del>');
@@ -146,7 +146,7 @@ export default function MessageBubble({
                     {senderProfilePic ? (
                         <img src={senderProfilePic} alt="Sender" className="w-full h-full object-cover" />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-600 text-xs font-bold text-gray-300">
+                        <div className="w-full h-full flex items-center justify-center bg-surface-dark text-xs font-bold text-muted-soft">
                             {(senderName || '?').charAt(0).toUpperCase()}
                         </div>
                     )}
@@ -163,7 +163,7 @@ export default function MessageBubble({
 
                 {/* Quoted Message */}
                 {quotedMessage && (
-                    <div className={`mb-1 p-3 rounded-2xl bg-white/5 border-l-4 border-primary/50 text-[11px] text-gray-400 font-medium truncate backdrop-blur-sm max-w-[16rem] ${isMe ? 'ml-auto' : 'mr-auto'}`}>
+                    <div className={`mb-1 p-3 rounded-2xl bg-control border-l-4 border-primary/50 text-[11px] text-muted font-medium truncate backdrop-blur-sm max-w-[16rem] ${isMe ? 'ml-auto' : 'mr-auto'}`}>
                         <div className="text-[10px] font-black uppercase text-primary/70 mb-1 tracking-widest">Replying to</div>
                         <div className="truncate italic">&quot;{quotedMessage.content}&quot;</div>
                     </div>
@@ -173,7 +173,7 @@ export default function MessageBubble({
                     className={`relative max-w-full min-w-0 px-4 py-2 shadow-xl rounded-2xl text-[14px] leading-relaxed transition-all 
                         ${isMe
                             ? 'bg-gradient-to-br from-primary to-primary-dark text-white shadow-primary/20 rounded-tr-sm'
-                            : 'bg-white/10 text-gray-100 shadow-black/10 rounded-tl-sm border border-white/5'
+                            : 'bg-surface-soft text-foreground shadow-black/5 rounded-tl-sm border border-border'
                         }
                     `}
                 >
@@ -187,7 +187,7 @@ export default function MessageBubble({
                     )}
 
                     {type === 'audio' && (
-                        <div className={`mb-2 flex items-center gap-3 p-3 rounded-2xl min-w-[200px] sm:min-w-[240px] border ${isMe ? 'bg-black/20 border-white/10' : 'bg-white/5 border-white/5 shadow-inner'}`}>
+                        <div className={`mb-2 flex items-center gap-3 p-3 rounded-2xl min-w-[200px] sm:min-w-[240px] border ${isMe ? 'bg-surface-inset border-border' : 'bg-control border-control-border shadow-inner'}`}>
                             <button
                                 onClick={toggleAudio}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-lg ${isMe ? 'bg-white text-primary' : 'bg-primary text-white'}`}
@@ -206,7 +206,7 @@ export default function MessageBubble({
                                     </div>
                                     {!mediaUrl && <Spinner className="animate-spin text-primary" size={12} />}
                                 </div>
-                                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                                <div className="h-1.5 bg-surface-muted rounded-full overflow-hidden relative">
                                     <div
                                         className="h-full bg-primary transition-all duration-100 shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]"
                                         style={{ width: `${progress}%` }}
@@ -220,7 +220,7 @@ export default function MessageBubble({
                                     <audio ref={audioRef} src={mediaUrl} className="hidden" />
                                 )}
                                 {!mediaUrl && (
-                                    <span className="text-[9px] font-bold text-gray-500 italic uppercase">Syncing voice...</span>
+                                    <span className="text-[9px] font-bold text-muted italic uppercase">Syncing voice...</span>
                                 )}
                             </div>
                         </div >
@@ -228,9 +228,9 @@ export default function MessageBubble({
 
                     {
                         type === 'document' && (
-                            <div className={`mb-3 p-4 rounded-2xl flex items-center gap-4 border border-white/10 ${isMe ? 'bg-white/10' : 'bg-white/5'}`}>
+                            <div className={`mb-3 p-4 rounded-2xl flex items-center gap-4 border border-border ${isMe ? 'bg-surface-muted' : 'bg-control'}`}>
                                 <FileText size={32} weight="duotone" className="text-primary" />
-                                <div className="flex-1 min-w-0 text-white">
+                                <div className="flex-1 min-w-0 text-foreground">
                                     <a href={mediaUrl} target="_blank" rel="noopener noreferrer">
                                         <div className="text-xs font-bold truncate">Application/File</div>
                                         <div className="text-[9px] opacity-50 uppercase font-black">Download Asset</div>
@@ -246,7 +246,7 @@ export default function MessageBubble({
                                 {mediaUrl ? (
                                     <img src={mediaUrl} alt="Sticker" className="w-full h-auto object-cover hover:scale-105 transition duration-300" />
                                 ) : (
-                                    <div className="p-4 flex flex-col items-center justify-center text-gray-500 gap-2 bg-white/5">
+                                    <div className="p-4 flex flex-col items-center justify-center text-muted gap-2 bg-control">
                                         <Spinner className="animate-spin" size={20} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Sticker...</span>
                                     </div>
@@ -258,21 +258,21 @@ export default function MessageBubble({
                     {/* Text Content */}
                     {
                         content && type !== 'image' && type !== 'video' && type !== 'audio' && type !== 'document' && type !== 'sticker' && (
-                            <div className={`min-w-0 font-medium ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word]`}>
+                            <div className={`min-w-0 font-medium ${isMe ? 'text-white' : 'text-foreground'} whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word]`}>
                                 {formatMessageText(content)}
                             </div>
                         )
                     }
                     {
                         (type === 'image' || type === 'video') && content && content !== '📷 Image' && content !== '🎥 Video' && (
-                            <div className={`min-w-0 font-medium mt-2 ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word]`}>
+                            <div className={`min-w-0 font-medium mt-2 ${isMe ? 'text-white' : 'text-foreground'} whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word]`}>
                                 {formatMessageText(content)}
                             </div>
                         )
                     }
 
                     {/* Metadata */}
-                    <div className={`flex items-center justify-end gap-2 mt-2 text-[9px] font-black uppercase tracking-tighter ${isMe ? 'text-white/60' : 'text-gray-500'}`}>
+                    <div className={`flex items-center justify-end gap-2 mt-2 text-[9px] font-black uppercase tracking-tighter ${isMe ? 'text-white/60' : 'text-muted'}`}>
                         <span>{time}</span>
                         {isMe && (
                             <Checks
@@ -289,7 +289,7 @@ export default function MessageBubble({
                     reactions.length > 0 && (
                         <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
                             {reactions.map((r, i) => (
-                                <span key={i} className="bg-[#1a162d] border border-white/5 backdrop-blur-md rounded-full px-2 py-1 text-[10px] shadow-lg">
+                                <span key={i} className="bg-control border border-control-border backdrop-blur-md rounded-full px-2 py-1 text-[10px] shadow-lg">
                                     {r}
                                 </span>
                             ))}
@@ -301,7 +301,7 @@ export default function MessageBubble({
                 <div className={`absolute top-0 ${isMe ? '-left-10' : '-right-10'} opacity-0 group-hover:opacity-100 transition-opacity`}>
                     <button
                         onClick={onReply}
-                        className="p-2 hover:bg-white/5 rounded-full text-gray-500 hover:text-primary transition-colors"
+                        className="p-2 hover:bg-control rounded-full text-muted hover:text-primary transition-colors"
                         title="Reply"
                     >
                         <ArrowBendUpLeft size={16} weight="bold" />

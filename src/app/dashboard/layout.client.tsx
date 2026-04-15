@@ -170,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         {!isCollapsed && <span className="text-2xl font-bold tracking-tight animate-in fade-in duration-500">WaMate</span>}
                     </div>
                     {!isCollapsed && (
-                        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400">
+                        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted">
                             <X size={24} />
                         </button>
                     )}
@@ -179,7 +179,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {/* Collapse Toggle Button (Desktop) */}
                 <button
                     onClick={toggleCollapse}
-                    className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 bg-surface border border-border rounded-full items-center justify-center text-gray-400 hover:text-primary transition shadow-md z-[60]"
+                    className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 bg-surface border border-border rounded-full items-center justify-center text-muted hover:text-primary transition shadow-md z-[60]"
                 >
                     {isCollapsed ? <CaretRight size={14} weight="bold" /> : <CaretLeft size={14} weight="bold" />}
                 </button>
@@ -200,7 +200,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 {!isCollapsed && (
                                     <div className="px-8 mb-2 flex items-center gap-2">
                                         <div className="w-1 h-3 bg-primary rounded-full" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400/60">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted/70">
                                             {group.label}
                                         </span>
                                     </div>
@@ -212,11 +212,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                             key={item.href}
                                             href={item.href}
                                             onClick={() => setSidebarOpen(false)}
-                                            className={`py-3 flex items-center gap-4 text-gray-400 hover:text-foreground transition group border-r-4 transition-all
+                                            className={`py-3 flex items-center gap-4 text-muted hover:text-foreground transition group border-r-4 transition-all
                                             ${isCollapsed ? 'justify-center px-0' : 'px-8'}
                                             ${isActive
                                                     ? 'bg-primary/10 text-primary border-primary'
-                                                    : 'border-transparent hover:bg-white/[0.02]'}`}
+                                                    : 'border-transparent hover:bg-control'}`}
                                         >
                                             <item.icon size={20} weight={isActive ? "fill" : "bold"} className={`group-hover:scale-110 transition flex-shrink-0 ${isActive ? 'text-primary' : ''}`} />
                                             {!isCollapsed && <span className="font-bold text-[10px] uppercase tracking-[0.15em] truncate">{item.label}</span>}
@@ -247,13 +247,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </button>
                     </div>
 
-                    <Link href="/dashboard/settings" className={`flex items-center gap-4 py-3.5 glass-card rounded-2xl text-gray-400 hover:text-foreground transition ${isCollapsed ? 'justify-center px-0' : 'px-6'} ${pathname === '/dashboard/settings' ? 'text-foreground border-primary/20' : ''}`}>
+                    <Link href="/dashboard/settings" className={`flex items-center gap-4 py-3.5 glass-card rounded-2xl text-muted hover:text-foreground transition ${isCollapsed ? 'justify-center px-0' : 'px-6'} ${pathname === '/dashboard/settings' ? 'text-foreground border-primary/20' : ''}`}>
                         <Gear size={22} weight="bold" className="flex-shrink-0" />
                         {!isCollapsed && <span className="font-bold text-xs uppercase tracking-widest truncate">{t('settings')}</span>}
                     </Link>
                     <button
                         onClick={handleLogout}
-                        className={`w-full flex items-center gap-4 py-3.5 rounded-2xl text-gray-500 hover:text-red-400 hover:bg-red-400/5 transition ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}
+                        className={`w-full flex items-center gap-4 py-3.5 rounded-2xl text-muted hover:text-red-400 hover:bg-red-500/10 transition ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}
                     >
                         <SignOut size={22} weight="bold" className="flex-shrink-0" />
                         {!isCollapsed && <span className="font-bold text-xs uppercase tracking-widest truncate">{t('sign_out')}</span>}
@@ -266,7 +266,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 <header className="h-20 border-b border-border flex items-center justify-between px-6 lg:px-10 flex-shrink-0 bg-background/80 backdrop-blur-md z-40 transition-colors">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-400">
+                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-muted">
                             <List size={24} />
                         </button>
                         <div>
@@ -308,7 +308,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                         body: JSON.stringify({ ai_enabled: newStatus })
                                     });
                                 }}
-                                className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-500 ${user?.ai_enabled ? 'bg-primary/10 border-primary/20 text-primary shadow-lg shadow-primary/10' : 'bg-white/5 border-white/10 text-gray-500'}`}
+                                className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-500 ${user?.ai_enabled ? 'bg-primary/10 border-primary/20 text-primary shadow-lg shadow-primary/10' : 'bg-control border-control-border text-muted'}`}
                             >
                                 <RocketLaunch size={18} weight={user?.ai_enabled ? "fill" : "bold"} className={user?.ai_enabled ? "animate-pulse" : ""} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">{user?.ai_enabled ? 'AI ACTIVE' : 'AI STANDBY'}</span>
@@ -358,7 +358,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Mobile Overlay */}
             {isSidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+                    className="fixed inset-0 bg-overlay backdrop-blur-sm z-40 lg:hidden"
                     onClick={() => setSidebarOpen(false)}
                 />
             )}

@@ -55,7 +55,7 @@ export default function WhyUsSection({ content }: { content?: any }) {
                         className="max-w-2xl"
                     >
                         <h5 className="text-primary font-bold tracking-widest uppercase text-sm mb-4">Core Features</h5>
-                        <h2 className="text-4xl lg:text-6xl font-bold font-sans text-white">
+                        <h2 className="text-4xl lg:text-6xl font-bold font-sans text-foreground">
                             {c.title}
                         </h2>
                     </motion.div>
@@ -63,7 +63,7 @@ export default function WhyUsSection({ content }: { content?: any }) {
                         initial={{ opacity: 0, x: 30 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        className="text-gray-400 max-w-sm mt-6 md:mt-0"
+                        className="text-muted max-w-sm mt-6 md:mt-0"
                     >
                         {c.subtitle}
                     </motion.p>
@@ -77,13 +77,13 @@ export default function WhyUsSection({ content }: { content?: any }) {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: i * 0.1 }}
-                            className={`carbon-card p-10 rounded-[2.5rem] group border-white/5 transition-all duration-500 ${feature.border}`}
+                            className={`carbon-card p-10 rounded-[2.5rem] group border-border transition-all duration-500 ${feature.border}`}
                         >
-                            <div className={`w-16 h-16 ${feature.bg} rounded-2xl flex items-center justify-center mb-8 border border-white/5 group-hover:bg-primary transition-all duration-500 shadow-lg`}>
+                            <div className={`w-16 h-16 ${feature.bg} rounded-2xl flex items-center justify-center mb-8 border border-border group-hover:bg-primary transition-all duration-500 shadow-lg`}>
                                 <feature.icon size={32} weight="bold" className={`${feature.color} group-hover:text-white transition-colors`} />
                             </div>
-                            <h3 className="text-2xl font-bold mb-4 text-white">{feature.title}</h3>
-                            <p className="text-gray-500 leading-relaxed font-sans">{feature.desc}</p>
+                            <h3 className="text-2xl font-bold mb-4 text-foreground">{feature.title}</h3>
+                            <p className="text-muted leading-relaxed font-sans">{feature.desc}</p>
                         </motion.div>
                     ))}
                 </div>
