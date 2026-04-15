@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { Bot, WhatsAppInstance } = require('../models');
 const { AppError } = require('../middlewares/error.middleware');
 
@@ -19,7 +20,13 @@ exports.createBot = async (req, res, next) => {
 
         // Verify instance ownership
         const instance = await WhatsAppInstance.findOne({
-            where: { instance_id, user_id: req.user.id }
+            where: {
+                user_id: req.user.id,
+                [Op.or]: [
+                    { instance_id },
+                    { id: instance_id }
+                ]
+            }
         });
         if (!instance) return next(new AppError('Instance not found or unauthorized', 404));
 
@@ -40,7 +47,7 @@ exports.createBot = async (req, res, next) => {
 exports.updateBot = async (req, res, next) => {
     try {
         const { botId } = req.params;
-        const { name, system_instruction, is_active } = req.body;
+        const { name, system_instruction, instance_id, is_active } = req.body;
 
         const bot = await Bot.findOne({
             where: { id: botId, user_id: req.user.id }
@@ -49,6 +56,20 @@ exports.updateBot = async (req, res, next) => {
 
         if (name) bot.name = name;
         if (system_instruction !== undefined) bot.system_instruction = system_instruction;
+        if (instance_id) {
+            const instance = await WhatsAppInstance.findOne({
+                where: {
+                    user_id: req.user.id,
+                    [Op.or]: [
+                        { instance_id },
+                        { id: instance_id }
+                    ]
+                }
+            });
+
+            if (!instance) return next(new AppError('Instance not found or unauthorized', 404));
+            bot.instance_id = instance.id;
+        }
         if (is_active !== undefined) bot.is_active = !!is_active;
 
         await bot.save();

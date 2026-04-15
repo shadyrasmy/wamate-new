@@ -17,7 +17,8 @@ exports.getLeads = async (req, res, next) => {
             where[Op.or] = [
                 { name: { [Op.like]: `%${search}%` } },
                 { phone: { [Op.like]: `%${search}%` } },
-                { title: { [Op.like]: `%${search}%` } }
+                { intent: { [Op.like]: `%${search}%` } },
+                { notes: { [Op.like]: `%${search}%` } }
             ];
         }
 

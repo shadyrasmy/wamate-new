@@ -90,6 +90,13 @@ class AIService {
         // Prepare current turn parts (only once)
         const parts = [];
         if (knowledgeContext) parts.push({ text: knowledgeContext });
+        const knownPhone = this.extractPhoneFromJid(contact?.jid);
+        if (contact?.name) {
+            parts.push({ text: `KNOWN CUSTOMER NAME: ${contact.name}` });
+        }
+        if (knownPhone) {
+            parts.push({ text: `KNOWN CUSTOMER WHATSAPP PHONE: ${knownPhone}` });
+        }
 
         // Include quoted message context if this is a reply
         if (messageData.quotedText) {
@@ -115,8 +122,9 @@ class AIService {
             3. ORDER_PLACEMENT: You can process orders, but you MUST follow this strict protocol:
                  - Step A: Verify the item(s) and quantity with the user.
                  - Step B: Ask for their **Governorate/City** and **Detailed Address**.
-                 - Step C: Ask for a **Phone Number** (if not already known/verified).
+                 - Step C: Ask for a **Phone Number** only if it is not already known. The customer's WhatsApp number counts as a valid primary phone number unless they provide a better delivery number.
                  - Step D: ONLY after collecting (A), (B), and (C), call the 'create_order' tool.
+                 - If all required order details are already present in the latest customer message or recent chat history, call 'create_order' immediately instead of replying with plain text.
                  - DO NOT call 'create_order' on the first turn unless all info is already present.
              4. INFO_GATHERING: Use provided business context to answer questions. If you don't know, ask a human or suggest contacting support.
 
@@ -161,6 +169,19 @@ class AIService {
                 }
 
                 const aiText = response.text();
+
+                const fallbackToolResponse = await this.tryStructuredToolFallback({
+                    modelId,
+                    user,
+                    contact,
+                    messageData,
+                    history,
+                    parts,
+                    aiText
+                });
+                if (fallbackToolResponse) {
+                    return fallbackToolResponse;
+                }
 
                 // Validate response integrity
                 if (!aiText || aiText.includes("I'm having a bit of trouble processing that right now")) {
@@ -240,7 +261,7 @@ class AIService {
             },
             {
                 name: "create_order",
-                description: "Creates an official order. STRICTLY REQUIRED: You MUST collect Address, City, and Phone Number before calling this.",
+                description: "Creates an official order. Use this only after the customer has confirmed the items, city/governorate, detailed address, and a phone number.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -254,7 +275,8 @@ class AIService {
                                     quantity: { type: "NUMBER" },
                                     color: { type: "STRING", description: "Color variant if applicable" },
                                     size: { type: "STRING", description: "Size variant if applicable" }
-                                }
+                                },
+                                required: ["product", "quantity"]
                             }
                         },
                         total_price: { type: "NUMBER" },
@@ -262,9 +284,10 @@ class AIService {
                         governorate: { type: "STRING" },
                         city: { type: "STRING" },
                         address: { type: "STRING", description: "Detailed shipping address" },
+                        phone: { type: "STRING", description: "Primary delivery phone number. Use the customer's WhatsApp number if that is the confirmed phone." },
                         phone2: { type: "STRING", description: "Secondary contact number" }
                     },
-                    required: ["items"]
+                    required: ["items", "governorate", "city", "address", "phone"]
                 }
             },
             {
@@ -315,6 +338,7 @@ class AIService {
                         governorate: args.governorate,
                         city: args.city,
                         address: args.address,
+                        phone: args.phone || this.extractPhoneFromJid(contact?.jid),
                         phone2: args.phone2
                     },
                     source: 'ai'
@@ -328,6 +352,122 @@ class AIService {
 
             default:
                 return null;
+        }
+    }
+
+    extractPhoneFromJid(jid) {
+        if (!jid) return null;
+        return jid.split('@')[0] || null;
+    }
+
+    normalizeDigits(value = '') {
+        return value.replace(/[٠-٩]/g, (digit) => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit).toString());
+    }
+
+    buildConversationTranscript(history, parts) {
+        const transcriptParts = [];
+
+        for (const turn of history) {
+            const text = turn.parts?.map((part) => part.text).filter(Boolean).join('\n').trim();
+            if (!text) continue;
+            transcriptParts.push(`${turn.role.toUpperCase()}: ${text}`);
+        }
+
+        const latestTurn = parts.map((part) => {
+            if (part.text) return part.text;
+            if (part.inlineData) return '[CUSTOMER SENT MEDIA]';
+            return null;
+        }).filter(Boolean).join('\n');
+
+        if (latestTurn) {
+            transcriptParts.push(`USER: ${latestTurn}`);
+        }
+
+        return transcriptParts.join('\n\n');
+    }
+
+    hasRecentOrderSignal(messageData = {}, history = []) {
+        const recentText = [messageData.text, messageData.quotedText]
+            .filter(Boolean)
+            .join('\n');
+
+        if (!recentText.trim()) return false;
+
+        const normalizedRecentText = this.normalizeDigits(recentText);
+        const phoneRegex = /(?:\+?\d[\d\s\-()]{7,}\d)/;
+        const addressRegex = /(address|street|road|avenue|building|block|floor|flat|apartment|district|area|عنوان|شارع|طريق|عمارة|بناية|برج|شقة|دور|منطقة|حي|بلوك|قطعة|قرب|امام|خلف|بجوار)/i;
+        const locationRegex = /(city|governorate|state|province|محافظة|مدينة|القاهرة|الجيزة|الإسكندرية|اسكندرية|الاسكندرية|طنطا|المنصورة|الزقازيق|أسيوط|اسيوط|الفيوم|المنيا|سوهاج|قنا|الأقصر|الاقصر|أسوان|اسوان)/i;
+        const orderRegex = /(order|buy|purchase|deliver|delivery|ship|shipping|cash on delivery|cod|place order|طلب|اطلب|اوردر|أوردر|اشتري|عايز|عاوز|اريد|أريد|محتاج|توصيل|شحن|عدد|قطعة|قطع|كمية)/i;
+
+        let signalCount = 0;
+        if (phoneRegex.test(normalizedRecentText)) signalCount += 1;
+        if (addressRegex.test(normalizedRecentText)) signalCount += 1;
+        if (locationRegex.test(normalizedRecentText)) signalCount += 1;
+        if (orderRegex.test(normalizedRecentText)) signalCount += 1;
+
+        const aiAskedForDetails = history.slice(-2).some((turn) => {
+            if (turn.role !== 'model') return false;
+            const turnText = turn.parts?.map((part) => part.text).filter(Boolean).join('\n') || '';
+            return /(phone|address|city|governorate|order|phone number|عنوان|شارع|محافظة|مدينة|توصيل|شحن|رقم)/i.test(turnText);
+        });
+
+        return signalCount >= 2 || (signalCount >= 1 && aiAskedForDetails);
+    }
+
+    async tryStructuredToolFallback({ modelId, user, contact, messageData, history, parts, aiText }) {
+        if (!aiText || !this.hasRecentOrderSignal(messageData, history)) {
+            return null;
+        }
+
+        const transcript = this.buildConversationTranscript(history, parts);
+        const extractionPrompt = `You are a structured order extraction layer for WaMate.
+
+Decide whether the conversation already contains a complete order.
+- Call create_order ONLY if you can confidently identify:
+  1. at least one item with quantity,
+  2. governorate or city,
+  3. a detailed address,
+  4. a phone number (the known WhatsApp number counts).
+- If any of those are still missing, respond with exactly NO_TOOL.
+- Do not ask follow-up questions.
+- Do not explain your reasoning.
+- Do not call create_order if the assistant already confirmed that an order was created in a previous turn.`;
+
+        try {
+            const extractionModel = this.genAI.getGenerativeModel({
+                model: modelId,
+                systemInstruction: extractionPrompt,
+                tools: [{
+                    functionDeclarations: this.getFunctionDeclarations().filter((tool) => tool.name === 'create_order')
+                }]
+            });
+
+            const result = await extractionModel.generateContent({
+                contents: [{
+                    role: 'user',
+                    parts: [{ text: transcript }]
+                }],
+                generationConfig: {
+                    maxOutputTokens: 300
+                }
+            });
+
+            const response = result.response;
+            const call = response.functionCalls()?.[0];
+
+            if (!call) {
+                const fallbackText = response.text()?.trim();
+                if (fallbackText && fallbackText !== 'NO_TOOL') {
+                    logger.info('AI structured fallback returned text instead of a tool call', { fallbackText });
+                }
+                return null;
+            }
+
+            console.log(`🧰 [Structured Fallback Tool Call]: ${call.name}`);
+            return await this.handleToolCall(call, user, contact);
+        } catch (error) {
+            logger.error('Structured tool fallback failed:', error);
+            return null;
         }
     }
 

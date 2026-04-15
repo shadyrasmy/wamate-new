@@ -23,6 +23,14 @@ export default function BotsPage() {
         is_active: true
     });
 
+    const getFormInstanceId = (bot: any) => {
+        const matchedInstance = instances.find(
+            (ins) => ins.id === bot.instance_id || ins.instance_id === bot.instance_id
+        );
+
+        return matchedInstance?.instance_id || bot.instance_id || '';
+    };
+
     useEffect(() => {
         loadData();
     }, []);
@@ -143,7 +151,12 @@ export default function BotsPage() {
                                 <div className="flex gap-2">
                                     <button onClick={() => {
                                         setEditingBot(bot);
-                                        setFormData({ name: bot.name, system_instruction: bot.system_instruction, instance_id: bot.instance_id, is_active: bot.is_active });
+                                        setFormData({
+                                            name: bot.name,
+                                            system_instruction: bot.system_instruction,
+                                            instance_id: getFormInstanceId(bot),
+                                            is_active: bot.is_active
+                                        });
                                         setIsAdding(true);
                                     }} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-500 transition"><PencilSimple size={16} /></button>
                                     <button onClick={() => handleDelete(bot.id)} className="p-2 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-red-500 transition"><Trash size={16} /></button>
