@@ -91,16 +91,42 @@ export default function MessageBubble({
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    const formatMessageText = (text: string) => {
-        if (!text) return "";
-        let formattedText = text;
-        // Basic WhatsApp formatting
-        formattedText = formattedText.replace(/\*(.*?)\*/g, "<strong>$1</strong>"); // Bold
-        formattedText = formattedText.replace(/_(.*?)_/g, "<em>$1</em>"); // Italic
-        formattedText = formattedText.replace(/~(.*?)~/g, "<del>$1</del>"); // Strikethrough
-        formattedText = formattedText.replace(/```([\s\S]*?)```/g, "<code>$1</code>"); // Monospace
+    const escapeHtml = (text: string) => text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 
-        return <span dangerouslySetInnerHTML={{ __html: formattedText }} />;
+    const formatInlineText = (text: string) => text
+        .replace(/```([\s\S]*?)```/g, '<code class="rounded bg-black/20 px-1.5 py-0.5">$1</code>')
+        .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+        .replace(/_(.*?)_/g, '<em>$1</em>')
+        .replace(/~(.*?)~/g, '<del>$1</del>');
+
+    const formatMessageText = (text: string) => {
+        if (!text) return null;
+
+        const formattedText = escapeHtml(text)
+            .split(/(https?:\/\/[^\s]+)/g)
+            .map((part) => {
+                if (!part) return '';
+
+                if (/^https?:\/\/[^\s]+$/.test(part)) {
+                    return `<a href="${part}" target="_blank" rel="noopener noreferrer" class="underline decoration-white/40 underline-offset-2 break-all [overflow-wrap:anywhere]">${part}</a>`;
+                }
+
+                return formatInlineText(part);
+            })
+            .join('')
+            .replace(/\n/g, '<br />');
+
+        return (
+            <span
+                className="break-words [overflow-wrap:anywhere] [word-break:break-word]"
+                dangerouslySetInnerHTML={{ __html: formattedText }}
+            />
+        );
     };
 
     if (type === 'reaction') return null;
@@ -127,7 +153,7 @@ export default function MessageBubble({
                 </div>
             )}
 
-            <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[70%] w-fit`}>
+            <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[70%] min-w-0`}>
                 {/* Sender Name (Group Chat) - Moved inside the stack */}
                 {showSender && (
                     <div className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 ml-1 opacity-80">
@@ -139,24 +165,18 @@ export default function MessageBubble({
                 {quotedMessage && (
                     <div className={`mb-1 p-3 rounded-2xl bg-white/5 border-l-4 border-primary/50 text-[11px] text-gray-400 font-medium truncate backdrop-blur-sm max-w-[16rem] ${isMe ? 'ml-auto' : 'mr-auto'}`}>
                         <div className="text-[10px] font-black uppercase text-primary/70 mb-1 tracking-widest">Replying to</div>
-                        <div className="truncate italic">"{quotedMessage.content}"</div>
+                        <div className="truncate italic">&quot;{quotedMessage.content}&quot;</div>
                     </div>
                 )}
 
                 <div
-                    className={`relative px-4 py-2 shadow-xl rounded-2xl text-[14px] leading-relaxed transition-all 
+                    className={`relative max-w-full min-w-0 px-4 py-2 shadow-xl rounded-2xl text-[14px] leading-relaxed transition-all 
                         ${isMe
                             ? 'bg-gradient-to-br from-primary to-primary-dark text-white shadow-primary/20 rounded-tr-sm'
                             : 'bg-white/10 text-gray-100 shadow-black/10 rounded-tl-sm border border-white/5'
                         }
                     `}
                 >
-                    {type === 'text' && (
-                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]" style={{ wordBreak: 'break-word' }}>
-                            {formatMessageText(content)}
-                        </p>
-                    )}
-
                     {type === 'image' && mediaUrl && (
                         <div className="mb-2 relative rounded-xl overflow-hidden cursor-pointer group" onClick={() => window.open(mediaUrl, '_blank')}>
                             <img src={mediaUrl} alt="Message attachment" className="max-w-full h-auto max-h-64 object-contain transition-transform duration-300 group-hover:scale-105" />
@@ -238,16 +258,16 @@ export default function MessageBubble({
                     {/* Text Content */}
                     {
                         content && type !== 'image' && type !== 'video' && type !== 'audio' && type !== 'document' && type !== 'sticker' && (
-                            <p className={`font-medium ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}>
+                            <div className={`min-w-0 font-medium ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word]`}>
                                 {formatMessageText(content)}
-                            </p>
+                            </div>
                         )
                     }
                     {
                         (type === 'image' || type === 'video') && content && content !== '📷 Image' && content !== '🎥 Video' && (
-                            <p className={`font-medium mt-2 ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}>
+                            <div className={`min-w-0 font-medium mt-2 ${isMe ? 'text-white' : 'text-gray-200'} whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word]`}>
                                 {formatMessageText(content)}
-                            </p>
+                            </div>
                         )
                     }
 

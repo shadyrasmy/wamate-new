@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     PaperPlaneRight, Smiley, Paperclip, Microphone,
     DotsThreeVertical, Phone, VideoCamera, Spinner,
-    UserCircle, Circle, X, CaretLeft, Target, ShoppingCart, Robot
+    UserCircle, Circle, X, CaretLeft, Target, ShoppingCart, Robot, Package
 } from '@phosphor-icons/react';
 import MessageBubble from './MessageBubble';
 import { fetchWithAuth, SOCKET_URL } from '@/lib/api';
@@ -67,6 +67,8 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
     useEffect(() => {
         setAiRepliesEnabled(chat?.ai_replies_enabled ?? true);
     }, [chat?.jid, chat?.ai_replies_enabled]);
+
+    const canUseAI = user?.role === 'admin' || user?.ai_enabled || user?.plan?.ai_enabled;
 
     const handleToggleAI = async () => {
         try {
@@ -377,27 +379,41 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5 lg:gap-2">
-                        {(user?.role === 'admin' || user?.ai_enabled || user?.plan?.ai_enabled) && (
-                            <>
-                                <button
-                                    onClick={handleToggleAI}
-                                    title={aiRepliesEnabled ? 'Silence AI' : 'Active AI'}
-                                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${aiRepliesEnabled ? 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20' : 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'}`}
-                                >
-                                    <Robot size={22} weight={aiRepliesEnabled ? "fill" : "bold"} />
-                                </button>
-
-                                <button
-                                    onClick={() => setShowOrderPanel(!showOrderPanel)}
-                                    title="CRM / Orders"
-                                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${showOrderPanel ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border-white/5'}`}
-                                >
-                                    <ShoppingCart size={22} weight={showOrderPanel ? "fill" : "bold"} />
-                                </button>
-
-                                <div className="w-[1px] h-8 bg-white/5 mx-1" />
-                            </>
+                        {canUseAI && (
+                            <button
+                                onClick={handleToggleAI}
+                                title={aiRepliesEnabled ? 'Silence AI' : 'Active AI'}
+                                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${aiRepliesEnabled ? 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20' : 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'}`}
+                            >
+                                <Robot size={22} weight={aiRepliesEnabled ? "fill" : "bold"} />
+                            </button>
                         )}
+
+                        <button
+                            onClick={() => setShowLeadModal(true)}
+                            title="Create Lead"
+                            className="w-10 h-10 flex items-center justify-center rounded-xl transition-all border bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border-orange-500/20"
+                        >
+                            <Target size={20} weight="bold" />
+                        </button>
+
+                        <button
+                            onClick={() => setShowOrderModal(true)}
+                            title="Create Order"
+                            className="w-10 h-10 flex items-center justify-center rounded-xl transition-all border bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/20"
+                        >
+                            <ShoppingCart size={20} weight="bold" />
+                        </button>
+
+                        <button
+                            onClick={() => setShowOrderPanel(!showOrderPanel)}
+                            title="Open CRM / Orders"
+                            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${showOrderPanel ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border-white/5'}`}
+                        >
+                            <Package size={20} weight={showOrderPanel ? "fill" : "bold"} />
+                        </button>
+
+                        <div className="w-[1px] h-8 bg-white/5 mx-1" />
 
                         <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5">
                             <DotsThreeVertical size={24} weight="bold" />
@@ -444,7 +460,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                     <div className="w-1 bg-primary h-8 rounded-full shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
                                     <div className="overflow-hidden">
                                         <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Replying to</p>
-                                        <p className="text-sm text-gray-400 truncate font-medium italic">"{replyingTo.content}"</p>
+                                        <p className="text-sm text-gray-400 truncate font-medium italic">&quot;{replyingTo.content}&quot;</p>
                                     </div>
                                 </div>
                                 <button
