@@ -21,6 +21,53 @@ interface ChatWindowProps {
     onBack?: () => void;
 }
 
+interface ChatMessageLike {
+    id?: string | number;
+    isMe?: boolean;
+    type?: string;
+    content?: string;
+    mediaUrl?: string | null;
+    senderJid?: string | null;
+    quotedMessage?: {
+        id?: string;
+        content?: string;
+    } | null;
+    timestamp?: string | number | Date | null;
+    time?: string;
+}
+
+const getMessageFingerprint = (message: ChatMessageLike) => {
+    const rawTimestamp = message?.timestamp ? new Date(message.timestamp).getTime() : '';
+    return [
+        message?.isMe ? '1' : '0',
+        message?.type || 'text',
+        (message?.content || '').trim(),
+        message?.mediaUrl || '',
+        message?.senderJid || '',
+        message?.quotedMessage?.id || '',
+        rawTimestamp || message?.time || ''
+    ].join('::');
+};
+
+const dedupeMessages = (messages: ChatMessageLike[]) => {
+    const seenIds = new Set<string>();
+    const seenFingerprints = new Set<string>();
+
+    return messages.filter((message) => {
+        if (!message) return false;
+
+        const id = message.id ? String(message.id) : '';
+        if (id && seenIds.has(id)) return false;
+
+        const fingerprint = getMessageFingerprint(message);
+        if (seenFingerprints.has(fingerprint)) return false;
+
+        if (id) seenIds.add(id);
+        seenFingerprints.add(fingerprint);
+        return true;
+    });
+};
+
 export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps) {
     const { theme: uiTheme } = useUI();
     const [messages, setMessages] = useState<any[]>([]);
@@ -168,11 +215,11 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                     );
                     if (optimisticMsg) {
                         // Replace the temp message with the real one
-                        return prev.map(m => m.id === optimisticMsg.id ? parsedMsg : m);
+                        return dedupeMessages(prev.map(m => m.id === optimisticMsg.id ? parsedMsg : m));
                     }
                 }
 
-                return [...prev, parsedMsg];
+                return dedupeMessages([...prev, parsedMsg]);
             });
             scrollToBottom();
         });
@@ -203,7 +250,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
         setLoading(true);
         try {
             const data = await fetchWithAuth(`/chat/messages?instanceId=${instanceId}&jid=${chat.jid}`);
-            setMessages(data.data.messages);
+            setMessages(dedupeMessages(data.data.messages));
             scrollToBottom();
         } catch (error) {
             console.error('Failed to load messages', error);
@@ -239,7 +286,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
             } : null
         };
 
-        setMessages(prev => [...prev, newMsg]);
+        setMessages(prev => dedupeMessages([...prev, newMsg]));
         setInput('');
         setReplyingTo(null);
         setShowEmoji(false);
@@ -262,10 +309,10 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                     // If the socket already arrived and added/replaced this message, do nothing
                     if (prev.some(m => m.id === realId)) {
                         // But we still need to remove the temp one if it's still there
-                        return prev.filter(m => m.id !== tempId);
+                        return dedupeMessages(prev.filter(m => m.id !== tempId));
                     }
                     // Otherwise, upgrade the temp message to real
-                    return prev.map(m => m.id === tempId ? { ...m, id: realId, status: 'read' } : m);
+                    return dedupeMessages(prev.map(m => m.id === tempId ? { ...m, id: realId, status: 'read' } : m));
                 });
             }
         } catch (error) {
@@ -317,13 +364,13 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                 })
             });
 
-            setMessages(prev => [...prev, {
+            setMessages(prev => dedupeMessages([...prev, {
                 id: Date.now().toString(),
                 content: type === 'image' ? '📷 Image' : (type === 'video' ? '🎥 Video' : '📎 Document'),
                 isMe: true,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 status: 'grey'
-            }]);
+            }]));
         } catch (error) {
             console.error('Upload failed', error);
             setUploadProgress(null);

@@ -3,6 +3,19 @@ const whatsappService = require('../services/whatsapp.service');
 const { AppError } = require('../middlewares/error.middleware');
 const { Op } = require('sequelize');
 
+const buildMessageFingerprint = (message) => {
+    const timestamp = message.timestamp ? new Date(message.timestamp).getTime() : '';
+    return [
+        message.isMe ? '1' : '0',
+        message.type || 'text',
+        (message.content || '').trim(),
+        message.mediaUrl || '',
+        message.senderJid || '',
+        message.quotedMessage?.id || '',
+        timestamp
+    ].join('::');
+};
+
 const getManagerId = (user) => {
     return user.role === 'seat' ? user.user_id : user.id;
 };
@@ -199,15 +212,23 @@ exports.getMessages = async (req, res, next) => {
         const messages = await Message.findAll({
             where: whereClause,
             order: [['timestamp', 'DESC']],
-            limit: 500,
-            include: [
-                {
-                    model: Message,
-                    as: 'quotedMessage',
-                    attributes: ['content', 'message_id']
-                }
-            ]
+            limit: 500
         });
+
+        const quotedMessageIds = [...new Set(messages.map(m => m.quoted_message_id).filter(Boolean))];
+        const quotedMessages = quotedMessageIds.length > 0
+            ? await Message.findAll({
+                where: {
+                    message_id: quotedMessageIds,
+                    ...(whereClause.instance_id ? { instance_id: whereClause.instance_id } : { user_id: managerId })
+                },
+                attributes: ['instance_id', 'message_id', 'content']
+            })
+            : [];
+
+        const quotedMessageMap = new Map(
+            quotedMessages.map(message => [`${message.instance_id}::${message.message_id}`, message])
+        );
 
         // Enrich with Sender Profile Pics
         const senderJids = [...new Set(messages.map(m => m.sender_jid).filter(Boolean))];
@@ -229,22 +250,48 @@ exports.getMessages = async (req, res, next) => {
             });
         }
 
-        const parsedMessages = messages.map(m => ({
-            id: m.message_id,
-            content: m.content,
-            isMe: m.from_me,
-            type: m.type,
-            mediaUrl: m.media_url,
-            senderName: m.sender_name,
-            senderJid: m.sender_jid,
-            senderProfilePic: contactMap[m.sender_jid] || null,
-            quotedMessage: m.quotedMessage ? {
-                id: m.quotedMessage.message_id,
-                content: m.quotedMessage.content
-            } : null,
-            time: new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            status: m.status || 'read'
-        })).reverse(); // Reverse back to ASC for the UI
+        const seenIds = new Set();
+        const seenFingerprints = new Set();
+
+        const parsedMessages = messages
+            .map(m => {
+                const quotedSource = m.quoted_message_id
+                    ? quotedMessageMap.get(`${m.instance_id}::${m.quoted_message_id}`)
+                    : null;
+
+                const quotedMessage = quotedSource && quotedSource.message_id !== m.message_id
+                    ? {
+                        id: quotedSource.message_id,
+                        content: quotedSource.content
+                    }
+                    : null;
+
+                return {
+                    id: m.message_id,
+                    content: m.content,
+                    isMe: m.from_me,
+                    type: m.type,
+                    mediaUrl: m.media_url,
+                    senderName: m.sender_name,
+                    senderJid: m.sender_jid,
+                    senderProfilePic: contactMap[m.sender_jid] || null,
+                    quotedMessage,
+                    time: new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    timestamp: m.timestamp,
+                    status: m.status || 'read'
+                };
+            })
+            .reverse()
+            .filter(message => {
+                if (message.id && seenIds.has(message.id)) return false;
+
+                const fingerprint = buildMessageFingerprint(message);
+                if (seenFingerprints.has(fingerprint)) return false;
+
+                if (message.id) seenIds.add(message.id);
+                seenFingerprints.add(fingerprint);
+                return true;
+            }); // Reverse back to ASC for the UI and dedupe before sending
 
         res.status(200).json({
             status: 'success',

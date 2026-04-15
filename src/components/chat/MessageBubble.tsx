@@ -133,6 +133,14 @@ export default function MessageBubble({
 
     const isGroup = jid?.endsWith('@g.us');
     const showSender = !isMe && isGroup && senderName;
+    const normalizedContent = (content || '').trim();
+    const normalizedQuotedContent = (quotedMessage?.content || '').trim();
+    const safeQuotedMessage = quotedMessage
+        && quotedMessage.id !== id
+        && normalizedQuotedContent.length > 0
+        && normalizedQuotedContent !== normalizedContent
+        ? quotedMessage
+        : null;
 
     return (
         <motion.div
@@ -162,10 +170,10 @@ export default function MessageBubble({
                 )}
 
                 {/* Quoted Message */}
-                {quotedMessage && (
+                {safeQuotedMessage && (
                     <div className={`mb-1 p-3 rounded-2xl bg-control border-l-4 border-primary/50 text-[11px] text-muted font-medium truncate backdrop-blur-sm max-w-[16rem] ${isMe ? 'ml-auto' : 'mr-auto'}`}>
                         <div className="text-[10px] font-black uppercase text-primary/70 mb-1 tracking-widest">Replying to</div>
-                        <div className="truncate italic">&quot;{quotedMessage.content}&quot;</div>
+                        <div className="truncate italic">&quot;{safeQuotedMessage.content}&quot;</div>
                     </div>
                 )}
 
