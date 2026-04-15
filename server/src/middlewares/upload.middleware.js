@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { AppError } = require('./error.middleware');
 
 // Ensure upload directory exists
 const uploadDir = path.join(__dirname, '../../public/uploads');
@@ -30,7 +31,7 @@ const fileFilter = (req, file, cb) => {
     ) {
         cb(null, true);
     } else {
-        cb(new Error('File type not supported'), false);
+        cb(new AppError('File type not supported', 400), false);
     }
 };
 

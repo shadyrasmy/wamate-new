@@ -184,15 +184,15 @@ class WhatsAppService {
 
                     console.log(`[WA] Processing LID Mapping: ${phoneJid} <-> ${lid}`);
 
+                    const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId } });
+                    if (!instance) return;
+
                     // NEW: Persist mapping to lid_mappings table
                     await LidMapping.upsert({
                         jid: phoneJid,
                         lid: lid,
                         instance_id: instance.id
                     }).catch(err => console.error('[WA] Error upserting LidMapping:', err));
-
-                    const instance = await WhatsAppInstance.findOne({ where: { instance_id: instanceId } });
-                    if (!instance) return;
 
                     // Find existing contacts by phone JID or LID
                     const candidates = await Contact.findAll({
@@ -214,9 +214,13 @@ class WhatsAppService {
                     // 🚨 VALIDATION: Check if this LID is already assigned to a DIFFERENT phone number
                     const lidOwnerCheck = await Contact.findOne({
                         where: {
+                            user_id: instance.user_id,
+                            instance_id: instance.id,
                             lid: lid,
-                            jid: { [Op.ne]: phoneJid },
-                            jid: { [Op.notLike]: '%@lid' } // Must be a phone number, not another LID
+                            jid: {
+                                [Op.ne]: phoneJid,
+                                [Op.notLike]: '%@lid'
+                            } // Must be a phone number, not another LID
                         }
                     });
 
@@ -325,9 +329,47 @@ class WhatsAppService {
 
                 // Upgrade LID record to Phone JID if available
                 if (contact.jid.endsWith('@lid') && phoneJid && !phoneJid.endsWith('@lid')) {
-                    contact.lid = contact.jid;
-                    contact.jid = phoneJid;
-                    changed = true;
+                    const existingPhoneContact = await Contact.findOne({
+                        where: {
+                            user_id: instance.user_id,
+                            instance_id: instance.id,
+                            jid: phoneJid,
+                            id: { [Op.ne]: contact.id }
+                        }
+                    });
+
+                    if (existingPhoneContact) {
+                        existingPhoneContact.lid = existingPhoneContact.lid || contact.lid || contact.jid;
+                        existingPhoneContact.name = existingPhoneContact.name || contact.name;
+                        existingPhoneContact.push_name = existingPhoneContact.push_name || contact.push_name;
+                        existingPhoneContact.profile_pic = existingPhoneContact.profile_pic || contact.profile_pic;
+
+                        if (update.name && existingPhoneContact.name !== update.name && !update.name.match(/^\d+$/)) {
+                            existingPhoneContact.name = update.name;
+                        }
+
+                        await existingPhoneContact.save();
+
+                        const sourceJids = [...new Set([contact.jid, contact.lid].filter(Boolean))];
+                        if (sourceJids.length > 0) {
+                            await Message.update(
+                                { jid: phoneJid },
+                                {
+                                    where: {
+                                        jid: { [Op.in]: sourceJids },
+                                        instance_id: instance.id
+                                    }
+                                }
+                            );
+                        }
+
+                        await contact.destroy();
+                        contact = existingPhoneContact;
+                    } else {
+                        contact.lid = contact.jid;
+                        contact.jid = phoneJid;
+                        changed = true;
+                    }
                 }
 
                 if (update.name && contact.name !== update.name && !update.name.match(/^\d+$/)) {

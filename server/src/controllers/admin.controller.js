@@ -318,10 +318,11 @@ exports.deleteUser = async (req, res, next) => {
 exports.banUser = async (req, res, next) => {
     try {
         const { userId } = req.params;
-        const { active } = req.body; // true = active, false = banned
+        const active = req.body.is_active ?? req.body.active; // keep legacy `active` body support
 
         const user = await User.findByPk(userId);
         if (!user) return next(new AppError('User not found', 404));
+        if (active === undefined) return next(new AppError('is_active is required', 400));
 
         user.is_active = !!active;
         await user.save();
