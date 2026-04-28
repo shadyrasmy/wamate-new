@@ -1,14 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { fetchWithAuth } from '@/lib/api';
 import {
-    Shield, Spinner,
-    ChatCircleDots, DeviceMobile, UsersThree, ShootingStar, Check
+    Shield,
+    Spinner,
+    ChatCircleDots,
+    DeviceMobile,
+    UsersThree,
+    ShootingStar,
+    Check
 } from '@phosphor-icons/react';
+import { useUI } from '@/context/UIContext';
 
 export default function PlansPage() {
+    const { t } = useUI();
     const [plans, setPlans] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAI, setShowAI] = useState(false);
@@ -28,7 +35,6 @@ export default function PlansPage() {
             ]);
             setPlans(plansData.data.plans);
             setUser(userData.data.user);
-            // Default to AI tab if user already on AI plan
             if (userData.data.user?.plan?.ai_enabled) {
                 setShowAI(true);
             }
@@ -51,29 +57,27 @@ export default function PlansPage() {
             if (data.data?.invoice_url) {
                 window.location.href = data.data.invoice_url;
             } else {
-                alert('Failed to create payment invoice. Please try again.');
+                alert(t('dashboard.plans.invoice_error'));
             }
         } catch (error: any) {
             console.error('Upgrade failed:', error);
-            alert(error.message || 'Failed to initiate payment. Please try again.');
+            alert(error.message || t('dashboard.plans.upgrade_error'));
         } finally {
             setUpgradingPlanId(null);
         }
     };
 
-    const filteredPlans = plans.filter(p => !!p.ai_enabled === showAI);
+    const filteredPlans = plans.filter(plan => !!plan.ai_enabled === showAI);
 
     return (
         <div className="space-y-10 pb-20">
             <div className="text-center mb-4">
-                <h1 className="text-4xl font-black tracking-tight mb-2 uppercase">Service Protocols</h1>
-                <p className="text-gray-500 font-medium max-w-xl mx-auto">Select the magnitude of your operation and scale your neural capacity.</p>
+                <h1 className="text-4xl font-black tracking-tight mb-2 uppercase">{t('dashboard.plans.title')}</h1>
+                <p className="text-gray-500 font-medium max-w-xl mx-auto">{t('dashboard.plans.subtitle')}</p>
             </div>
 
-            {/* AI Toggle - Prominent and Centered */}
             <div className="flex justify-center mb-8">
                 <div className="relative flex bg-gray-900/80 p-2 rounded-3xl border-2 border-white/10 shadow-2xl backdrop-blur-xl">
-                    {/* Sliding Background Indicator */}
                     <div
                         className={`absolute top-2 bottom-2 w-[calc(50%-4px)] rounded-2xl transition-all duration-500 ease-out ${showAI
                                 ? 'left-[calc(50%+2px)] bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 shadow-lg shadow-pink-500/30'
@@ -83,30 +87,23 @@ export default function PlansPage() {
 
                     <button
                         onClick={() => setShowAI(false)}
-                        className={`relative z-10 px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-3 ${!showAI
-                                ? 'text-white'
-                                : 'text-gray-400 hover:text-white'
-                            }`}
+                        className={`relative z-10 px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-3 ${!showAI ? 'text-white' : 'text-gray-400 hover:text-white'}`}
                     >
                         <Shield size={20} weight="bold" />
-                        Standard
+                        {t('dashboard.plans.standard')}
                     </button>
                     <button
                         onClick={() => setShowAI(true)}
-                        className={`relative z-10 px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-3 ${showAI
-                                ? 'text-white'
-                                : 'text-gray-400 hover:text-white'
-                            }`}
+                        className={`relative z-10 px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-3 ${showAI ? 'text-white' : 'text-gray-400 hover:text-white'}`}
                     >
                         <ShootingStar size={20} weight="bold" className={showAI ? 'animate-pulse' : ''} />
-                        AI-Powered
+                        {t('dashboard.plans.ai_powered')}
                     </button>
                 </div>
             </div>
 
-            {/* Subtle hint text */}
             <p className="text-center text-xs text-gray-600 -mt-4 mb-6">
-                {showAI ? '✨ AI plans include intelligent auto-replies and knowledge base' : '🔒 Standard plans for messaging automation'}
+                {showAI ? t('dashboard.plans.ai_hint') : t('dashboard.plans.standard_hint')}
             </p>
 
             {loading ? (
@@ -115,20 +112,21 @@ export default function PlansPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                    {filteredPlans.map((plan, i) => {
+                    {filteredPlans.map((plan, index) => {
                         const isCurrent = user?.plan?.id === plan.id || user?.id_plan === plan.id;
                         const isUpgrading = upgradingPlanId === plan.id;
+
                         return (
                             <motion.div
                                 key={plan.id}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.1 }}
+                                transition={{ delay: index * 0.1 }}
                                 className={`carbon-card p-8 rounded-[3rem] border-white/5 relative overflow-hidden group transition-all duration-500 shadow-2xl ${isCurrent ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20' : 'hover:border-primary/30'}`}
                             >
                                 {isCurrent && (
                                     <div className="absolute top-0 right-0 px-6 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-bl-3xl shadow-lg z-20">
-                                        Current Protocol
+                                        {t('dashboard.plans.current_protocol')}
                                     </div>
                                 )}
 
@@ -142,33 +140,33 @@ export default function PlansPage() {
                                     <h3 className="text-2xl font-black text-white mb-1 uppercase tracking-tight">{plan.name}</h3>
                                     <div className="text-4xl font-black text-primary flex items-baseline gap-1">
                                         ${plan.price}
-                                        <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">/ {plan.billing_cycle || 'Month'}</span>
+                                        <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">/ {plan.billing_cycle || t('dashboard.plans.month')}</span>
                                     </div>
                                 </div>
 
                                 <div className="space-y-4 mb-8 relative z-10">
                                     <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
                                         <ChatCircleDots size={20} weight="duotone" className="text-primary" />
-                                        <span>{plan.monthly_message_limit.toLocaleString()} Broadcasts</span>
+                                        <span>{plan.monthly_message_limit.toLocaleString()} {t('dashboard.plans.broadcasts')}</span>
                                     </div>
                                     <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
                                         <DeviceMobile size={20} weight="duotone" className="text-primary" />
-                                        <span>{plan.max_instances} Operations Nodes</span>
+                                        <span>{plan.max_instances} {t('dashboard.plans.nodes')}</span>
                                     </div>
                                     <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
                                         <UsersThree size={20} weight="duotone" className="text-primary" />
-                                        <span>{plan.max_seats} Support Seats</span>
+                                        <span>{plan.max_seats} {t('dashboard.plans.seats')}</span>
                                     </div>
 
                                     {plan.ai_enabled && (
                                         <div className="pt-4 mt-4 border-t border-white/5 space-y-4">
                                             <div className="flex items-center gap-4 text-primary font-black text-xs uppercase tracking-[0.15em]">
                                                 <Check size={16} weight="bold" />
-                                                <span>AI Reply Quota: {plan.ai_reply_limit.toLocaleString()}</span>
+                                                <span>{t('dashboard.plans.ai_reply_quota', { count: plan.ai_reply_limit.toLocaleString() })}</span>
                                             </div>
                                             <div className="flex items-center gap-4 text-primary font-black text-xs uppercase tracking-[0.15em]">
                                                 <Check size={16} weight="bold" />
-                                                <span>Cognitive Capacity: {plan.ai_knowledge_limit} Units</span>
+                                                <span>{t('dashboard.plans.cognitive_capacity', { count: plan.ai_knowledge_limit })}</span>
                                             </div>
                                         </div>
                                     )}
@@ -186,7 +184,7 @@ export default function PlansPage() {
                                     ) : (
                                         <ShootingStar size={18} weight="bold" />
                                     )}
-                                    {isCurrent ? 'PROTOCOL ACTIVE' : isUpgrading ? 'TRANSMITTING...' : 'Engage Tier'}
+                                    {isCurrent ? t('dashboard.plans.protocol_active') : isUpgrading ? t('dashboard.plans.transmitting') : t('dashboard.plans.engage_tier')}
                                 </button>
                             </motion.div>
                         );

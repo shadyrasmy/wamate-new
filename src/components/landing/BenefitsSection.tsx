@@ -1,26 +1,26 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useUI } from '@/context/UIContext';
+import { getLocalizedValue } from '@/translations/localized';
 
 export default function BenefitsSection({ content }: { content?: any }) {
-    const defaultContent = {
-        title: "Data that drives Conversions.",
-        subtitle: "Our advanced routing engine doesn't just send messages—it tracks every interaction. See exactly which agent is closing deals and which campaigns are performing.",
-        stat1_title: "99.9%",
-        stat1_label: "Delivery Rate",
-        stat2_title: "< 2s",
-        stat2_label: "Avg Response",
-        mission_title: "Why We Exist.",
-        mission_text: "In the age of scattered attention, WhatsApp is the only place left where people actually listen. We built WaMate to turn this personal connection into a scalable enterprise asset."
-    };
+    const { language, t } = useUI();
 
-    const c = content || defaultContent;
+    const copy = {
+        title: getLocalizedValue(content?.title, language, t('landing.benefits.title')),
+        subtitle: getLocalizedValue(content?.subtitle, language, t('landing.benefits.subtitle')),
+        stat1Title: getLocalizedValue(content?.stat1_title, language, '99.9%'),
+        stat1Label: getLocalizedValue(content?.stat1_label, language, t('landing.benefits.stat1_label')),
+        stat2Title: getLocalizedValue(content?.stat2_title, language, '< 2s'),
+        stat2Label: getLocalizedValue(content?.stat2_label, language, t('landing.benefits.stat2_label')),
+        missionTitle: getLocalizedValue(content?.mission_title, language, t('landing.benefits.mission_title')),
+        missionText: getLocalizedValue(content?.mission_text, language, t('landing.benefits.mission_text'))
+    };
 
     return (
         <section className="py-24 relative overflow-hidden">
             <div className="container mx-auto px-6">
-
-                {/* Advanced Analytics Section */}
                 <div className="grid lg:grid-cols-2 gap-20 items-center mb-32">
                     <motion.div
                         initial={{ opacity: 0, x: -50 }}
@@ -30,15 +30,14 @@ export default function BenefitsSection({ content }: { content?: any }) {
                     >
                         <div className="flex justify-between items-center mb-10">
                             <div>
-                                <h3 className="text-2xl font-bold text-foreground">Advanced Analytics</h3>
-                                <p className="text-muted">Real-time traffic pulse & team performance.</p>
+                                <h3 className="text-2xl font-bold text-foreground">{t('landing.benefits.analytics_title')}</h3>
+                                <p className="text-muted">{t('landing.benefits.analytics_subtitle')}</p>
                             </div>
                             <div className="flex gap-2">
-                                <div className="px-4 py-1.5 glass-card rounded-lg text-[10px] font-bold border-border uppercase tracking-widest text-primary">Live Pulse</div>
+                                <div className="px-4 py-1.5 glass-card rounded-lg text-[10px] font-bold border-border uppercase tracking-widest text-primary">{t('landing.benefits.analytics_badge')}</div>
                             </div>
                         </div>
 
-                        {/* SVG Chart */}
                         <div className="w-full h-[250px] relative">
                             <svg viewBox="0 0 800 200" className="w-full h-full">
                                 <defs>
@@ -65,25 +64,24 @@ export default function BenefitsSection({ content }: { content?: any }) {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                     >
-                        <h5 className="text-primary font-bold tracking-widest uppercase text-sm mb-4">Intelligence</h5>
-                        <h2 className="text-4xl lg:text-5xl font-bold mb-8 text-foreground">{c.title}</h2>
+                        <h5 className="text-primary font-bold tracking-widest uppercase text-sm mb-4">{t('landing.benefits.eyebrow')}</h5>
+                        <h2 className="text-4xl lg:text-5xl font-bold mb-8 text-foreground">{copy.title}</h2>
                         <p className="text-muted text-lg leading-relaxed mb-10">
-                            {c.subtitle}
+                            {copy.subtitle}
                         </p>
                         <div className="grid grid-cols-2 gap-8">
                             <div>
-                                <div className="text-3xl font-bold mb-1 text-foreground">{c.stat1_title}</div>
-                                <div className="text-xs text-muted uppercase font-black">{c.stat1_label}</div>
+                                <div className="text-3xl font-bold mb-1 text-foreground">{copy.stat1Title}</div>
+                                <div className="text-xs text-muted uppercase font-black">{copy.stat1Label}</div>
                             </div>
                             <div>
-                                <div className="text-3xl font-bold mb-1 text-foreground">{c.stat2_title}</div>
-                                <div className="text-xs text-muted uppercase font-black">{c.stat2_label}</div>
+                                <div className="text-3xl font-bold mb-1 text-foreground">{copy.stat2Title}</div>
+                                <div className="text-xs text-muted uppercase font-black">{copy.stat2Label}</div>
                             </div>
                         </div>
                     </motion.div>
                 </div>
 
-                {/* Purpose Section */}
                 <div className="py-24 border-y border-border/60">
                     <div className="max-w-4xl mx-auto text-center">
                         <motion.div
@@ -92,22 +90,21 @@ export default function BenefitsSection({ content }: { content?: any }) {
                             viewport={{ once: true }}
                         >
                             <h2 className="text-4xl lg:text-7xl font-black mb-12 text-foreground">
-                                {c.mission_title}
+                                {copy.missionTitle}
                             </h2>
                             <p className="text-2xl text-muted leading-relaxed font-light italic">
-                                "{c.mission_text}"
+                                "{copy.missionText}"
                             </p>
                             <div className="mt-12 flex items-center justify-center gap-4">
                                 <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-bold italic">WM</div>
                                 <div className="text-left text-sm">
-                                    <div className="font-bold text-foreground">Engineering Team</div>
-                                    <div className="text-muted font-bold uppercase tracking-widest text-[10px]">Founders Mission</div>
+                                    <div className="font-bold text-foreground">{t('landing.benefits.mission_author')}</div>
+                                    <div className="text-muted font-bold uppercase tracking-widest text-[10px]">{t('landing.benefits.mission_role')}</div>
                                 </div>
                             </div>
                         </motion.div>
                     </div>
                 </div>
-
             </div>
         </section>
     );

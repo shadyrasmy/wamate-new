@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
-import { Checks, FileText, PlayCircle, Microphone, Spinner, ArrowBendUpLeft, Play, Pause, DownloadSimple } from '@phosphor-icons/react';
+import { Checks, FileText, Microphone, Spinner, ArrowBendUpLeft, Play, Pause } from '@phosphor-icons/react';
+import { useUI } from '@/context/UIContext';
 
 interface MessageProps {
     id: string;
@@ -38,6 +39,7 @@ export default function MessageBubble({
     reactions = [],
     onReply
 }: MessageProps) {
+    const { t } = useUI();
     const [isPlaying, setIsPlaying] = useState(false);
     const audioRef = useRef<HTMLAudioElement>(null);
     const [progress, setProgress] = useState(0);
@@ -172,7 +174,7 @@ export default function MessageBubble({
                 {/* Quoted Message */}
                 {safeQuotedMessage && (
                     <div className={`mb-1 p-3 rounded-2xl bg-control border-l-4 border-primary/50 text-[11px] text-muted font-medium truncate backdrop-blur-sm max-w-[16rem] ${isMe ? 'ml-auto' : 'mr-auto'}`}>
-                        <div className="text-[10px] font-black uppercase text-primary/70 mb-1 tracking-widest">Replying to</div>
+                        <div className="text-[10px] font-black uppercase text-primary/70 mb-1 tracking-widest">{t('chat.window.replying_to')}</div>
                         <div className="truncate italic">&quot;{safeQuotedMessage.content}&quot;</div>
                     </div>
                 )}
@@ -189,7 +191,7 @@ export default function MessageBubble({
                         <div className="mb-2 relative rounded-xl overflow-hidden cursor-pointer group" onClick={() => window.open(mediaUrl, '_blank')}>
                             <img src={mediaUrl} alt="Message attachment" className="max-w-full h-auto max-h-64 object-contain transition-transform duration-300 group-hover:scale-105" />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                                <span className="text-white text-xs font-bold uppercase tracking-widest px-3 py-1.5 bg-white/20 rounded-full">Open Original</span>
+                                <span className="text-white text-xs font-bold uppercase tracking-widest px-3 py-1.5 bg-white/20 rounded-full">{t('chat.message.open_original')}</span>
                             </div>
                         </div>
                     )}
@@ -210,7 +212,7 @@ export default function MessageBubble({
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-1.5">
                                         <Microphone size={14} weight="bold" className="text-primary" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Voice Note</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">{t('chat.message.voice_note')}</span>
                                     </div>
                                     {!mediaUrl && <Spinner className="animate-spin text-primary" size={12} />}
                                 </div>
@@ -228,7 +230,7 @@ export default function MessageBubble({
                                     <audio ref={audioRef} src={mediaUrl} className="hidden" />
                                 )}
                                 {!mediaUrl && (
-                                    <span className="text-[9px] font-bold text-muted italic uppercase">Syncing voice...</span>
+                                    <span className="text-[9px] font-bold text-muted italic uppercase">{t('chat.message.syncing_voice')}</span>
                                 )}
                             </div>
                         </div >
@@ -240,8 +242,8 @@ export default function MessageBubble({
                                 <FileText size={32} weight="duotone" className="text-primary" />
                                 <div className="flex-1 min-w-0 text-foreground">
                                     <a href={mediaUrl} target="_blank" rel="noopener noreferrer">
-                                        <div className="text-xs font-bold truncate">Application/File</div>
-                                        <div className="text-[9px] opacity-50 uppercase font-black">Download Asset</div>
+                                        <div className="text-xs font-bold truncate">{t('chat.message.application_file')}</div>
+                                        <div className="text-[9px] opacity-50 uppercase font-black">{t('chat.message.download_asset')}</div>
                                     </a>
                                 </div>
                             </div>
@@ -256,7 +258,7 @@ export default function MessageBubble({
                                 ) : (
                                     <div className="p-4 flex flex-col items-center justify-center text-muted gap-2 bg-control">
                                         <Spinner className="animate-spin" size={20} />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">Sticker...</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest">{t('chat.message.sticker_loading')}</span>
                                     </div>
                                 )}
                             </div>
@@ -272,7 +274,7 @@ export default function MessageBubble({
                         )
                     }
                     {
-                        (type === 'image' || type === 'video') && content && content !== '📷 Image' && content !== '🎥 Video' && (
+                        (type === 'image' || type === 'video') && content && content !== t('chat.window.image_label') && content !== t('chat.window.video_label') && (
                             <div className={`min-w-0 font-medium mt-2 ${isMe ? 'text-white' : 'text-foreground'} whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word]`}>
                                 {formatMessageText(content)}
                             </div>
@@ -310,7 +312,7 @@ export default function MessageBubble({
                     <button
                         onClick={onReply}
                         className="p-2 hover:bg-control rounded-full text-muted hover:text-primary transition-colors"
-                        title="Reply"
+                        title={t('chat.message.reply')}
                     >
                         <ArrowBendUpLeft size={16} weight="bold" />
                     </button>

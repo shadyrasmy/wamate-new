@@ -2,9 +2,11 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useUI } from '@/context/UIContext';
 
 function ResetPasswordContent() {
     const searchParams = useSearchParams();
+    const { t } = useUI();
     const [token, setToken] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,10 +21,10 @@ function ResetPasswordContent() {
             setToken(tokenParam);
         } else {
             setIsTokenValid(false);
-            setMessage('Invalid or missing reset token. Please request a new password reset.');
+            setMessage(t('auth.reset.invalid_token'));
             setMessageType('error');
         }
-    }, [searchParams]);
+    }, [searchParams, t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,14 +32,14 @@ function ResetPasswordContent() {
         setMessage('');
 
         if (password !== confirmPassword) {
-            setMessage('Passwords do not match.');
+            setMessage(t('auth.reset.password_mismatch'));
             setMessageType('error');
             setIsLoading(false);
             return;
         }
 
         if (password.length < 6) {
-            setMessage('Password must be at least 6 characters long.');
+            setMessage(t('auth.reset.password_short'));
             setMessageType('error');
             setIsLoading(false);
             return;
@@ -56,16 +58,16 @@ function ResetPasswordContent() {
             const data = await response.json();
 
             if (response.ok) {
-                setMessage(data.message || 'Password has been reset successfully. You can now log in with your new password.');
+                setMessage(data.message || t('auth.reset.success_fallback'));
                 setMessageType('success');
                 setPassword('');
                 setConfirmPassword('');
             } else {
-                setMessage(data.message || 'An error occurred. Please try again.');
+                setMessage(data.message || t('auth.reset.error_fallback'));
                 setMessageType('error');
             }
         } catch (error) {
-            setMessage('An error occurred. Please try again.');
+            setMessage(t('auth.reset.error_fallback'));
             setMessageType('error');
         } finally {
             setIsLoading(false);
@@ -75,8 +77,8 @@ function ResetPasswordContent() {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center text-foreground p-10">
             <div className="max-w-md w-full text-center space-y-8">
-                <h1 className="text-4xl font-black tracking-tighter uppercase italic">Reset Cipher</h1>
-                <p className="theme-copy font-medium">Enter your new transmission cipher to restore access to your identity.</p>
+                <h1 className="text-4xl font-black tracking-tighter uppercase italic">{t('auth.reset.title')}</h1>
+                <p className="theme-copy font-medium">{t('auth.reset.subtitle')}</p>
 
                 {message && (
                     <div className={`p-4 rounded-xl ${messageType === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
@@ -88,7 +90,7 @@ function ResetPasswordContent() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <input
                             type="password"
-                            placeholder="New Cipher (Password)"
+                            placeholder={t('auth.reset.new_password_placeholder')}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -97,7 +99,7 @@ function ResetPasswordContent() {
                         />
                         <input
                             type="password"
-                            placeholder="Confirm New Cipher"
+                            placeholder={t('auth.reset.confirm_password_placeholder')}
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             required
@@ -109,7 +111,7 @@ function ResetPasswordContent() {
                             disabled={isLoading}
                             className="theme-button-primary w-full py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isLoading ? 'Processing...' : 'Reset Cipher'}
+                            {isLoading ? t('auth.reset.submitting') : t('auth.reset.submit')}
                         </button>
                     </form>
                 )}
@@ -117,13 +119,13 @@ function ResetPasswordContent() {
                 {messageType === 'success' && (
                     <div className="pt-6">
                         <a href="/login" className="theme-button-primary inline-block py-5 px-8 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] transition">
-                            Proceed to Login
+                            {t('auth.reset.proceed_to_login')}
                         </a>
                     </div>
                 )}
 
                 <div className="pt-6">
-                    <a href="/forgot-password" className="text-[10px] font-black uppercase tracking-widest text-muted hover:text-foreground transition">Request New Cipher</a>
+                    <a href="/forgot-password" className="text-[10px] font-black uppercase tracking-widest text-muted hover:text-foreground transition">{t('auth.reset.request_new')}</a>
                 </div>
             </div>
         </div>
@@ -131,8 +133,10 @@ function ResetPasswordContent() {
 }
 
 export default function ResetPasswordPage() {
+    const { t } = useUI();
+
     return (
-        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-foreground font-bold p-10">Loading...</div>}>
+        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-foreground font-bold p-10">{t('common.loading')}</div>}>
             <ResetPasswordContent />
         </Suspense>
     );

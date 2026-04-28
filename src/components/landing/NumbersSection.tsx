@@ -1,17 +1,26 @@
+'use client';
+
 import { motion } from 'framer-motion';
+import { useUI } from '@/context/UIContext';
+import { getLocalizedValue } from '@/translations/localized';
 
 export default function NumbersSection({ content }: { content?: any }) {
-    const defaultContent = {
-        title: "GLOBAL INFRASTRUCTURE",
-        stat1_title: "99.99%",
-        stat1_label: "Uptime Record",
-        stat2_title: "24/7",
-        stat2_label: "Human Support",
-        stat3_title: "<10ms",
-        stat3_label: "Global Latency"
-    };
+    const { language, t } = useUI();
 
-    const c = content || defaultContent;
+    const stats = [
+        {
+            value: getLocalizedValue(content?.stat1_title, language, '99.99%'),
+            label: getLocalizedValue(content?.stat1_label, language, t('landing.numbers.stat1_label'))
+        },
+        {
+            value: getLocalizedValue(content?.stat2_title, language, '24/7'),
+            label: getLocalizedValue(content?.stat2_label, language, t('landing.numbers.stat2_label'))
+        },
+        {
+            value: getLocalizedValue(content?.stat3_title, language, '<10ms'),
+            label: getLocalizedValue(content?.stat3_label, language, t('landing.numbers.stat3_label'))
+        }
+    ];
 
     return (
         <div className="py-24 bg-primary/5 border-y border-primary/10 relative overflow-hidden">
@@ -21,26 +30,23 @@ export default function NumbersSection({ content }: { content?: any }) {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                 >
-                    <h3 className="text-4xl lg:text-7xl font-black mb-10 text-foreground/20 select-none tracking-widest uppercase">{c.title}</h3>
+                    <h3 className="text-4xl lg:text-7xl font-black mb-10 text-foreground/20 select-none tracking-widest uppercase">
+                        {getLocalizedValue(content?.title, language, t('landing.numbers.title'))}
+                    </h3>
                     <div className="grid md:grid-cols-3 gap-12 w-full max-w-4xl">
-                        {[
-                            { val: c.stat1_title, label: c.stat1_label },
-                            { val: c.stat2_title, label: c.stat2_label },
-                            { val: c.stat3_title, label: c.stat3_label }
-                        ].map((stat, i) => (
-                            <div key={i}>
-                                <div className="text-4xl lg:text-5xl font-bold mb-2 text-foreground">{stat.val}</div>
+                        {stats.map((stat) => (
+                            <div key={`${stat.value}-${stat.label}`}>
+                                <div className="text-4xl lg:text-5xl font-bold mb-2 text-foreground">{stat.value}</div>
                                 <div className="text-[10px] text-primary font-black uppercase tracking-widest">{stat.label}</div>
                             </div>
                         ))}
                     </div>
                 </motion.div>
             </div>
-            {/* Background Marquee Effect */}
             <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full opacity-[0.02] pointer-events-none select-none">
                 <div className="flex animate-marquee whitespace-nowrap text-[120px] font-black italic">
-                    <span className="mx-10 whitespace-nowrap">INFRASTRUCTURE NETWORK NODES SIGNAL TRANSMISSION</span>
-                    <span className="mx-10 whitespace-nowrap">INFRASTRUCTURE NETWORK NODES SIGNAL TRANSMISSION</span>
+                    <span className="mx-10 whitespace-nowrap">{t('landing.numbers.marquee')}</span>
+                    <span className="mx-10 whitespace-nowrap">{t('landing.numbers.marquee')}</span>
                 </div>
             </div>
         </div>

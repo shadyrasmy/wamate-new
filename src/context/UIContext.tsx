@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { defaultLanguage, getLabel, type Language, type TranslationKey, type TranslationParams } from '@/translations';
 
 type Theme = 'dark' | 'nova-light';
 
@@ -9,22 +10,32 @@ interface UIContextType {
     language: Language;
     setTheme: (theme: Theme) => void;
     setLanguage: (lang: Language) => void;
-    t: (key: string) => string;
+    t: (key: TranslationKey | string, params?: TranslationParams) => string;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
 
-import { translations, Language } from '@/translations';
-
 export function UIProvider({ children }: { children: React.ReactNode }) {
     const [theme, setThemeState] = useState<Theme>('dark');
-    const [language, setLanguageState] = useState<Language>('en');
+    const [language, setLanguageState] = useState<Language>(defaultLanguage);
+
+    const syncDocumentLanguage = (lang: Language) => {
+        if (typeof document === 'undefined') return;
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.documentElement.lang = lang;
+    };
 
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') as Theme;
         const savedLang = localStorage.getItem('language') as Language;
+
         if (savedTheme) setThemeState(savedTheme);
-        if (savedLang) setLanguageState(savedLang);
+        if (savedLang) {
+            setLanguageState(savedLang);
+            syncDocumentLanguage(savedLang);
+        } else {
+            syncDocumentLanguage(defaultLanguage);
+        }
     }, []);
 
     const setTheme = (newTheme: Theme) => {
@@ -35,15 +46,10 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
     const setLanguage = (newLang: Language) => {
         setLanguageState(newLang);
         localStorage.setItem('language', newLang);
-        if (typeof document !== 'undefined') {
-            document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
-            document.documentElement.lang = newLang;
-        }
+        syncDocumentLanguage(newLang);
     };
 
-    const t = (key: string) => {
-        return translations[language][key] || key;
-    };
+    const t = (key: TranslationKey | string, params?: TranslationParams) => getLabel(language, key, params);
 
     return (
         <UIContext.Provider value={{ theme, language, setTheme, setLanguage, t }}>
@@ -58,10 +64,10 @@ export function useUI() {
         // Fallback for SSR / Static Generation
         return {
             theme: 'dark' as Theme,
-            language: 'en' as Language,
+            language: defaultLanguage as Language,
             setTheme: () => { },
             setLanguage: () => { },
-            t: (key: string) => key
+            t: (key: TranslationKey | string, params?: TranslationParams) => getLabel(defaultLanguage, key, params)
         };
     }
     return context;

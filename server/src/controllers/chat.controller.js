@@ -307,7 +307,7 @@ exports.sendMessage = async (req, res, next) => {
     try {
         const managerId = getManagerId(req.user);
         const params = { ...req.body, ...req.query };
-        const { instanceId, type = 'text', mediaUrl, reaction, quotedMessageId } = params;
+        const { instanceId, type = 'text', mediaUrl, reaction, quotedMessageId, mimeType, fileName } = params;
 
         // Support 'number' as alias for 'jid' and 'message' as alias for 'content'
         const jid = params.jid || params.number;
@@ -392,7 +392,11 @@ exports.sendMessage = async (req, res, next) => {
         } else if (type === 'audio' && mediaUrl) {
             messagePayload = { audio: { url: mediaUrl }, ptt: true }; // Treat as voice note by default
         } else if (type === 'document' && mediaUrl) {
-            messagePayload = { document: { url: mediaUrl }, mimetype: 'application/pdf', fileName: 'document.pdf' }; // Simple default
+            messagePayload = {
+                document: { url: mediaUrl },
+                mimetype: mimeType || 'application/octet-stream',
+                fileName: fileName || mediaUrl.split('/').pop() || 'document'
+            };
         } else {
             messagePayload = { text: content || '' };
         }
@@ -447,6 +451,7 @@ exports.uploadMedia = async (req, res, next) => {
             data: {
                 url: fileUrl,
                 filename: req.file.filename,
+                originalName: req.file.originalname,
                 mimetype: req.file.mimetype,
                 size: req.file.size
             }

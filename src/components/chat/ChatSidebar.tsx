@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { MagnifyingGlass, UserCircle, Funnel, Plus, CaretDown, Spinner, WhatsappLogo, Circle, ChatCircleDots } from '@phosphor-icons/react';
+import { useEffect, useState } from 'react';
+import { MagnifyingGlass, UserCircle, Plus, Spinner, WhatsappLogo, Circle, ChatCircleDots } from '@phosphor-icons/react';
 import CustomSelect from '@/components/ui/CustomSelect';
 import { fetchWithAuth, SOCKET_URL } from '@/lib/api';
 import { io } from 'socket.io-client';
+import { useUI } from '@/context/UIContext';
 
 interface ChatSidebarProps {
     onSelectContact: (contact: any) => void;
@@ -13,112 +14,110 @@ interface ChatSidebarProps {
 }
 
 export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSelectInstance }: ChatSidebarProps) {
+    const { t } = useUI();
     const [instances, setInstances] = useState<any[]>([]);
     const [chats, setChats] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [activeJid, setActiveJid] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [socket, setSocket] = useState<any>(null);
+    const [showNewChat, setShowNewChat] = useState(false);
+    const [newChatPhone, setNewChatPhone] = useState('');
+    const [activeTab, setActiveTab] = useState<'chats' | 'contacts'>('chats');
+    const [contacts, setContacts] = useState<any[]>([]);
 
-    // Load Instances
     useEffect(() => {
         fetchWithAuth('/instances').then(data => {
             setInstances(data.data.instances);
             if (data.data.instances.length > 0 && !selectedInstanceId) {
                 onSelectInstance(data.data.instances[0].instance_id);
             }
-        }).catch(err => console.error('Failed to load instances', err));
-    }, []);
+        }).catch(error => console.error('Failed to load instances', error));
+    }, [onSelectInstance, selectedInstanceId]);
 
-    // Load Chats when instance changes
     useEffect(() => {
         if (selectedInstanceId) {
             loadChats(selectedInstanceId);
         }
     }, [selectedInstanceId]);
 
-    const [socket, setSocket] = useState<any>(null);
-
-    // Initialize Socket
     useEffect(() => {
-        const s = io(SOCKET_URL);
-        setSocket(s);
-        return () => { s.disconnect(); };
+        const nextSocket = io(SOCKET_URL);
+        setSocket(nextSocket);
+        return () => { nextSocket.disconnect(); };
     }, []);
 
-    // Listen for new messages
     useEffect(() => {
         if (!socket) return;
-        instances.forEach(i => socket.emit('join_instance', i.instance_id));
+        instances.forEach(instance => socket.emit('join_instance', instance.instance_id));
 
-        socket.on('new_message', (msg: any) => {
-            // Fix: Use chatJid if available (remote chat), otherwise fallback to senderJid
-            // This prevents "me" conversations when sending from phone.
-            const jid = msg.chatJid || msg.senderJid;
-            const content = msg.content || 'Media';
+        socket.on('new_message', (message: any) => {
+            const jid = message.chatJid || message.senderJid;
+            const content = message.content || t('chat.window.document_label');
 
-            // Fix Invalid Date Issue
-            // Use raw timestamp if available (new backend), otherwise try parsing string
             let timeObj = new Date();
-            if (msg.timestamp) {
-                timeObj = new Date(msg.timestamp);
-            } else if (msg.time) {
-                const parsedTime = new Date(msg.time * 1000);
-                if (parsedTime.getFullYear() === 1970 && msg.time > 2000000000) {
-                    const d = new Date(msg.time);
-                    if (!isNaN(d.getTime())) timeObj = d;
+            if (message.timestamp) {
+                timeObj = new Date(message.timestamp);
+            } else if (message.time) {
+                const parsedTime = new Date(message.time * 1000);
+                if (parsedTime.getFullYear() === 1970 && message.time > 2000000000) {
+                    const nextDate = new Date(message.time);
+                    if (!isNaN(nextDate.getTime())) timeObj = nextDate;
                 } else if (!isNaN(parsedTime.getTime())) {
                     timeObj = parsedTime;
                 } else {
-                    const d = new Date(msg.time);
-                    if (!isNaN(d.getTime())) timeObj = d;
+                    const nextDate = new Date(message.time);
+                    if (!isNaN(nextDate.getTime())) timeObj = nextDate;
                 }
             }
-            // Fallback for immediate UI update: just use 'now' if it's a live message
-            // Ideally live messages represent 'now' unless they are history syncs.
             if (isNaN(timeObj.getTime())) timeObj = new Date();
 
-            setChats(prev => {
-                const existing = prev.findIndex(c =>
-                    c.jid === jid ||
-                    (c.lid && c.lid === jid) ||
-                    (msg.lid && c.jid === msg.lid) ||
-                    (msg.lid && c.lid === msg.lid)
+            setChats(previous => {
+                const existing = previous.findIndex(chat =>
+                    chat.jid === jid ||
+                    (chat.lid && chat.lid === jid) ||
+                    (message.lid && chat.jid === message.lid) ||
+                    (message.lid && chat.lid === message.lid)
                 );
-                let newChat;
 
                 if (existing !== -1) {
-                    const oldChat = prev[existing];
-                    newChat = {
+                    const oldChat = previous[existing];
+                    const updatedChat = {
                         ...oldChat,
                         lastMessage: content,
                         time: timeObj,
-                        unread: (activeJid === jid) ? 0 : (oldChat.unread + 1),
-                        instanceId: msg.instanceId || oldChat.instanceId // Update instanceId if present
+                        unread: activeJid === jid ? 0 : (oldChat.unread + 1),
+                        instanceId: message.instanceId || oldChat.instanceId
                     };
-                    const newChats = [...prev];
-                    newChats.splice(existing, 1);
-                    return [newChat, ...newChats];
-                } else {
-                    newChat = {
-                        jid,
-                        name: jid.split('@')[0],
-                        lastMessage: content,
-                        time: timeObj,
-                        unread: 1,
-                        instanceId: msg.instanceId // Store instanceId
-                    };
-                    return [newChat, ...prev];
+                    const nextChats = [...previous];
+                    nextChats.splice(existing, 1);
+                    return [updatedChat, ...nextChats];
                 }
+
+                return [{
+                    jid,
+                    name: jid.split('@')[0],
+                    lastMessage: content,
+                    time: timeObj,
+                    unread: 1,
+                    instanceId: message.instanceId
+                }, ...previous];
             });
         });
 
         return () => { socket.off('new_message'); };
-    }, [socket, instances, activeJid]);
+    }, [socket, instances, activeJid, t]);
+
+    useEffect(() => {
+        if (activeTab === 'contacts' && selectedInstanceId) {
+            loadContacts(selectedInstanceId);
+        }
+    }, [activeTab, selectedInstanceId]);
 
     const loadChats = async (instanceId: string) => {
         setLoading(true);
         try {
-            const query = (instanceId && instanceId !== 'all') ? `?instanceId=${instanceId}` : '';
+            const query = instanceId && instanceId !== 'all' ? `?instanceId=${instanceId}` : '';
             const data = await fetchWithAuth(`/chat/chats${query}`);
             setChats(data.data.chats);
         } catch (error) {
@@ -127,33 +126,6 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
             setLoading(false);
         }
     };
-
-    const handleSelect = (chat: any) => {
-        setActiveJid(chat.jid);
-        onSelectContact(chat);
-    };
-
-    const [showNewChat, setShowNewChat] = useState(false);
-    const [newChatPhone, setNewChatPhone] = useState('');
-    const [activeTab, setActiveTab] = useState<'chats' | 'contacts'>('chats');
-    const [contacts, setContacts] = useState<any[]>([]);
-
-    useEffect(() => {
-        if (activeTab === 'contacts' && selectedInstanceId) {
-            loadContacts(selectedInstanceId);
-        }
-    }, [activeTab, selectedInstanceId]);
-
-    const filteredList = (activeTab === 'chats' ? chats : contacts).filter(item => {
-        if (!searchTerm) return true;
-        const search = searchTerm.toLowerCase();
-        return (
-            item.name?.toLowerCase().includes(search) ||
-            item.jid?.toLowerCase().includes(search) ||
-            item.phone?.toLowerCase().includes(search) ||
-            item.lastMessage?.toLowerCase().includes(search)
-        );
-    });
 
     const loadContacts = async (instanceId: string) => {
         setLoading(true);
@@ -167,6 +139,22 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
         }
     };
 
+    const handleSelect = (chat: any) => {
+        setActiveJid(chat.jid);
+        onSelectContact(chat);
+    };
+
+    const filteredList = (activeTab === 'chats' ? chats : contacts).filter(item => {
+        if (!searchTerm) return true;
+        const search = searchTerm.toLowerCase();
+        return (
+            item.name?.toLowerCase().includes(search) ||
+            item.jid?.toLowerCase().includes(search) ||
+            item.phone?.toLowerCase().includes(search) ||
+            item.lastMessage?.toLowerCase().includes(search)
+        );
+    });
+
     const startNewChat = () => {
         if (!newChatPhone) return;
         const jid = newChatPhone.includes('@') ? newChatPhone : `${newChatPhone}@s.whatsapp.net`;
@@ -177,9 +165,9 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
             time: new Date(),
             unread: 0
         });
-        setChats(prev => {
-            if (prev.find(c => c.jid === jid)) return prev;
-            return [{ jid, name: newChatPhone, lastMessage: '', time: new Date(), unread: 0 }, ...prev];
+        setChats(previous => {
+            if (previous.find(chat => chat.jid === jid)) return previous;
+            return [{ jid, name: newChatPhone, lastMessage: '', time: new Date(), unread: 0 }, ...previous];
         });
         setShowNewChat(false);
         setNewChatPhone('');
@@ -187,8 +175,6 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
 
     return (
         <div className="w-full md:w-64 lg:w-[300px] flex flex-col border-r border-border bg-carbon h-full relative">
-
-            {/* Header */}
             <div className="p-6 space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -198,13 +184,13 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                         <div className="relative group min-w-[140px]">
                             <CustomSelect
                                 value={selectedInstanceId || ''}
-                                onChange={(val) => onSelectInstance(val)}
-                                placeholder="Select Instance"
+                                onChange={(value) => onSelectInstance(value)}
+                                placeholder={t('common.select_instance')}
                                 options={[
-                                    { value: 'all', label: 'ALL ACTIVE CHATS' },
-                                    ...instances.map(inst => ({
-                                        value: inst.instance_id,
-                                        label: inst.name
+                                    { value: 'all', label: t('chat.sidebar.all_active_chats') },
+                                    ...instances.map(instance => ({
+                                        value: instance.instance_id,
+                                        label: instance.name
                                     }))
                                 ]}
                             />
@@ -220,36 +206,33 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                     </div>
                 </div>
 
-                {/* Tab Switcher */}
                 <div className="flex bg-control p-1 rounded-2xl border border-control-border">
                     <button
                         onClick={() => setActiveTab('chats')}
                         className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'chats' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-muted hover:text-foreground'}`}
                     >
-                        Conversations
+                        {t('chat.sidebar.conversations')}
                     </button>
                     <button
                         onClick={() => setActiveTab('contacts')}
                         className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'contacts' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-muted hover:text-foreground'}`}
                     >
-                        Global Contacts
+                        {t('chat.sidebar.global_contacts')}
                     </button>
                 </div>
 
-                {/* Search */}
                 <div className="relative">
                     <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
                     <input
                         type="text"
-                        placeholder={`Search ${activeTab === 'chats' ? 'conversations' : 'contacts'}...`}
+                        placeholder={activeTab === 'chats' ? t('chat.sidebar.search_conversations') : t('chat.sidebar.search_contacts')}
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(event) => setSearchTerm(event.target.value)}
                         className="w-full pl-12 pr-4 py-3 bg-input border border-input-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-primary/50 transition-all font-sans"
                     />
                 </div>
             </div>
 
-            {/* List */}
             <div className="flex-1 overflow-y-auto custom-scroll px-3 pb-8">
                 {loading ? (
                     <div className="flex justify-center p-12">
@@ -260,8 +243,8 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                         <div className="w-16 h-16 bg-control rounded-3xl flex items-center justify-center mx-auto mb-4 border border-control-border">
                             <ChatCircleDots size={32} weight="duotone" className="text-muted" />
                         </div>
-                        <p className="text-muted text-sm font-medium">No results found.</p>
-                        <p className="text-xs text-muted mt-1 uppercase font-black tracking-widest">Initialization Required</p>
+                        <p className="text-muted text-sm font-medium">{t('common.no_results')}</p>
+                        <p className="text-xs text-muted mt-1 uppercase font-black tracking-widest">{t('chat.sidebar.empty_secondary')}</p>
                     </div>
                 ) : (
                     <div className="space-y-1">
@@ -287,7 +270,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-baseline mb-0.5">
                                         <span className={`font-bold truncate text-[13px] transition-colors ${activeJid === item.jid ? 'text-foreground' : 'text-muted-soft'}`}>
-                                            {item.name || item.jid || item.phone || 'Unknown User'}
+                                            {item.name || item.jid || item.phone || t('chat.sidebar.unknown_user')}
                                         </span>
                                         {activeTab === 'chats' && item.time && (
                                             <span className="text-[9px] font-black text-muted uppercase tracking-tighter">
@@ -297,7 +280,7 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <p className="text-[11px] text-muted truncate pr-2 group-hover:text-muted-soft transition-colors">
-                                            {activeTab === 'chats' ? (item.lastMessage || <span className="italic opacity-50">Secure Channel Established</span>) : item.jid}
+                                            {activeTab === 'chats' ? (item.lastMessage || <span className="italic opacity-50">{t('chat.sidebar.secure_channel')}</span>) : item.jid}
                                         </p>
                                         {activeTab === 'chats' && item.unread > 0 && (
                                             <span className="min-w-[16px] h-[16px] px-1 rounded-md bg-primary text-white text-[8px] font-black flex items-center justify-center shadow-lg shadow-primary/20">
@@ -312,7 +295,6 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                 )}
             </div>
 
-            {/* New Chat Backdrop */}
             {showNewChat && (
                 <div
                     className="absolute inset-0 bg-overlay backdrop-blur-sm z-50 flex flex-col p-8"
@@ -320,20 +302,20 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                 >
                     <div
                         className="bg-carbon p-8 rounded-[2.5rem] border border-border shadow-2xl"
-                        onClick={e => e.stopPropagation()}
+                        onClick={event => event.stopPropagation()}
                     >
                         <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
                             <Circle size={12} weight="fill" className="text-primary" />
-                            Launch Conversation
+                            {t('chat.sidebar.launch_conversation')}
                         </h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-[10px] font-black text-muted uppercase tracking-widest mb-2 block">Phone Identifier</label>
+                                <label className="text-[10px] font-black text-muted uppercase tracking-widest mb-2 block">{t('chat.sidebar.phone_identifier')}</label>
                                 <input
                                     className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground focus:outline-none focus:border-primary/50 transition"
-                                    placeholder="e.g. 15551234567"
+                                    placeholder={t('chat.sidebar.phone_placeholder')}
                                     value={newChatPhone}
-                                    onChange={e => setNewChatPhone(e.target.value)}
+                                    onChange={event => setNewChatPhone(event.target.value)}
                                     autoFocus
                                 />
                             </div>
@@ -342,13 +324,13 @@ export default function ChatSidebar({ onSelectContact, selectedInstanceId, onSel
                                     onClick={() => setShowNewChat(false)}
                                     className="flex-1 py-4 text-muted font-bold text-sm uppercase tracking-widest"
                                 >
-                                    Abort
+                                    {t('common.abort')}
                                 </button>
                                 <button
                                     onClick={startNewChat}
                                     className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition"
                                 >
-                                    Initiate
+                                    {t('chat.sidebar.initiate')}
                                 </button>
                             </div>
                         </div>

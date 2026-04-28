@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useUI } from '@/context/UIContext';
 import {
     Money,
     TrendUp,
@@ -14,6 +15,7 @@ import {
 import { fetchWithAuth } from '@/lib/api';
 
 export default function AdminReferralPage() {
+    const { t } = useUI();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [percentage, setPercentage] = useState(20);
@@ -44,9 +46,9 @@ export default function AdminReferralPage() {
                 method: 'POST',
                 body: JSON.stringify({ percentage: Number(percentage) })
             });
-            setMsg({ type: 'success', text: 'Commission settings updated successfully.' });
+            setMsg({ type: 'success', text: t('admin.referrals.update_success') });
         } catch (error: any) {
-            setMsg({ type: 'error', text: error.message || 'Failed to update settings' });
+            setMsg({ type: 'error', text: error.message || t('admin.referrals.update_error') });
         } finally {
             setSaving(false);
         }
@@ -64,8 +66,8 @@ export default function AdminReferralPage() {
         <div className="min-h-screen bg-background text-foreground p-8 space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tight mb-2">Referral Administration</h1>
-                    <p className="text-gray-400">Manage global commission rates and view top affiliates.</p>
+                    <h1 className="text-3xl font-black tracking-tight mb-2">{t('admin.referrals.title')}</h1>
+                    <p className="text-gray-400">{t('admin.referrals.subtitle')}</p>
                 </div>
             </div>
 
@@ -76,7 +78,7 @@ export default function AdminReferralPage() {
                         <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
                             <Money size={20} weight="fill" />
                         </div>
-                        <span className="text-sm text-gray-500 font-bold uppercase tracking-widest">Total Commissions</span>
+                        <span className="text-sm text-gray-500 font-bold uppercase tracking-widest">{t('admin.referrals.total_commissions')}</span>
                     </div>
                     <div className="text-3xl font-black tracking-tight">${Number(stats?.total_commissions || 0).toFixed(2)}</div>
                 </div>
@@ -86,7 +88,7 @@ export default function AdminReferralPage() {
                         <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
                             <HandCoins size={20} weight="fill" />
                         </div>
-                        <span className="text-sm text-gray-500 font-bold uppercase tracking-widest">Total Payouts</span>
+                        <span className="text-sm text-gray-500 font-bold uppercase tracking-widest">{t('admin.referrals.total_payouts')}</span>
                     </div>
                     <div className="text-3xl font-black tracking-tight">${Number(stats?.total_payouts || 0).toFixed(2)}</div>
                 </div>
@@ -96,7 +98,7 @@ export default function AdminReferralPage() {
                         <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
                             <Users size={20} weight="fill" />
                         </div>
-                        <span className="text-sm text-gray-500 font-bold uppercase tracking-widest">Active Referrers</span>
+                        <span className="text-sm text-gray-500 font-bold uppercase tracking-widest">{t('admin.referrals.active_referrers')}</span>
                     </div>
                     <div className="text-3xl font-black tracking-tight">{stats?.top_referrers?.length || 0}</div>
                 </div>
@@ -107,13 +109,13 @@ export default function AdminReferralPage() {
                 <div className="bg-surface rounded-3xl border border-white/5 p-8 h-fit">
                     <div className="flex items-center gap-3 mb-6">
                         <Gear size={24} weight="fill" className="text-gray-400" />
-                        <h2 className="text-xl font-bold">Global Configuration</h2>
+                        <h2 className="text-xl font-bold">{t('admin.referrals.config_title')}</h2>
                     </div>
 
                     <div className="space-y-6">
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
-                                Commission Percentage (%)
+                                {t('admin.referrals.commission_label')}
                             </label>
                             <div className="flex items-center gap-4">
                                 <input
@@ -127,7 +129,7 @@ export default function AdminReferralPage() {
                                 <span className="text-gray-500 font-bold">%</span>
                             </div>
                             <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                                This percentage applies to all future payments. Existing balances are not affected.
+                                {t('admin.referrals.commission_help')}
                             </p>
                         </div>
 
@@ -144,7 +146,7 @@ export default function AdminReferralPage() {
                             className="w-full py-4 bg-primary hover:bg-primary-dark text-black font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                         >
                             {saving ? <Spinner className="animate-spin" /> : <CheckCircle size={20} weight="bold" />}
-                            {saving ? 'Saving...' : 'Update Settings'}
+                            {saving ? t('admin.referrals.saving') : t('admin.referrals.update_settings')}
                         </button>
                     </div>
                 </div>
@@ -153,16 +155,16 @@ export default function AdminReferralPage() {
                 <div className="lg:col-span-2 bg-surface rounded-3xl border border-white/5 p-8">
                     <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
                         <TrendUp size={24} className="text-primary" weight="fill" />
-                        Top Performing Affiliates
+                        {t('admin.referrals.top_affiliates')}
                     </h2>
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b border-white/5 text-xs text-gray-500 uppercase tracking-widest">
-                                    <th className="py-4 pl-4">User</th>
-                                    <th className="py-4">Code</th>
-                                    <th className="py-4 text-right pr-4">Balance</th>
+                                    <th className="py-4 pl-4">{t('admin.referrals.table_user')}</th>
+                                    <th className="py-4">{t('admin.referrals.table_code')}</th>
+                                    <th className="py-4 text-right pr-4">{t('admin.referrals.table_balance')}</th>
                                 </tr>
                             </thead>
                             <tbody className="text-sm">
@@ -186,7 +188,7 @@ export default function AdminReferralPage() {
                                 ) : (
                                     <tr>
                                         <td colSpan={3} className="py-12 text-center text-gray-500 italic">
-                                            No active referrers found.
+                                            No {t('admin.referrals.active_referrers')} found.
                                         </td>
                                     </tr>
                                 )}
@@ -198,3 +200,4 @@ export default function AdminReferralPage() {
         </div>
     );
 }
+

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useUI } from '@/context/UIContext';
 
 export default function ForgotPasswordPage() {
+    const { t } = useUI();
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
@@ -26,15 +28,15 @@ export default function ForgotPasswordPage() {
             const data = await response.json();
 
             if (response.ok) {
-                setMessage(data.message || 'If an account with that email exists, a password reset link has been sent.');
+                setMessage(data.message || t('auth.forgot.success_fallback'));
                 setMessageType('success');
                 setEmail('');
             } else {
-                setMessage(data.message || 'An error occurred. Please try again.');
+                setMessage(data.message || t('auth.forgot.error_fallback'));
                 setMessageType('error');
             }
         } catch (error) {
-            setMessage('An error occurred. Please try again.');
+            setMessage(t('auth.forgot.error_fallback'));
             setMessageType('error');
         } finally {
             setIsLoading(false);
@@ -44,8 +46,8 @@ export default function ForgotPasswordPage() {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center text-foreground p-10">
             <div className="max-w-md w-full text-center space-y-8">
-                <h1 className="text-4xl font-black tracking-tighter uppercase italic">Identity Recovery</h1>
-                <p className="theme-copy font-medium">Enter your transmission ID to receive a bypass cipher. This protocol requires a verified backup frequency.</p>
+                <h1 className="text-4xl font-black tracking-tighter uppercase italic">{t('auth.forgot.title')}</h1>
+                <p className="theme-copy font-medium">{t('auth.forgot.subtitle')}</p>
 
                 {message && (
                     <div className={`p-4 rounded-xl ${messageType === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
@@ -56,7 +58,7 @@ export default function ForgotPasswordPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input
                         type="email"
-                        placeholder="Verified Identity (Email)"
+                        placeholder={t('auth.forgot.email_placeholder')}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -67,11 +69,11 @@ export default function ForgotPasswordPage() {
                         disabled={isLoading}
                         className="theme-button-primary w-full py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isLoading ? 'Processing...' : 'Request Cipher'}
+                        {isLoading ? t('auth.forgot.submitting') : t('auth.forgot.submit')}
                     </button>
                 </form>
                 <div className="pt-6">
-                    <a href="/login" className="text-[10px] font-black uppercase tracking-widest text-muted hover:text-foreground transition">Abort Protocol & Return</a>
+                    <a href="/login" className="text-[10px] font-black uppercase tracking-widest text-muted hover:text-foreground transition">{t('auth.forgot.back')}</a>
                 </div>
             </div>
         </div>

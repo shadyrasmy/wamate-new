@@ -8,8 +8,10 @@ import BenefitsSection from '@/components/landing/BenefitsSection';
 import NumbersSection from '@/components/landing/NumbersSection';
 import HowEasySection from '@/components/landing/HowEasySection';
 import Footer from '@/components/layout/Footer';
+import { useUI } from '@/context/UIContext';
 
 export default function Home() {
+  const { t } = useUI();
   const [config, setConfig] = useState<any>(null);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function Home() {
           className="fixed bottom-10 right-10 z-[100] bg-primary text-white p-4 rounded-2xl shadow-2xl shadow-primary/40 font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-110 active:scale-95 transition"
         >
           <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-          Edit Landing Content
+          {t('home.edit_landing_content')}
         </a>
       )}
       {show('hero') && <HeroSection content={config?.landing_content?.hero} />}

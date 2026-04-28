@@ -9,9 +9,11 @@ import {
     CaretDown, CaretUp, WhatsappLogo, PaperPlaneRight,
     Shield, Envelope, Robot
 } from '@phosphor-icons/react';
+import { useUI } from '@/context/UIContext';
 import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AdminUsersPage() {
+    const { t, language } = useUI();
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingUser, setEditingUser] = useState<any>(null);
@@ -109,7 +111,7 @@ export default function AdminUsersPage() {
     };
 
     const handleDeleteUser = async (userId: string) => {
-        if (!confirm('Are you sure you want to permanently DECOMMISSION this identity? All associated nodes will be purged.')) return;
+        if (!confirm(t('admin.users.confirm_delete'))) return;
         try {
             await fetchWithAuth(`/admin/users/${userId}`, { method: 'DELETE' });
             loadUsers();
@@ -119,7 +121,7 @@ export default function AdminUsersPage() {
     };
 
     const handleExtendSubscription = async (userId: string) => {
-        const days = prompt('Enter magnitude extension (days):', '30');
+        const days = prompt(t('admin.users.prompt_extend'), '30');
         if (!days) return;
         try {
             await fetchWithAuth(`/admin/users/${userId}/extend`, {
@@ -133,7 +135,8 @@ export default function AdminUsersPage() {
     };
 
     const handleToggleEmailVerification = async (userId: string, currentStatus: boolean) => {
-        if (!confirm(`Are you sure you want to ${currentStatus ? 'UNVERIFY' : 'VERIFY'} this user's email?`)) return;
+        const action = currentStatus ? t('admin.users.unverify_email') : t('admin.users.verify_email');
+        if (!confirm(t('admin.users.confirm_verify_email', { action }))) return;
         try {
             await fetchWithAuth(`/admin/users/${userId}/verify-email`, {
                 method: 'PATCH',
@@ -149,14 +152,14 @@ export default function AdminUsersPage() {
         <div className="space-y-10 pb-20">
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tight mb-2">Global Nodes</h1>
-                    <p className="text-gray-500 font-medium">Control tower for all operational entities on the grid.</p>
+                    <h1 className="text-4xl font-black tracking-tight mb-2">{t('admin.users.title')}</h1>
+                    <p className="text-gray-500 font-medium">{t('admin.users.subtitle')}</p>
                 </div>
                 <div className="flex gap-4">
                     <div className="flex bg-white/5 rounded-2xl p-1 border border-white/5">
                         <input
                             type="text"
-                            placeholder="Search identities..."
+                            placeholder={t('admin.users.search_placeholder')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && loadUsers()}
@@ -167,12 +170,12 @@ export default function AdminUsersPage() {
                         value={dateRange}
                         onChange={(val) => setDateRange(val)}
                         options={[
-                            { value: 'all', label: 'ALL TIME' },
-                            { value: 'today', label: 'TODAY' },
-                            { value: 'yesterday', label: 'YESTERDAY' },
-                            { value: 'last7days', label: 'LAST 7 DAYS' },
-                            { value: 'thisMonth', label: 'THIS MONTH' },
-                            { value: 'lastMonth', label: 'LAST MONTH' }
+                            { value: 'all', label: t('admin.users.filter_all') },
+                            { value: 'today', label: t('admin.users.filter_today') },
+                            { value: 'yesterday', label: t('admin.users.filter_yesterday') },
+                            { value: 'last7days', label: t('admin.users.filter_7d') },
+                            { value: 'thisMonth', label: t('admin.users.filter_this_month') },
+                            { value: 'lastMonth', label: t('admin.users.filter_last_month') }
                         ]}
                     />
                 </div>
@@ -193,13 +196,13 @@ export default function AdminUsersPage() {
                             <thead>
                                 <tr className="bg-white/5 text-[10px] font-black uppercase text-gray-500 tracking-widest">
                                     <th className="p-6 w-10"></th>
-                                    <th className="p-6">Operator Identity</th>
-                                    <th className="p-6">Phone</th>
-                                    <th className="p-6">Subscription Tier</th>
-                                    <th className="p-6">Network Load</th>
-                                    <th className="p-6">Status</th>
-                                    <th className="p-6">Expires</th>
-                                    <th className="p-6 text-right">Actions</th>
+                                    <th className="p-6">{t('admin.users.table_operator')}</th>
+                                    <th className="p-6">{t('admin.users.table_phone')}</th>
+                                    <th className="p-6">{t('admin.users.table_tier')}</th>
+                                    <th className="p-6">{t('admin.users.table_load')}</th>
+                                    <th className="p-6">{t('admin.users.table_status')}</th>
+                                    <th className="p-6">{t('admin.users.table_expires')}</th>
+                                    <th className="p-6 text-right">{t('admin.users.table_actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -215,7 +218,7 @@ export default function AdminUsersPage() {
                                             </td>
                                             <td className="p-6">
                                                 <div className="text-sm font-bold text-gray-400 font-mono italic">
-                                                    {u.phone_number || 'SIGNAL_LOW'}
+                                                    {u.phone_number || t('admin.users.signal_low')}
                                                 </div>
                                             </td>
                                             <td className="p-6">
@@ -230,7 +233,7 @@ export default function AdminUsersPage() {
                                             <td className="p-6">
                                                 <div className="text-xs space-y-1">
                                                     <div className="flex justify-between items-center gap-4">
-                                                        <span className="text-gray-500 uppercase font-black text-[9px] tracking-widest">Broadcasts</span>
+                                                        <span className="text-gray-500 uppercase font-black text-[9px] tracking-widest">{t('dashboard.plans.broadcasts')}</span>
                                                         <span className="text-white font-bold">{u.messages_sent_current_period?.toLocaleString() || 0} <span className="text-gray-600 font-medium">/ {u.monthly_message_limit?.toLocaleString() || 0}</span></span>
                                                     </div>
                                                 </div>
@@ -239,25 +242,25 @@ export default function AdminUsersPage() {
                                                 <div className="flex flex-col gap-2">
                                                     {u.is_active ?
                                                         <div className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-widest">
-                                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e]"></div> Active
+                                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e]"></div> {t('admin.users.status_active')}
                                                         </div> :
                                                         <div className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest">
-                                                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div> Suspended
+                                                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div> {t('admin.users.status_suspended')}
                                                         </div>
                                                     }
                                                     {u.email_verified ?
                                                         <div className="flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest">
-                                                            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div> Email Verified
+                                                            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div> {t('admin.users.email_verified')}
                                                         </div> :
                                                         <div className="flex items-center gap-2 text-yellow-500 text-[10px] font-black uppercase tracking-widest">
-                                                            <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Email Pending
+                                                            <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> {t('admin.users.email_pending')}
                                                         </div>
                                                     }
                                                 </div>
                                             </td>
                                             <td className="p-6">
                                                 <div className="text-[10px] font-black uppercase text-gray-500 tracking-widest font-mono italic">
-                                                    {u.subscription_end_date ? new Date(u.subscription_end_date).toLocaleDateString() : 'PERPETUAL'}
+                                                    {u.subscription_end_date ? new Date(u.subscription_end_date).toLocaleDateString() : t('admin.users.perpetual')}
                                                 </div>
                                             </td>
                                             <td className="p-6 text-right">
@@ -265,28 +268,28 @@ export default function AdminUsersPage() {
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleToggleEmailVerification(u.id, u.email_verified); }}
                                                         className={`w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition border border-white/5 ${u.email_verified ? 'text-blue-400' : 'text-gray-400'}`}
-                                                        title={u.email_verified ? "Unverify Email" : "Verify Email"}
+                                                        title={u.email_verified ? t('admin.users.unverify_email') : t('admin.users.verify_email')}
                                                     >
                                                         <Envelope size={18} weight={u.email_verified ? "fill" : "bold"} />
                                                     </button>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setEditingUser(u); }}
                                                         className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition border border-white/5"
-                                                        title="Edit User"
+                                                        title={t('admin.users.edit_user')}
                                                     >
                                                         <PencilSimple size={18} weight="bold" />
                                                     </button>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleExtendSubscription(u.id); }}
                                                         className="w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition border border-primary/10"
-                                                        title="Extend Subscription"
+                                                        title={t('admin.users.extend_sub')}
                                                     >
                                                         <CheckCircle size={18} weight="bold" />
                                                     </button>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.id); }}
                                                         className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition border border-red-500/10"
-                                                        title="Delete User"
+                                                        title={t('admin.users.delete_user')}
                                                     >
                                                         <Trash size={18} weight="bold" />
                                                     </button>
@@ -330,13 +333,13 @@ export default function AdminUsersPage() {
                                                                             </div>
                                                                             <div>
                                                                                 <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Phone</div>
-                                                                                <div className="text-xs font-bold text-white">{inst.phone_number || 'UNKNOWN'}</div>
+                                                                                <div className="text-xs font-bold text-white">{inst.phone_number || t('admin.users.unknown')}</div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                 )) : (
                                                                     <div className="col-span-full py-10 text-center text-gray-600 font-medium italic text-xs tracking-widest">
-                                                                        SIGNAL_ZERO // No operational nodes found.
+                                                                        {t('admin.users.no_nodes')}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -353,7 +356,7 @@ export default function AdminUsersPage() {
 
                     <div className="p-6 bg-white/[0.01] border-t border-white/5 flex justify-between items-center">
                         <div className="text-[10px] font-black uppercase text-gray-500 tracking-widest">
-                            Page <span className="text-white">{page}</span> of <span className="text-white">{totalPages}</span>
+                            {t('auth.forgot.back').split(' ')[0]} <span className="text-white">{page}</span> {t('common.of')} <span className="text-white">{totalPages}</span>
                         </div>
                         <div className="flex gap-2">
                             <button
@@ -388,8 +391,8 @@ export default function AdminUsersPage() {
                                     <div className="w-10 h-10 lg:w-14 lg:h-14 bg-primary/10 rounded-xl lg:rounded-2xl flex items-center justify-center border border-primary/20 mb-4 lg:mb-6 font-black text-primary">
                                         <Shield size={24} weight="bold" />
                                     </div>
-                                    <h3 className="text-xl lg:text-3xl font-black mb-1 lg:mb-2">Override Node Magnitude</h3>
-                                    <p className="text-xs lg:text-sm text-gray-500 font-medium">Adjusting parameters for operator: <span className="text-white">{editingUser.name}</span></p>
+                                    <h3 className="text-xl lg:text-3xl font-black mb-1 lg:mb-2">{t('admin.users.edit_title')}</h3>
+                                    <p className="text-xs lg:text-sm text-gray-500 font-medium">{t('admin.users.edit_subtitle', { name: editingUser.name })}</p>
                                 </div>
                                 <button onClick={() => setEditingUser(null)} className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 transition">
                                     <X size={18} weight="bold" />
@@ -399,7 +402,7 @@ export default function AdminUsersPage() {
                             <form onSubmit={handleSaveUser} className="space-y-6">
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="space-y-2 col-span-full">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Phone Number Hub</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.users.label_phone')}</label>
                                         <input
                                             type="text"
                                             value={editingUser.phone_number || ''}
@@ -408,7 +411,7 @@ export default function AdminUsersPage() {
                                         />
                                     </div>
                                     <CustomSelect
-                                        label="Service Tier"
+                                        label={t('admin.users.service_tier')}
                                         value={editingUser.plan?.name || editingUser.plan || 'free'}
                                         onChange={val => {
                                             const selectedPlan = plans.find(p => p.name === val);
@@ -429,7 +432,7 @@ export default function AdminUsersPage() {
                                     />
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Broadcast Quota</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.users.label_broadcast')}</label>
                                         <input
                                             type="number"
                                             value={editingUser.monthly_message_limit}
@@ -438,7 +441,7 @@ export default function AdminUsersPage() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Max Channels</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.users.label_channels')}</label>
                                         <input
                                             type="number"
                                             value={editingUser.max_instances}
@@ -447,7 +450,7 @@ export default function AdminUsersPage() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Team Capacity</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.users.label_seats')}</label>
                                         <input
                                             type="number"
                                             value={editingUser.max_seats}
@@ -461,7 +464,7 @@ export default function AdminUsersPage() {
                                         <div className="flex items-center justify-between bg-primary/5 p-4 rounded-2xl border border-primary/10">
                                             <div className="flex items-center gap-3">
                                                 <Robot size={20} className="text-primary" />
-                                                <span className="text-xs font-black uppercase tracking-widest text-white">AI Neural Connection</span>
+                                                <span className="text-xs font-black uppercase tracking-widest text-white">{t('admin.users.label_ai')}</span>
                                             </div>
                                             <button
                                                 type="button"
@@ -475,7 +478,7 @@ export default function AdminUsersPage() {
                                         {editingUser.ai_enabled && (
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">AI Reply Quota</label>
+                                                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">{t('admin.users.label_ai_reply')}</label>
                                                     <input
                                                         type="number"
                                                         value={editingUser.ai_reply_limit || 0}
@@ -484,7 +487,7 @@ export default function AdminUsersPage() {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">Knowledge Cap</label>
+                                                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">{t('admin.users.label_ai_knowledge')}</label>
                                                     <input
                                                         type="number"
                                                         value={editingUser.ai_knowledge_limit || 0}
@@ -505,11 +508,11 @@ export default function AdminUsersPage() {
                                     >
                                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 ${editingUser.is_active ? 'left-7' : 'left-1'}`}></div>
                                     </button>
-                                    <span className="text-xs font-black uppercase tracking-widest text-gray-400">Identity Status: <span className={editingUser.is_active ? 'text-green-500' : 'text-red-500'}>{editingUser.is_active ? 'Operational' : 'Suspended'}</span></span>
+                                    <span className="text-xs font-black uppercase tracking-widest text-gray-400">{t('admin.users.identity_status')}: <span className={editingUser.is_active ? 'text-green-500' : 'text-red-500'}>{editingUser.is_active ? t('admin.users.status_op') : t('admin.users.status_susp')}</span></span>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Subscription Expiry</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.users.expiry')}</label>
                                     <input
                                         type="date"
                                         value={editingUser.subscription_end_date ? editingUser.subscription_end_date.split('T')[0] : ''}
@@ -524,13 +527,13 @@ export default function AdminUsersPage() {
                                         onClick={() => setEditingUser(null)}
                                         className="flex-1 py-3 text-gray-500 font-bold text-[10px] uppercase tracking-widest bg-white/5 rounded-xl lg:rounded-2xl hover:bg-white/10 transition border border-white/5"
                                     >
-                                        Abort
+                                        {t('common.cancel')}
                                     </button>
                                     <button
                                         type="submit"
                                         className="flex-1 bg-primary text-white py-3 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition"
                                     >
-                                        Apply Override
+                                        {t('admin.users.apply_override')}
                                     </button>
                                 </div>
                             </form>

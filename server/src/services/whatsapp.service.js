@@ -198,7 +198,6 @@ class WhatsAppService {
                     const candidates = await Contact.findAll({
                         where: {
                             user_id: instance.user_id,
-                            instance_id: instance.id,
                             [Op.or]: [
                                 { jid: phoneJid },
                                 { jid: lid },
@@ -215,7 +214,6 @@ class WhatsAppService {
                     const lidOwnerCheck = await Contact.findOne({
                         where: {
                             user_id: instance.user_id,
-                            instance_id: instance.id,
                             lid: lid,
                             jid: {
                                 [Op.ne]: phoneJid,
@@ -310,7 +308,6 @@ class WhatsAppService {
             let contact = await Contact.findOne({
                 where: {
                     user_id: instance.user_id,
-                    instance_id: instance.id,
                     [Op.or]: [
                         { jid: jid },
                         { lid: jid },
@@ -332,7 +329,6 @@ class WhatsAppService {
                     const existingPhoneContact = await Contact.findOne({
                         where: {
                             user_id: instance.user_id,
-                            instance_id: instance.id,
                             jid: phoneJid,
                             id: { [Op.ne]: contact.id }
                         }
@@ -598,7 +594,6 @@ class WhatsAppService {
                 let candidates = await Contact.findAll({
                     where: {
                         user_id: instance.user_id,
-                        instance_id: instance.id,
                         [Op.or]: [
                             { jid: jid },
                             { lid: jid },
@@ -696,7 +691,6 @@ class WhatsAppService {
                         where: {
                             profile_pic: profilePicUrl,
                             user_id: instance.user_id,
-                            instance_id: instance.id,
                             id: { [Op.ne]: existingContact?.id || 'none' }
                         }
                     });
@@ -734,7 +728,7 @@ class WhatsAppService {
                 // 2. Individual Sender Contact (if in group)
                 if (isGroup && participant) {
                     const existingParticipant = await Contact.findOne({
-                        where: { user_id: instance.user_id, instance_id: instance.id, jid: participant }
+                        where: { user_id: instance.user_id, jid: participant }
                     });
                     let pPic = existingParticipant?.profile_pic;
                     if (!pPic) pPic = await getProfilePic(participant);

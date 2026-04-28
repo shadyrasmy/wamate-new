@@ -64,7 +64,7 @@ export default function InstancesPage() {
 
             const res = await fetchWithAuth('/instances', {
                 method: 'POST',
-                body: JSON.stringify({ instanceName: `WhatsApp Node ${instances.length + 1}` })
+                body: JSON.stringify({ instanceName: t('dashboard.instances.create_success', { n: instances.length + 1 }) })
             });
 
             const { instanceId } = res.data;
@@ -83,20 +83,20 @@ export default function InstancesPage() {
 
         } catch (error) {
             console.error('Create instance failed', error);
-            alert('Channel capacity reached for your tier.');
+            alert(t('dashboard.instances.capacity_reached'));
             setShowQR(false);
         }
     };
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!confirm('Abort session? This will disconnect the channel link.')) return;
+        if (!confirm(t('dashboard.instances.abort_confirm'))) return;
 
         try {
             await fetchWithAuth(`/instances/${id}`, { method: 'DELETE' });
             setInstances(prev => prev.filter(i => i.instance_id !== id));
         } catch (error) {
-            alert('Failed to terminate session.');
+            alert(t('dashboard.instances.delete_error'));
         }
     };
 
@@ -126,7 +126,7 @@ export default function InstancesPage() {
             setPairingCode(res.data.code);
         } catch (error) {
             console.error('Pairing code request failed', error);
-            alert('Failed to generate pairing code. Ensure the instance is ready.');
+            alert(t('dashboard.instances.pairing_error'));
         } finally {
             setPairingLoading(false);
         }
@@ -169,7 +169,7 @@ export default function InstancesPage() {
             setEditingInstance(null);
             loadInstances();
         } catch (error) {
-            alert('Failed to rename instance');
+            alert(t('dashboard.instances.rename_error'));
         }
     };
 
@@ -186,7 +186,7 @@ export default function InstancesPage() {
             loadInstances();
         } catch (error) {
             console.error('Update AI settings failed', error);
-            alert('Failed to update main prompt.');
+            alert(t('dashboard.instances.ai_update_error'));
         } finally {
             setAiLoading(false);
         }
@@ -203,8 +203,8 @@ export default function InstancesPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tight mb-2">Channel Registry</h1>
-                    <p className="text-gray-500 font-medium">Manage your active WhatsApp edge nodes and identities.</p>
+                    <h1 className="text-4xl font-black tracking-tight mb-2">{t('dashboard.instances.title')}</h1>
+                    <p className="text-gray-500 font-medium">{t('dashboard.instances.subtitle')}</p>
                 </div>
                 <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -248,7 +248,7 @@ export default function InstancesPage() {
                                         </button>
                                     </div>
                                     <p className="text-xs text-gray-500 font-black uppercase tracking-widest opacity-60">
-                                        ID: {instance.instance_id.slice(0, 8)}...
+                                        {t('dashboard.instances.id_label')} {instance.instance_id.slice(0, 8)}...
                                     </p>
                                 </div>
                             </div>
@@ -275,8 +275,8 @@ export default function InstancesPage() {
                         <div className="space-y-6 relative z-10">
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Chat Logging</span>
-                                    <p className="text-[9px] text-gray-600 font-medium">Save traffic to database</p>
+                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('dashboard.instances.chat_logging')}</span>
+                                    <p className="text-[9px] text-gray-600 font-medium">{t('dashboard.instances.chat_logging_desc')}</p>
                                 </div>
                                 <button
                                     onClick={async (e) => {
@@ -288,7 +288,7 @@ export default function InstancesPage() {
                                             });
                                             loadInstances();
                                         } catch (error) {
-                                            alert('Toggle operation failed.');
+                                            alert(t('dashboard.instances.toggle_error'));
                                         }
                                     }}
                                     className={`w-12 h-6 rounded-full relative transition-colors duration-500 ${instance.chat_enabled ? 'bg-primary shadow-[0_0_10px_rgba(255,255,255,0.1)]' : 'bg-white/10 border border-white/5'}`}
@@ -304,8 +304,8 @@ export default function InstancesPage() {
                                 <div className="border-t border-white/5 pt-6">
                                     <div className="flex items-center justify-between mb-4">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">AI Support</span>
-                                            <p className="text-[9px] text-gray-600 font-medium">Automated response engine</p>
+                                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{t('dashboard.instances.ai_support')}</span>
+                                            <p className="text-[9px] text-gray-600 font-medium">{t('dashboard.instances.ai_support_desc')}</p>
                                         </div>
                                         <button
                                             onClick={async (e) => {
@@ -317,7 +317,7 @@ export default function InstancesPage() {
                                                     });
                                                     loadInstances();
                                                 } catch (error) {
-                                                    alert('Toggle operation failed.');
+                                                    alert(t('dashboard.instances.toggle_error'));
                                                 }
                                             }}
                                             className={`w-12 h-6 rounded-full relative transition-colors duration-500 ${instance.ai_enabled ? 'bg-primary shadow-[0_0_10px_rgba(255,255,255,0.1)]' : 'bg-white/10 border border-white/5'}`}
@@ -339,13 +339,13 @@ export default function InstancesPage() {
                                         className="w-full py-3 bg-white/5 hover:bg-primary/10 hover:text-primary rounded-xl text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] border border-white/5 transition flex items-center justify-center gap-2"
                                     >
                                         <Brain size={14} weight="bold" />
-                                        Main Prompt
+                                        {t('dashboard.instances.main_prompt')}
                                     </button>
                                 </div>
                             )}
 
                             <div className="flex items-center justify-between border-t border-white/5 pt-6">
-                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Phone Record</span>
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('dashboard.instances.phone_record')}</span>
                                 <span className="text-sm font-mono text-white/80">{instance.phone_number || 'PENDING_LINK'}</span>
                             </div>
 
@@ -361,7 +361,7 @@ export default function InstancesPage() {
                                             {instance.status}
                                         </span>
                                     </div>
-                                    <span className="text-gray-500 font-mono">100% SIGNAL</span>
+                                    <span className="text-gray-500 font-mono">{t('dashboard.instances.signal_status')}</span>
                                 </div>
                                 <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden border border-white/5">
                                     <motion.div
@@ -378,8 +378,8 @@ export default function InstancesPage() {
                 {instances.length === 0 && (
                     <div className="col-span-full py-32 text-center carbon-card rounded-[3rem] border-dashed border-white/10">
                         <Broadcast size={80} weight="duotone" className="mx-auto mb-6 text-gray-700" />
-                        <h3 className="text-2xl font-black mb-2">No Active Nodes</h3>
-                        <p className="text-gray-500 font-medium">Provision your first edge node to begin automated messaging.</p>
+                        <h3 className="text-2xl font-black mb-2">{t('dashboard.instances.no_nodes')}</h3>
+                        <p className="text-gray-500 font-medium">{t('dashboard.instances.no_nodes_desc')}</p>
                     </div>
                 )}
             </div>
@@ -412,8 +412,8 @@ export default function InstancesPage() {
                                 <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 mb-4 font-black text-primary">
                                     {connectionMethod === 'qr' ? <QrCode size={28} weight="bold" /> : <DeviceMobile size={28} weight="bold" />}
                                 </div>
-                                <h2 className="text-2xl font-black text-white mb-1 tracking-tight">Integration Portal</h2>
-                                <p className="text-gray-500 font-medium text-xs text-center">Establish a link via QR or pairing code.</p>
+                                <h2 className="text-2xl font-black text-white mb-1 tracking-tight">{t('dashboard.instances.portal_title')}</h2>
+                                <p className="text-gray-500 font-medium text-xs text-center">{t('dashboard.instances.portal_subtitle')}</p>
                             </div>
 
                             {/* Method Selection */}
@@ -422,13 +422,13 @@ export default function InstancesPage() {
                                     onClick={() => { setConnectionMethod('qr'); setPairingCode(null); }}
                                     className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition ${connectionMethod === 'qr' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:bg-white/5'}`}
                                 >
-                                    Traditional QR Sync
+                                    {t('dashboard.instances.qr_sync')}
                                 </button>
                                 <button
                                     onClick={() => setConnectionMethod('pairing')}
                                     className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition ${connectionMethod === 'pairing' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:bg-white/5'}`}
                                 >
-                                    8-Digit Pairing Code
+                                    {t('dashboard.instances.pairing_sync')}
                                 </button>
                             </div>
 
@@ -449,7 +449,7 @@ export default function InstancesPage() {
                                             ) : (
                                                 <div className="flex flex-col items-center">
                                                     <Spinner size={40} className="animate-spin text-primary mb-4" weight="bold" />
-                                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest animate-pulse">Awaiting Signal...</p>
+                                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest animate-pulse">{t('dashboard.instances.awaiting_signal')}</p>
                                                 </div>
                                             )}
                                             <AnimatePresence>
@@ -469,7 +469,7 @@ export default function InstancesPage() {
                                                     <div className="relative group">
                                                         <input
                                                             type="text"
-                                                            placeholder="Phone Number (e.g. 2012345678)"
+                                                            placeholder={t('dashboard.instances.phone_placeholder')}
                                                             className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold focus:outline-none focus:border-primary transition"
                                                             value={phoneNumber}
                                                             onChange={(e) => setPhoneNumber(e.target.value)}
@@ -480,12 +480,12 @@ export default function InstancesPage() {
                                                         disabled={pairingLoading || !phoneNumber}
                                                         className="w-full py-4 bg-primary rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 disabled:opacity-50 flex items-center justify-center gap-3"
                                                     >
-                                                        {pairingLoading ? <Spinner className="animate-spin" size={20} /> : 'Generate Pairing Code'}
+                                                        {pairingLoading ? <Spinner className="animate-spin" size={20} /> : t('dashboard.instances.generate_pairing')}
                                                     </button>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-6 py-8 card-glass rounded-[2rem] border border-white/5 bg-white/[0.02]">
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Your Pairing Code</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">{t('dashboard.instances.your_pairing')}</p>
                                                     <div className="flex flex-wrap justify-center gap-1.5 md:gap-2 px-2">
                                                         {pairingCode.split('').map((char, i) => (
                                                             <div key={i} className="w-8 h-10 md:w-10 md:h-14 bg-white/10 rounded-lg md:rounded-xl flex items-center justify-center text-xl md:text-2xl font-black text-primary border border-white/10 shadow-xl relative">
@@ -497,7 +497,7 @@ export default function InstancesPage() {
                                                         ))}
                                                     </div>
                                                     <div className="flex flex-col items-center gap-3">
-                                                        <p className="text-[9px] text-gray-600 font-medium max-w-[200px] text-center">Type this code on your WhatsApp mobile app.</p>
+                                                        <p className="text-[9px] text-gray-600 font-medium max-w-[200px] text-center">{t('dashboard.instances.pairing_instruction')}</p>
                                                         <button
                                                             onClick={copyPairingCode}
                                                             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${pairingCopied
@@ -506,7 +506,7 @@ export default function InstancesPage() {
                                                                 }`}
                                                         >
                                                             {pairingCopied ? <CheckCircle size={14} weight="bold" /> : <Copy size={14} weight="bold" />}
-                                                            {pairingCopied ? 'Copied' : 'Copy Code'}
+                                                            {pairingCopied ? t('dashboard.instances.copied') : t('dashboard.instances.copy_code')}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -518,12 +518,12 @@ export default function InstancesPage() {
 
                                 {/* Right side: Instructions */}
                                 <div className="flex-1 flex flex-col justify-center space-y-3">
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">How to Connect</h3>
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">{t('dashboard.instances.how_to_connect')}</h3>
                                     {connectionMethod === 'qr' ? (
                                         [
-                                            { step: 1, text: "Open WhatsApp > Linked Devices" },
-                                            { step: 2, text: "Tap 'Link a Device'" },
-                                            { step: 3, text: "Point your phone camera at this QR code" }
+                                            { step: 1, text: t('dashboard.instances.step_open_wa') },
+                                            { step: 2, text: t('dashboard.instances.step_link_device') },
+                                            { step: 3, text: t('dashboard.instances.step_point_camera') }
                                         ].map((step) => (
                                             <div key={step.step} className="flex items-center gap-3 bg-white/[0.03] p-3 rounded-xl border border-white/5 group/step hover:bg-white/[0.05] transition-colors">
                                                 <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center font-black text-xs text-primary border border-white/5 group-hover/step:border-primary/30 transition-colors shrink-0">
@@ -536,9 +536,9 @@ export default function InstancesPage() {
                                         ))
                                     ) : (
                                         [
-                                            { step: 1, text: "Open WhatsApp > Linked Devices" },
-                                            { step: 2, text: "Tap 'Link with phone number instead'" },
-                                            { step: 3, text: "Enter the pairing code shown" }
+                                            { step: 1, text: t('dashboard.instances.step_open_wa') },
+                                            { step: 2, text: t('dashboard.instances.step_link_phone') },
+                                            { step: 3, text: t('dashboard.instances.step_enter_pairing') }
                                         ].map((step) => (
                                             <div key={step.step} className="flex items-center gap-3 bg-white/[0.03] p-3 rounded-xl border border-white/5 group/step hover:bg-white/[0.05] transition-colors">
                                                 <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center font-black text-xs text-primary border border-white/5 group-hover/step:border-primary/30 transition-colors shrink-0">
@@ -556,7 +556,7 @@ export default function InstancesPage() {
                                             onClick={handleCreateInstance}
                                             className="w-full py-3 mt-4 bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-white/10 hover:text-white transition-all border border-white/5"
                                         >
-                                            Force Re-Provision Signal
+                                            {t('dashboard.instances.force_reprovision')}
                                         </button>
                                     )}
                                 </div>
@@ -575,17 +575,17 @@ export default function InstancesPage() {
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                             className="carbon-card rounded-[2.5rem] p-10 max-w-md w-full border-white/10 shadow-3xl"
                         >
-                            <h3 className="text-2xl font-black mb-6">Rename Global Node</h3>
+                            <h3 className="text-2xl font-black mb-6">{t('dashboard.instances.rename_title')}</h3>
                             <form onSubmit={handleRename} className="space-y-6">
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block ml-1">New Identity Label</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block ml-1">{t('dashboard.instances.new_identity')}</label>
                                     <input
                                         type="text"
                                         value={newName}
                                         onChange={e => setNewName(e.target.value)}
                                         autoFocus
                                         className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
-                                        placeholder="e.g. Sales Node 01"
+                                        placeholder={t('dashboard.instances.rename_placeholder')}
                                     />
                                 </div>
                                 <div className="flex gap-4">
@@ -629,28 +629,28 @@ export default function InstancesPage() {
                                 <div>
                                     <h3 className="text-2xl font-black flex items-center gap-3">
                                         <Brain size={28} className="text-primary" />
-                                        Main Prompt Tuning
+                                        {t('dashboard.instances.ai_tuning_title')}
                                     </h3>
-                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Node: {editingInstance?.name}</p>
+                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">{t('dashboard.instances.node_label')} {editingInstance?.name}</p>
                                 </div>
                                 <button onClick={() => { setIsAIOpen(false); setEditingInstance(null); }} className="p-2 hover:bg-white/5 rounded-full transition"><X size={24} /></button>
                             </div>
 
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Main System Instruction (Prompt)</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('dashboard.instances.ai_prompt_label')}</label>
                                     <textarea
                                         value={aiPrompt}
                                         onChange={e => setAiPrompt(e.target.value)}
                                         className="w-full min-h-[250px] bg-white/5 border border-white/10 p-6 rounded-[2rem] text-white font-medium text-sm focus:outline-none focus:border-primary/50 transition resize-none custom-scroll"
-                                        placeholder="Define how this specific node should behave. e.g. 'You are a formal customer support agent for WaMate. Be polite and helpful, use bullet points for product lists...'"
+                                        placeholder={t('dashboard.instances.ai_prompt_placeholder')}
                                     />
                                 </div>
 
                                 <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex gap-4">
                                     <Info size={24} className="text-primary flex-shrink-0" />
                                     <p className="text-[10px] text-gray-400 font-medium leading-relaxed uppercase tracking-widest">
-                                        This prompt is specific to this WhatsApp number. It overrides general AI behavior and allows you to run multiple brands/personas from one account.
+                                        {t('dashboard.instances.ai_info')}
                                     </p>
                                 </div>
 
@@ -659,14 +659,14 @@ export default function InstancesPage() {
                                         onClick={() => { setIsAIOpen(false); setEditingInstance(null); }}
                                         className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition"
                                     >
-                                        Cancel
+                                        {t('dashboard.instances.cancel')}
                                     </button>
                                     <button
                                         onClick={handleUpdateAISettings}
                                         disabled={aiLoading}
                                         className="flex-1 bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition flex items-center justify-center gap-2"
                                     >
-                                        {aiLoading ? <Spinner size={16} className="animate-spin" /> : 'Apply Intelligence'}
+                                        {aiLoading ? <Spinner size={16} className="animate-spin" /> : t('dashboard.instances.apply_intelligence')}
                                     </button>
                                 </div>
                             </div>

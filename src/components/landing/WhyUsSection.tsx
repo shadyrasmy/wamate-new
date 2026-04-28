@@ -1,46 +1,48 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Stack, UserSquare, Repeat, ShieldCheck, ChatCircleDots, HardDrives } from '@phosphor-icons/react';
+import { Stack, Repeat, ShieldCheck } from '@phosphor-icons/react';
+import { useUI } from '@/context/UIContext';
+import { getLocalizedValue } from '@/translations/localized';
 
 export default function WhyUsSection({ content }: { content?: any }) {
-    const defaultContent = {
-        title: "Engineered for Resilience.",
-        subtitle: "Our architecture is built on top of the latest edge-computing standards, ensuring your messages always reach their destination.",
-        card1_title: "Global Edge Network",
-        card1_desc: "Distributed nodes across 12+ regions for 0ms latency.",
-        card2_title: "Enterprise Encryption",
-        card2_desc: "End-to-end security protocols for every transmission.",
-        card3_title: "Smart Automations",
-        card3_desc: "Build complex workflows with our visual logic engine."
-    };
+    const { language, t } = useUI();
 
-    const c = content || defaultContent;
+    const copy = {
+        title: getLocalizedValue(content?.title, language, t('landing.why_us.title')),
+        subtitle: getLocalizedValue(content?.subtitle, language, t('landing.why_us.subtitle')),
+        card1Title: getLocalizedValue(content?.card1_title, language, t('landing.why_us.card1_title')),
+        card1Desc: getLocalizedValue(content?.card1_desc, language, t('landing.why_us.card1_desc')),
+        card2Title: getLocalizedValue(content?.card2_title, language, t('landing.why_us.card2_title')),
+        card2Desc: getLocalizedValue(content?.card2_desc, language, t('landing.why_us.card2_desc')),
+        card3Title: getLocalizedValue(content?.card3_title, language, t('landing.why_us.card3_title')),
+        card3Desc: getLocalizedValue(content?.card3_desc, language, t('landing.why_us.card3_desc'))
+    };
 
     const features = [
         {
             icon: Stack,
-            title: c.card1_title,
-            desc: c.card1_desc,
-            color: "text-purple-400",
-            bg: "bg-purple-600/10",
-            border: "hover:border-purple-500/50"
+            title: copy.card1Title,
+            desc: copy.card1Desc,
+            color: 'text-purple-400',
+            bg: 'bg-purple-600/10',
+            border: 'hover:border-purple-500/50'
         },
         {
             icon: ShieldCheck,
-            title: c.card2_title,
-            desc: c.card2_desc,
-            color: "text-blue-400",
-            bg: "bg-blue-600/10",
-            border: "hover:border-blue-500/50"
+            title: copy.card2Title,
+            desc: copy.card2Desc,
+            color: 'text-blue-400',
+            bg: 'bg-blue-600/10',
+            border: 'hover:border-blue-500/50'
         },
         {
             icon: Repeat,
-            title: c.card3_title,
-            desc: c.card3_desc,
-            color: "text-green-400",
-            bg: "bg-green-600/10",
-            border: "hover:border-green-500/50"
+            title: copy.card3Title,
+            desc: copy.card3Desc,
+            color: 'text-green-400',
+            bg: 'bg-green-600/10',
+            border: 'hover:border-green-500/50'
         }
     ];
 
@@ -54,9 +56,9 @@ export default function WhyUsSection({ content }: { content?: any }) {
                         viewport={{ once: true }}
                         className="max-w-2xl"
                     >
-                        <h5 className="text-primary font-bold tracking-widest uppercase text-sm mb-4">Core Features</h5>
+                        <h5 className="text-primary font-bold tracking-widest uppercase text-sm mb-4">{t('landing.why_us.eyebrow')}</h5>
                         <h2 className="text-4xl lg:text-6xl font-bold font-sans text-foreground">
-                            {c.title}
+                            {copy.title}
                         </h2>
                     </motion.div>
                     <motion.p
@@ -65,14 +67,14 @@ export default function WhyUsSection({ content }: { content?: any }) {
                         viewport={{ once: true }}
                         className="text-muted max-w-sm mt-6 md:mt-0"
                     >
-                        {c.subtitle}
+                        {copy.subtitle}
                     </motion.p>
                 </div>
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {features.map((feature, i) => (
                         <motion.div
-                            key={i}
+                            key={feature.title}
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}

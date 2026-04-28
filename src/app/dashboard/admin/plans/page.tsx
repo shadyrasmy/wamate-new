@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useUI } from '@/context/UIContext';
 import { motion } from 'framer-motion';
 import { fetchWithAuth } from '@/lib/api';
 import {
@@ -11,6 +12,7 @@ import {
 import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function AdminPlansPage() {
+    const { t } = useUI();
     const [plans, setPlans] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingPlan, setEditingPlan] = useState<any>(null);
@@ -25,7 +27,7 @@ export default function AdminPlansPage() {
             const data = await fetchWithAuth('/admin/plans');
             setPlans(data.data.plans);
         } catch (error) {
-            console.error('Failed to load plans', error);
+            console.error(t('admin.plans.load_error'), error);
         } finally {
             setLoading(false);
         }
@@ -55,18 +57,18 @@ export default function AdminPlansPage() {
             setEditingPlan(null);
             loadPlans();
         } catch (error) {
-            console.error('Save failed', error);
+            console.error(t('admin.plans.save_error'), error);
         }
     };
 
     const handleDeletePlan = async (planId: string) => {
-        if (!confirm('Are you sure you want to decommission this protocol?')) return;
+        if (!confirm(t('admin.plans.delete_confirm'))) return;
         try {
             await fetchWithAuth(`/admin/plans/${planId}`, { method: 'DELETE' });
             loadPlans();
         } catch (error: any) {
             console.error('Delete failed', error);
-            alert(error.message || 'Failed to delete plan. It may be assigned to users.');
+            alert(error.message || t('admin.plans.delete_error'));
         }
     };
 
@@ -74,8 +76,8 @@ export default function AdminPlansPage() {
         <div className="space-y-10 pb-20">
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tight mb-2">Service Protocols</h1>
-                    <p className="text-gray-500 font-medium">Define the operational constraints and value metrics for the grid tiers.</p>
+                    <h1 className="text-4xl font-black tracking-tight mb-2">{t('admin.plans.title')}</h1>
+                    <p className="text-gray-500 font-medium">{t('admin.plans.subtitle')}</p>
                 </div>
                 <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -88,7 +90,7 @@ export default function AdminPlansPage() {
                     className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 flex items-center gap-3"
                 >
                     <Plus size={20} weight="bold" />
-                    New Tier
+                    {t('admin.plans.new_tier')}
                 </motion.button>
             </div>
 
@@ -130,27 +132,27 @@ export default function AdminPlansPage() {
                                 <h3 className="text-2xl font-black text-white mb-1 uppercase tracking-tight">{plan.name}</h3>
                                 <div className="text-3xl font-black text-primary flex items-baseline gap-1">
                                     ${plan.price}
-                                    <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">/ {plan.billing_cycle || 'Month'}</span>
+                                    <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">/ {plan.billing_cycle || t('admin.plans.billing_cycle_month')}</span>
                                 </div>
                             </div>
 
                             <div className="space-y-4 relative z-10">
                                 <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
                                     <ChatCircleDots size={20} weight="duotone" className="text-primary" />
-                                    <span>{plan.monthly_message_limit.toLocaleString()} Broadcasts</span>
+                                    <span>{plan.monthly_message_limit.toLocaleString()} {t('admin.plans.broadcasts')}</span>
                                 </div>
                                 <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
                                     <DeviceMobile size={20} weight="duotone" className="text-primary" />
-                                    <span>{plan.max_instances} Total Channels</span>
+                                    <span>{plan.max_instances} {t('admin.plans.total_channels')}</span>
                                 </div>
                                 <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
                                     <UsersThree size={20} weight="duotone" className="text-primary" />
-                                    <span>{plan.max_seats} Support Seats</span>
+                                    <span>{plan.max_seats} {t('admin.plans.support_seats')}</span>
                                 </div>
                                 {plan.ai_enabled && (
                                     <div className="flex items-center gap-4 text-primary font-black text-xs uppercase tracking-widest mt-2">
                                         <Robot size={18} weight="bold" />
-                                        <span>AI INFUSED ({plan.ai_reply_limit} msg)</span>
+                                        <span>{t('admin.plans.ai_infused', { count: plan.ai_reply_limit })}</span>
                                     </div>
                                 )}
                             </div>
@@ -158,7 +160,7 @@ export default function AdminPlansPage() {
                             {!plan.is_active && (
                                 <div className="mt-8 pt-4 border-t border-white/5">
                                     <span className="text-[10px] font-black text-red-500 uppercase tracking-widest flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full" /> Offline Protocol
+                                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full" /> {t('admin.plans.offline_protocol')}
                                     </span>
                                 </div>
                             )}
@@ -176,22 +178,22 @@ export default function AdminPlansPage() {
                         className="carbon-card rounded-[2.5rem] shadow-2xl w-full max-w-2xl border-white/10 overflow-hidden flex flex-col max-h-[90vh]"
                     >
                         <div className="p-6 lg:p-10 overflow-y-auto custom-scroll">
-                            <h3 className="text-3xl font-black mb-10">Protocol Configuration</h3>
+                            <h3 className="text-3xl font-black mb-10">{t('admin.plans.config_title')}</h3>
 
                             <form onSubmit={handleSavePlan} className="space-y-6">
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="space-y-2 col-span-full">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Tier Name</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.plans.tier_name')}</label>
                                         <input
                                             type="text"
                                             value={editingPlan.name}
                                             onChange={e => setEditingPlan({ ...editingPlan, name: e.target.value })}
                                             className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white focus:outline-none focus:border-primary/50 transition font-bold"
-                                            placeholder="e.g. ULTIMATE CLUSTER"
+                                            placeholder={t('admin.plans.tier_placeholder')}
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Magnitude (Price)</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.plans.price_label')}</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -201,7 +203,7 @@ export default function AdminPlansPage() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Broadcast Quota</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.plans.broadcast_quota')}</label>
                                         <input
                                             type="number"
                                             value={editingPlan.monthly_message_limit ?? ''}
@@ -210,7 +212,7 @@ export default function AdminPlansPage() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Max Channels</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.plans.max_channels')}</label>
                                         <input
                                             type="number"
                                             value={editingPlan.max_instances ?? ''}
@@ -219,7 +221,7 @@ export default function AdminPlansPage() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Team Capacity</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.plans.team_capacity')}</label>
                                         <input
                                             type="number"
                                             value={editingPlan.max_seats ?? ''}
@@ -228,14 +230,14 @@ export default function AdminPlansPage() {
                                         />
                                     </div>
                                     <CustomSelect
-                                        label="Temporal Cycle (Billing)"
+                                        label={t('admin.plans.temporal_cycle')}
                                         value={editingPlan.billing_cycle || 'monthly'}
                                         onChange={val => setEditingPlan({ ...editingPlan, billing_cycle: val })}
                                         options={[
-                                            { value: 'monthly', label: 'MONTHLY' },
-                                            { value: 'quarterly', label: 'QUARTERLY' },
-                                            { value: 'yearly', label: 'YEARLY' },
-                                            { value: 'lifetime', label: 'LIFETIME' }
+                                            { value: 'monthly', label: t('admin.plans.cycle_monthly') },
+                                            { value: 'quarterly', label: t('admin.plans.cycle_quarterly') },
+                                            { value: 'yearly', label: t('admin.plans.cycle_yearly') },
+                                            { value: 'lifetime', label: t('admin.plans.cycle_lifetime') }
                                         ]}
                                     />
 
@@ -247,8 +249,8 @@ export default function AdminPlansPage() {
                                                     <Robot size={20} weight="bold" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-white leading-none">AI CORE INTEGRATION</p>
-                                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Toggle cognitive expansion for this tier</p>
+                                                    <p className="text-sm font-black text-white leading-none">{t('admin.plans.ai_integration')}</p>
+                                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t('admin.plans.toggle_ai_desc')}</p>
                                                 </div>
                                             </div>
                                             <button
@@ -268,7 +270,7 @@ export default function AdminPlansPage() {
                                             >
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1 flex items-center gap-2">
-                                                        <Brain size={12} /> AI Reply Limit
+                                                        <Brain size={12} /> {t('admin.plans.ai_reply_limit')}
                                                     </label>
                                                     <input
                                                         type="number"
@@ -279,7 +281,7 @@ export default function AdminPlansPage() {
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1 flex items-center gap-2">
-                                                        <Database size={12} /> Knowledge Cap
+                                                        <Database size={12} /> {t('admin.plans.knowledge_cap')}
                                                     </label>
                                                     <input
                                                         type="number"
@@ -290,14 +292,14 @@ export default function AdminPlansPage() {
                                                 </div>
                                                 <div className="space-y-2 col-span-full">
                                                     <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1 flex items-center gap-2">
-                                                        <Selection size={12} /> Model ID
+                                                        <Selection size={12} /> {t('admin.plans.model_id')}
                                                     </label>
                                                     <input
                                                         type="text"
                                                         value={editingPlan.ai_model_id}
                                                         onChange={e => setEditingPlan({ ...editingPlan, ai_model_id: e.target.value })}
                                                         className="w-full bg-black/20 border border-primary/20 p-4 rounded-xl text-white focus:outline-none focus:border-primary transition font-bold"
-                                                        placeholder="e.g. gemini-3-flash"
+                                                        placeholder={t('dashboard.instances.ai_prompt_placeholder')}
                                                     />
                                                 </div>
                                             </motion.div>
@@ -311,13 +313,13 @@ export default function AdminPlansPage() {
                                         onClick={() => setEditingPlan(null)}
                                         className="flex-1 py-4 text-gray-500 font-bold text-sm uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition"
                                     >
-                                        Abort
+                                        {t('dashboard.instances.cancel')}
                                     </button>
                                     <button
                                         type="submit"
                                         className="flex-1 bg-primary text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition"
                                     >
-                                        Synchronize
+                                        {t('admin.plans.synchronize')}
                                     </button>
                                 </div>
                             </form>
@@ -328,3 +330,4 @@ export default function AdminPlansPage() {
         </div>
     );
 }
+

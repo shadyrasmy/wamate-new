@@ -8,6 +8,8 @@ const sendMessageSchema = Joi.object({
     message: Joi.string().allow('').optional(),
     type: Joi.string().valid('text', 'image', 'video', 'audio', 'document', 'sticker', 'reaction').default('text'),
     mediaUrl: Joi.string().uri().optional(),
+    mimeType: Joi.string().optional(),
+    fileName: Joi.string().optional(),
     reaction: Joi.object({
         text: Joi.string().required(),
         key: Joi.object().required()

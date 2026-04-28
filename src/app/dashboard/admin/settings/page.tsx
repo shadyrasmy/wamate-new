@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
+import { useUI } from '@/context/UIContext';
 import { fetchWithAuth } from '@/lib/api';
 import {
     Gear, Eye, Code, FacebookLogo, Envelope,
@@ -12,6 +13,7 @@ import {
 import { useSearchParams } from 'next/navigation';
 
 function TemplateManager() {
+    const { t } = useUI();
     const [templates, setTemplates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -45,10 +47,10 @@ function TemplateManager() {
             });
             setEditingId(null);
             loadTemplates();
-            alert('Template updated!');
+            alert(t('admin.settings.template_success'));
         } catch (error) {
             console.error('Failed to save template', error);
-            alert('Save failed.');
+            alert(t('admin.settings.template_error'));
         }
     };
 
@@ -57,8 +59,8 @@ function TemplateManager() {
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="text-xl font-bold mb-2">Message Templates</h3>
-                <p className="text-gray-500 text-sm">Customize the automated emails sent by the system.</p>
+                <h3 className="text-xl font-bold mb-2">{t('admin.settings.template_title')}</h3>
+                <p className="text-gray-500 text-sm">{t('admin.settings.template_desc')}</p>
             </div>
 
             <div className="grid gap-6">
@@ -74,7 +76,7 @@ function TemplateManager() {
                             </div>
                             {editingId !== tmpl.key && (
                                 <button onClick={() => handleEdit(tmpl)} className="text-xs bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg font-bold transition">
-                                    Edit Template
+                                    {t('admin.settings.edit_template')}
                                 </button>
                             )}
                         </div>
@@ -82,7 +84,7 @@ function TemplateManager() {
                         {editingId === tmpl.key ? (
                             <div className="space-y-4 pt-4 border-t border-white/5 animate-in fade-in slide-in-from-top-2">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Subject Line</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.subject_line')}</label>
                                     <input
                                         type="text"
                                         value={editForm.subject}
@@ -91,7 +93,7 @@ function TemplateManager() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">HTML Body Content</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.html_body')}</label>
                                     <textarea
                                         value={editForm.body}
                                         onChange={e => setEditForm({ ...editForm, body: e.target.value })}
@@ -100,10 +102,10 @@ function TemplateManager() {
                                 </div>
                                 <div className="flex gap-3">
                                     <button onClick={() => handleSave(tmpl.key)} className="bg-primary text-white px-6 py-2 rounded-xl font-bold text-xs shadow-lg shadow-primary/20 hover:scale-105 transition">
-                                        Save Changes
+                                        {t('admin.settings.save_changes')}
                                     </button>
                                     <button onClick={() => setEditingId(null)} className="bg-white/5 text-gray-400 px-6 py-2 rounded-xl font-bold text-xs hover:text-white transition">
-                                        Cancel
+                                        {t('dashboard.instances.cancel')}
                                     </button>
                                 </div>
                             </div>
@@ -120,6 +122,7 @@ function TemplateManager() {
 }
 
 function SettingsContent() {
+    const { t } = useUI();
     const searchParams = useSearchParams();
     const [config, setConfig] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -156,10 +159,10 @@ function SettingsContent() {
                 setConfig(res.data.config); // Update state directly from response
             }
 
-            alert('Site configuration synchronized successfully.');
+            alert(t('admin.settings.sync_success'));
         } catch (error) {
             console.error('Save failed', error);
-            alert('Settings synchronization failed. Check validation rules.');
+            alert(t('admin.settings.sync_error'));
         } finally {
             setSaving(false);
         }
@@ -180,17 +183,17 @@ function SettingsContent() {
     const [sendingTest, setSendingTest] = useState(false);
 
     const handleTestSmtp = async () => {
-        if (!testEmail) return alert('Please enter a recipient email.');
+        if (!testEmail) return alert(t('admin.settings.test_recip_error'));
         setSendingTest(true);
         try {
             await fetchWithAuth('/admin/config/test-smtp', {
                 method: 'POST',
                 body: JSON.stringify({ to: testEmail, message: 'This is a test from the Admin Dashboard.' })
             });
-            alert('Test email sent successfully!');
+            alert(t('admin.settings.test_success'));
         } catch (error) {
             console.error('Test failed', error);
-            alert('Failed to send test email. Check server logs.');
+            alert(t('admin.settings.test_error'));
         } finally {
             setSendingTest(false);
         }
@@ -206,8 +209,8 @@ function SettingsContent() {
         <div className="space-y-10 pb-20">
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tight mb-2">Command Center</h1>
-                    <p className="text-gray-500 font-medium text-sm">Global grid configuration for site visibility and tracking telemetry.</p>
+                    <h1 className="text-4xl font-black tracking-tight mb-2">{t('admin.settings.title')}</h1>
+                    <p className="text-gray-500 font-medium text-sm">{t('admin.settings.subtitle')}</p>
                 </div>
                 <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -217,19 +220,19 @@ function SettingsContent() {
                     className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 flex items-center gap-3"
                 >
                     {saving ? <Spinner size={20} className="animate-spin" /> : <Check size={20} weight="bold" />}
-                    Synchronize Magnitude
+                    {t('admin.settings.sync_btn')}
                 </motion.button>
             </div>
 
             <div className="flex gap-4 p-1.5 bg-white/5 rounded-2xl w-fit">
                 {[
-                    { id: 'cms', label: 'Visibility', icon: Eye },
-                    { id: 'landing', label: 'Landing CMS', icon: Gear },
-                    { id: 'scripts', label: 'Script Lab', icon: Code },
-                    { id: 'facebook', label: 'Tracking', icon: FacebookLogo },
-                    { id: 'smtp', label: 'SMTP / Email', icon: Envelope },
-                    { id: 'templates', label: 'Msg Templates', icon: FileText },
-                    { id: 'ai', label: 'AI Engine', icon: Robot }
+                    { id: 'cms', label: t('admin.settings.tab_visibility'), icon: Eye },
+                    { id: 'landing', label: t('admin.settings.tab_landing'), icon: Gear },
+                    { id: 'scripts', label: t('admin.settings.tab_scripts'), icon: Code },
+                    { id: 'facebook', label: t('admin.settings.tab_tracking'), icon: FacebookLogo },
+                    { id: 'smtp', label: t('admin.settings.tab_smtp'), icon: Envelope },
+                    { id: 'templates', label: t('admin.settings.tab_templates'), icon: FileText },
+                    { id: 'ai', label: t('admin.settings.tab_ai'), icon: Robot }
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -251,14 +254,14 @@ function SettingsContent() {
                         <div className="space-y-10">
                             {/* ... SMTP Content ... */}
                             <div>
-                                <h3 className="text-xl font-bold mb-2">SMTP Gateway Configuration</h3>
-                                <p className="text-gray-500 text-sm">Configure your mail server for transactional warnings and notifications.</p>
+                                <h3 className="text-xl font-bold mb-2">{t('admin.settings.smtp_title')}</h3>
+                                <p className="text-gray-500 text-sm">{t('admin.settings.smtp_desc')}</p>
                             </div>
                             {/* ... (rest of the content remains the same, just ensuring correct nesting) ... */}
                             <div className="grid md:grid-cols-2 gap-8">
                                 {/* ... fields ... */}
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">SMTP Host</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.smtp_host')}</label>
                                     <input
                                         type="text"
                                         value={config.smtp_settings?.host || ''}
@@ -268,7 +271,7 @@ function SettingsContent() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">SMTP Port</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.smtp_port')}</label>
                                     <input
                                         type="number"
                                         value={config.smtp_settings?.port || ''}
@@ -278,7 +281,7 @@ function SettingsContent() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Username / Email</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.smtp_user')}</label>
                                     <input
                                         type="text"
                                         value={config.smtp_settings?.user || ''}
@@ -287,7 +290,7 @@ function SettingsContent() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Password</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.smtp_pass')}</label>
                                     <input
                                         type="password"
                                         value={config.smtp_settings?.password || ''}
@@ -297,7 +300,7 @@ function SettingsContent() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">From Name</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.smtp_from_name')}</label>
                                     <input
                                         type="text"
                                         value={config.smtp_settings?.from_name || ''}
@@ -313,15 +316,15 @@ function SettingsContent() {
                                         value={config.smtp_settings?.from_email || ''}
                                         onChange={e => setConfig({ ...config, smtp_settings: { ...config.smtp_settings, from_email: e.target.value } })}
                                         className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
-                                        placeholder="defaults to username"
+                                        placeholder={t('admin.settings.smtp_from_default')}
                                     />
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-4 p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
                                 <div className="flex-1 space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Secure Connection (SSL/TLS)</label>
-                                    <p className="text-xs text-gray-500">Enable for port 465. Disable for 587 (STARTTLS).</p>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.smtp_secure')}</label>
+                                    <p className="text-xs text-gray-500">{t('admin.settings.smtp_secure_help')}</p>
                                 </div>
                                 <button
                                     onClick={() => setConfig({ ...config, smtp_settings: { ...config.smtp_settings, secure: !config.smtp_settings?.secure } })}
@@ -336,7 +339,7 @@ function SettingsContent() {
 
                             <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl space-y-4">
                                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                                    <PaperPlaneRight size={16} /> Test Configuration
+                                    <PaperPlaneRight size={16} /> {t('admin.settings.test_config')}
                                 </h4>
                                 <div className="flex gap-4">
                                     <input
@@ -344,14 +347,14 @@ function SettingsContent() {
                                         value={testEmail}
                                         onChange={e => setTestEmail(e.target.value)}
                                         className="flex-1 bg-black/20 border border-primary/20 p-3 rounded-xl text-white text-sm focus:outline-none"
-                                        placeholder="Send test email to..."
+                                        placeholder={t('admin.settings.test_placeholder')}
                                     />
                                     <button
                                         onClick={handleTestSmtp}
                                         disabled={sendingTest}
                                         className="px-6 py-3 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20 disabled:opacity-50"
                                     >
-                                        {sendingTest ? 'Sending...' : 'Send Test'}
+                                        {sendingTest ? t('admin.settings.sending') : t('admin.settings.send_test')}
                                     </button>
                                 </div>
                             </div>
@@ -363,14 +366,14 @@ function SettingsContent() {
                     activeTab === 'cms' && (
                         <div className="space-y-8">
                             <div>
-                                <h3 className="text-xl font-bold mb-2">Visibility Protocols</h3>
-                                <p className="text-gray-500 text-sm">Toggle front-end landing page sections on/off instantly.</p>
+                                <h3 className="text-xl font-bold mb-2">{t('admin.settings.visibility_title')}</h3>
+                                <p className="text-gray-500 text-sm">{t('admin.settings.visibility_desc')}</p>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {config?.cms_visibility && Object.entries(config.cms_visibility).map(([key, val]: [string, any]) => (
                                     <div key={key} className="flex justify-between items-center p-6 bg-white/[0.03] border border-white/5 rounded-2xl">
                                         <div className="capitalize font-bold text-gray-300">
-                                            {key.replace(/([A-Z])/g, ' $1')} Section
+                                            {t('admin.settings.section_label', { key: key.replace(/([A-Z])/g, ' $1') })}
                                         </div>
                                         <button onClick={() => toggleCMS(key)} className="transition">
                                             {val ? (
@@ -391,10 +394,10 @@ function SettingsContent() {
                         <div className="space-y-12">
                             {/* HERO SECTION */}
                             <div className="space-y-6">
-                                <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">Hero Section</h3>
+                                <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">{t('admin.settings.hero_section')}</h3>
                                 <div className="grid gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Hero Title</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.hero_title')}</label>
                                         <input
                                             type="text"
                                             value={config?.landing_content?.hero?.title || ''}
@@ -403,7 +406,7 @@ function SettingsContent() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Hero Subtitle</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.hero_subtitle')}</label>
                                         <textarea
                                             value={config?.landing_content?.hero?.subtitle || ''}
                                             onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, hero: { ...config.landing_content.hero, subtitle: e.target.value } } })}
@@ -412,7 +415,7 @@ function SettingsContent() {
                                     </div>
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Primary CTA</label>
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.cta_primary')}</label>
                                             <input
                                                 type="text"
                                                 value={config?.landing_content?.hero?.cta_primary || ''}
@@ -421,7 +424,7 @@ function SettingsContent() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Secondary CTA</label>
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.cta_secondary')}</label>
                                             <input
                                                 type="text"
                                                 value={config?.landing_content?.hero?.cta_secondary || ''}
@@ -435,9 +438,9 @@ function SettingsContent() {
 
                             {/* NUMBERS SECTION */}
                             <div className="space-y-6">
-                                <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">Numbers Section</h3>
+                                <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">{t('admin.settings.numbers_section')}</h3>
                                 <div className="space-y-2 mb-6">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Background Label</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.bg_label')}</label>
                                     <input
                                         type="text"
                                         value={config?.landing_content?.numbers?.title || ''}
@@ -449,7 +452,7 @@ function SettingsContent() {
                                     {[1, 2, 3].map(i => (
                                         <div key={i} className="space-y-4 p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Stat {i} Title</label>
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.stat_title', { i })}</label>
                                                 <input
                                                     type="text"
                                                     value={config?.landing_content?.numbers?.[`stat${i}_title`] || ''}
@@ -458,7 +461,7 @@ function SettingsContent() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Stat {i} Label</label>
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.stat_label', { i })}</label>
                                                 <input
                                                     type="text"
                                                     value={config?.landing_content?.numbers?.[`stat${i}_label`] || ''}
@@ -473,7 +476,7 @@ function SettingsContent() {
 
                             {/* WHY US SECTION */}
                             <div className="space-y-6">
-                                <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">Why Us Section</h3>
+                                <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">{t('admin.settings.why_us_section')}</h3>
                                 <div className="grid gap-6">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Section Title</label>
@@ -497,7 +500,7 @@ function SettingsContent() {
                                         {[1, 2, 3].map(i => (
                                             <div key={i} className="space-y-4 p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Card {i} Title</label>
+                                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.card_title', { i })}</label>
                                                     <input
                                                         type="text"
                                                         value={config?.landing_content?.whyUs?.[`card${i}_title`] || ''}
@@ -506,7 +509,7 @@ function SettingsContent() {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Card {i} Description</label>
+                                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.card_desc', { i })}</label>
                                                     <textarea
                                                         value={config?.landing_content?.whyUs?.[`card${i}_desc`] || ''}
                                                         onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, whyUs: { ...config.landing_content.whyUs, [`card${i}_desc`]: e.target.value } } })}
@@ -521,10 +524,10 @@ function SettingsContent() {
 
                             {/* BENEFITS SECTION */}
                             <div className="space-y-6">
-                                <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">Benefits Section</h3>
+                                <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">{t('admin.settings.benefits_section')}</h3>
                                 <div className="grid gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Analytics Title</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.analytics_title')}</label>
                                         <input
                                             type="text"
                                             value={config?.landing_content?.benefits?.title || ''}
@@ -533,7 +536,7 @@ function SettingsContent() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Analytics Description</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.analytics_desc')}</label>
                                         <textarea
                                             value={config?.landing_content?.benefits?.subtitle || ''}
                                             onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, subtitle: e.target.value } } })}
@@ -562,7 +565,7 @@ function SettingsContent() {
                                     </div>
                                     <div className="border-t border-white/5 pt-6 mt-4">
                                         <div className="space-y-2 mb-6">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Mission Title</label>
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.mission_title')}</label>
                                             <input
                                                 type="text"
                                                 value={config?.landing_content?.benefits?.mission_title || ''}
@@ -571,7 +574,7 @@ function SettingsContent() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Mission Quote</label>
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.mission_quote')}</label>
                                             <textarea
                                                 value={config?.landing_content?.benefits?.mission_text || ''}
                                                 onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, benefits: { ...config.landing_content.benefits, mission_text: e.target.value } } })}
@@ -584,7 +587,7 @@ function SettingsContent() {
 
                             {/* CASE STUDIES SECTION */}
                             <div className="space-y-6">
-                                <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">Case Studies</h3>
+                                <h3 className="text-lg font-black uppercase tracking-widest text-primary border-b border-white/5 pb-4">{t('admin.settings.case_studies')}</h3>
                                 <div className="space-y-2 mb-6">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Section Title</label>
                                     <input
@@ -598,7 +601,7 @@ function SettingsContent() {
                                     {[1, 2].map(i => (
                                         <div key={i} className="space-y-4 p-8 bg-white/[0.02] border border-white/5 rounded-[2rem]">
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Brand</label>
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.case_brand', { i })}</label>
                                                 <input
                                                     type="text"
                                                     value={config?.landing_content?.howEasy?.[`case${i}_brand`] || ''}
@@ -607,7 +610,7 @@ function SettingsContent() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Stat Badge</label>
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.case_stat', { i })}</label>
                                                 <input
                                                     type="text"
                                                     value={config?.landing_content?.howEasy?.[`case${i}_stat`] || ''}
@@ -616,7 +619,7 @@ function SettingsContent() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Quote</label>
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.case_quote', { i })}</label>
                                                 <textarea
                                                     value={config?.landing_content?.howEasy?.[`case${i}_text`] || ''}
                                                     onChange={e => setConfig({ ...config, landing_content: { ...config.landing_content, howEasy: { ...config.landing_content.howEasy, [`case${i}_text`]: e.target.value } } })}
@@ -624,7 +627,7 @@ function SettingsContent() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Case {i} Footer Label</label>
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.case_footer', { i })}</label>
                                                 <input
                                                     type="text"
                                                     value={config?.landing_content?.howEasy?.[`case${i}_footer`] || ''}
@@ -644,11 +647,11 @@ function SettingsContent() {
                     activeTab === 'scripts' && (
                         <div className="space-y-8">
                             <div>
-                                <h3 className="text-xl font-bold mb-2">Neural Header Injection</h3>
-                                <p className="text-gray-500 text-sm">Add custom HTML scripts to the global header (Analytics, Chat widgets, etc).</p>
+                                <h3 className="text-xl font-bold mb-2">{t('admin.settings.scripts_title')}</h3>
+                                <p className="text-gray-500 text-sm">{t('admin.settings.scripts_desc')}</p>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Custom Header Code</label>
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.scripts_label')}</label>
                                 <textarea
                                     value={config.header_scripts || ''}
                                     onChange={e => setConfig({ ...config, header_scripts: e.target.value })}
@@ -664,12 +667,12 @@ function SettingsContent() {
                     activeTab === 'facebook' && (
                         <div className="space-y-10">
                             <div>
-                                <h3 className="text-xl font-bold mb-2">FB Tracking Telemetry</h3>
-                                <p className="text-gray-500 text-sm">Connect your Facebook Pixel and Conversion API for landing events.</p>
+                                <h3 className="text-xl font-bold mb-2">{t('admin.settings.tracking_title')}</h3>
+                                <p className="text-gray-500 text-sm">{t('admin.settings.tracking_desc')}</p>
                             </div>
                             <div className="grid md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Pixel ID</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.pixel_id')}</label>
                                     <input
                                         type="text"
                                         value={config.fb_pixel_id || ''}
@@ -679,7 +682,7 @@ function SettingsContent() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Conversion API Token</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.capi_token')}</label>
                                     <input
                                         type="password"
                                         value={config.fb_capi_token || ''}
@@ -698,13 +701,13 @@ function SettingsContent() {
                         <div className="space-y-10">
                             <div className="flex justify-between items-start">
                                 <div className="space-y-1">
-                                    <h3 className="text-xl font-bold">Neural Core Configuration</h3>
-                                    <p className="text-gray-500 text-sm">Orchestrate global AI behavior and secure provider credentials.</p>
+                                    <h3 className="text-xl font-bold">{t('admin.settings.ai_title')}</h3>
+                                    <p className="text-gray-500 text-sm">{t('admin.settings.ai_desc')}</p>
                                 </div>
                                 <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
                                     <div className="text-right">
-                                        <p className="text-xs font-black text-white leading-none mb-1">GLOBAL AI STATUS</p>
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{config.ai_settings?.global_enabled ? 'Active Pulse' : 'Standby Mode'}</p>
+                                        <p className="text-xs font-black text-white leading-none mb-1">{t('admin.settings.ai_status')}</p>
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{config.ai_settings?.global_enabled ? t('admin.settings.active_pulse') : t('admin.settings.standby_mode')}</p>
                                     </div>
                                     <button onClick={() => setConfig({ ...config, ai_settings: { ...config.ai_settings, global_enabled: !config.ai_settings?.global_enabled } })}>
                                         {config.ai_settings?.global_enabled ? (
@@ -719,7 +722,7 @@ function SettingsContent() {
                             <div className="grid md:grid-cols-2 gap-8 pt-6 border-t border-white/5">
                                 <div className="space-y-2 col-span-full">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                        <Key size={14} /> Google Generative AI Key
+                                        <Key size={14} /> {t('admin.settings.google_key')}
                                     </label>
                                     <input
                                         type="password"
@@ -728,12 +731,12 @@ function SettingsContent() {
                                         className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
                                         placeholder="••••••••••••••••••••••••••••••••"
                                     />
-                                    <p className="text-[10px] text-gray-400 ml-1">Used for Gemini 3 Flash and Deep Think models.</p>
+                                    <p className="text-[10px] text-gray-400 ml-1">{t('admin.settings.google_key_help')}</p>
                                 </div>
 
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                        <Brain size={14} /> Pinecone API Key (RAG)
+                                        <Brain size={14} /> {t('admin.settings.pinecone_key')}
                                     </label>
                                     <input
                                         type="password"
@@ -746,7 +749,7 @@ function SettingsContent() {
 
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                                        <MagnifyingGlassPlus size={14} /> Pinecone Environment
+                                        <MagnifyingGlassPlus size={14} /> {t('admin.settings.pinecone_env')}
                                     </label>
                                     <input
                                         type="text"
@@ -758,7 +761,7 @@ function SettingsContent() {
                                 </div>
 
                                 <div className="space-y-2 col-span-full">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Default Platform Model</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('admin.settings.default_model')}</label>
                                     <input
                                         type="text"
                                         value={config.ai_settings?.default_model || 'gemini-3-flash'}

@@ -79,7 +79,12 @@ export async function uploadFileWithProgress(file: File, onProgress: (percent: n
             if (xhr.status >= 200 && xhr.status < 300) {
                 resolve(JSON.parse(xhr.responseText));
             } else {
-                reject(new Error('Upload failed'));
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    reject(new Error(data.message || 'Upload failed'));
+                } catch {
+                    reject(new Error('Upload failed'));
+                }
             }
         };
 

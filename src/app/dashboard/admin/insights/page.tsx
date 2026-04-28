@@ -57,15 +57,15 @@ export default function InsightsPage() {
 
     const stats = [
         {
-            label: 'Monthly Recurring (MRR)',
+            label: t('admin.insights.mrr'),
             value: `$${summary.mrr.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
             icon: CurrencyCircleDollar,
             color: 'text-green-500',
             bg: 'bg-green-500/10',
-            sub: 'Projected Revenue'
+            sub: t('admin.insights.projected_revenue')
         },
         {
-            label: 'Conversion Rate',
+            label: t('admin.insights.conversion_rate'),
             value: summary.conversionRate,
             icon: Target,
             color: 'text-primary',
@@ -73,20 +73,20 @@ export default function InsightsPage() {
             sub: `${summary.totalUsers} total users`
         },
         {
-            label: 'Affiliate Payouts',
+            label: t('admin.insights.affiliate_payouts'),
             value: `$${summary.totalCommissions.toLocaleString()}`,
             icon: HandCoins,
             color: 'text-purple-500',
             bg: 'bg-purple-500/10',
-            sub: 'Total Commissions'
+            sub: t('admin.insights.total_commissions')
         },
         {
-            label: 'Active Clusters',
+            label: t('admin.insights.active_clusters'),
             value: `${summary.onlineInstances}/${summary.totalInstances}`,
             icon: Pulse,
             color: 'text-orange-500',
             bg: 'bg-orange-500/10',
-            sub: 'Nodes Online'
+            sub: t('admin.insights.nodes_online')
         }
     ];
 
@@ -116,22 +116,22 @@ export default function InsightsPage() {
                 <div className="glass-card rounded-[40px] border border-border p-8 bg-surface/30">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h3 className="text-xl font-black tracking-tight">Growth Velocity</h3>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">User Registration</p>
+                            <h3 className="text-xl font-black tracking-tight">{t('admin.insights.growth_velocity')}</h3>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{t('admin.insights.user_registration')}</p>
                         </div>
                         <UserPlus size={28} weight="bold" className="text-blue-500" />
                     </div>
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
-                            <span className="text-sm font-bold text-gray-400">Last 24 Hours</span>
+                            <span className="text-sm font-bold text-gray-400">{t('admin.insights.last_24h')}</span>
                             <span className="text-lg font-black text-blue-500">+{summary.newUsers24h}</span>
                         </div>
                         <div className="flex items-center justify-between border-t border-border pt-4">
-                            <span className="text-sm font-bold text-gray-400">Last 7 Days</span>
+                            <span className="text-sm font-bold text-gray-400">{t('admin.insights.last_7d')}</span>
                             <span className="text-lg font-black text-blue-500">+{summary.newUsers7d}</span>
                         </div>
                         <div className="flex items-center justify-between border-t border-border pt-4">
-                            <span className="text-sm font-bold text-gray-400">Total Network</span>
+                            <span className="text-sm font-bold text-gray-400">{t('admin.insights.total_network')}</span>
                             <span className="text-lg font-black">{summary.totalUsers}</span>
                         </div>
                     </div>
@@ -141,8 +141,8 @@ export default function InsightsPage() {
                 <div className="glass-card rounded-[40px] border border-border p-8 bg-surface/30">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h3 className="text-xl font-black tracking-tight">Messaging DNA</h3>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Type Breakdown</p>
+                            <h3 className="text-xl font-black tracking-tight">{t('admin.insights.messaging_dna')}</h3>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{t('admin.insights.type_breakdown')}</p>
                         </div>
                         <WhatsappLogo size={28} weight="bold" className="text-green-500" />
                     </div>
@@ -156,12 +156,12 @@ export default function InsightsPage() {
                     </div>
                 </div>
 
-                {/* Churn Risk */}
+                {/* {t('admin.insights.churn_risk')} */}
                 <div className="glass-card rounded-[40px] border border-border p-8 bg-surface/30">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h3 className="text-xl font-black tracking-tight">Churn Risk</h3>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest text-red-400">Expiring in 7 Days</p>
+                            <h3 className="text-xl font-black tracking-tight">{t('admin.insights.churn_risk')}</h3>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest text-red-400">{t('admin.insights.expiring_7d')}</p>
                         </div>
                         <Warning size={28} weight="fill" className="text-red-500" />
                     </div>
@@ -176,7 +176,7 @@ export default function InsightsPage() {
                             </div>
                         )) : (
                             <div className="text-center py-10">
-                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">No immediate risks</p>
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t('admin.insights.no_risks')}</p>
                             </div>
                         )}
                     </div>
@@ -188,8 +188,8 @@ export default function InsightsPage() {
                 <div className="glass-card rounded-[40px] border border-border p-10 bg-surface/30">
                     <div className="flex items-center justify-between mb-10">
                         <div>
-                            <h2 className="text-2xl font-black tracking-tighter">Cluster Ecosystem</h2>
-                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">Market Share Analysis</p>
+                            <h2 className="text-2xl font-black tracking-tighter">{t('admin.insights.cluster_ecosystem')}</h2>
+                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">{t('admin.insights.market_share')}</p>
                         </div>
                         <ChartPieSlice size={32} weight="bold" className="text-primary" />
                     </div>
@@ -211,7 +211,7 @@ export default function InsightsPage() {
                             ))}
                         </div>
                         <div className="bg-surface rounded-3xl p-6 border border-border flex flex-col justify-center text-center">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Network Earnings</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">{t('admin.insights.network_earnings')}</span>
                             <span className="text-4xl font-black tracking-tight text-primary">${summary.totalEarnings.toLocaleString()}</span>
                             <div className="mt-4 pt-4 border-t border-border flex justify-around">
                                 {revenue.invoiceStats.map((stat: any, idx: number) => (
@@ -229,8 +229,8 @@ export default function InsightsPage() {
                 <div className="glass-card rounded-[40px] border border-border p-10 bg-surface/30">
                     <div className="flex items-center justify-between mb-10">
                         <div>
-                            <h2 className="text-2xl font-black tracking-tighter">Top Command Referrers</h2>
-                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">Affiliate Growth Leaders</p>
+                            <h2 className="text-2xl font-black tracking-tighter">{t('admin.insights.top_referrers')}</h2>
+                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">{t('admin.insights.affiliate_leaders')}</p>
                         </div>
                         <Crown size={32} weight="fill" className="text-yellow-500" />
                     </div>
@@ -248,12 +248,12 @@ export default function InsightsPage() {
                                 </div>
                                 <div className="text-right">
                                     <div className="text-sm font-black text-primary">${parseFloat(ref.total_earned).toLocaleString()}</div>
-                                    <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Total Earned</div>
+                                    <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{t('admin.insights.total_earned')}</div>
                                 </div>
                             </div>
                         )) : (
                             <div className="text-center py-10 opacity-30">
-                                <p className="text-xs font-bold uppercase tracking-widest">No affiliate data yet</p>
+                                <p className="text-xs font-bold uppercase tracking-widest">{t('admin.insights.no_affiliate_data')}</p>
                             </div>
                         )}
                     </div>
@@ -265,8 +265,8 @@ export default function InsightsPage() {
                 <div className="glass-card rounded-[40px] border border-border overflow-hidden">
                     <div className="p-8 border-b border-border flex items-center justify-between bg-surface/30">
                         <div>
-                            <h3 className="text-xl font-black tracking-tight">Node Grid Activity</h3>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Top 10 Performers</p>
+                            <h3 className="text-xl font-black tracking-tight">{t('admin.insights.node_grid')}</h3>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('admin.insights.top_performers')}</p>
                         </div>
                         <Pulse size={24} weight="bold" className="text-primary animate-pulse" />
                     </div>
@@ -274,9 +274,9 @@ export default function InsightsPage() {
                         <table className="w-full text-left">
                             <thead className="bg-surface/50">
                                 <tr>
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Instance</th>
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Protocol</th>
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-right">Volume</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">{t('admin.insights.table_instance')}</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">{t('admin.insights.table_protocol')}</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-right">{t('admin.insights.table_volume')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
@@ -313,8 +313,8 @@ export default function InsightsPage() {
                 <div className="glass-card rounded-[40px] border border-border overflow-hidden">
                     <div className="p-8 border-b border-border flex items-center justify-between bg-surface/30">
                         <div>
-                            <h3 className="text-xl font-black tracking-tight">Vanguard Power Users</h3>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Top Volume Leaders</p>
+                            <h3 className="text-xl font-black tracking-tight">{t('admin.insights.vanguard_users')}</h3>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('admin.insights.volume_leaders')}</p>
                         </div>
                         <UserList size={24} weight="bold" className="text-primary" />
                     </div>
@@ -332,7 +332,7 @@ export default function InsightsPage() {
                                 </div>
                                 <div className="text-right">
                                     <div className="font-black text-lg tracking-tight">{user.messages_sent?.toLocaleString() || 0}</div>
-                                    <div className="text-[9px] font-black text-primary uppercase tracking-tighter">Messages</div>
+                                    <div className="text-[9px] font-black text-primary uppercase tracking-tighter">{t('admin.insights.messages')}</div>
                                 </div>
                             </div>
                         ))}
@@ -342,3 +342,4 @@ export default function InsightsPage() {
         </div>
     );
 }
+

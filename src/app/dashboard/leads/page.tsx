@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import { fetchWithAuth } from '@/lib/api';
 import { Funnel, Export, UserCircle } from '@phosphor-icons/react';
 import toast from 'react-hot-toast';
+import { useUI } from '@/context/UIContext';
 
 export default function LeadsPage() {
+    const { t } = useUI();
     const [leads, setLeads] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('All');
@@ -25,7 +27,7 @@ export default function LeadsPage() {
             setPagination(res.data.pagination);
         } catch (error) {
             console.error(error);
-            toast.error('Failed to load leads');
+            toast.error(t('dashboard.leads.load_error'));
         } finally {
             setLoading(false);
         }
@@ -39,17 +41,15 @@ export default function LeadsPage() {
             });
             // Optimistic update
             setLeads(prev => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
-            toast.success('Status updated');
+            toast.success(t('dashboard.leads.update_success'));
         } catch (error) {
-            toast.error('Update failed');
+            toast.error(t('dashboard.leads.update_error'));
         }
     };
 
     const handleExport = async () => {
         try {
-            // Need to fetch blob manually since fetchWithAuth parses JSON
             const token = localStorage.getItem('token');
-            // Use the centralized API_URL which handles the env var logic
             const { API_URL } = await import('@/lib/api');
             const res = await fetch(`${API_URL}/leads/export?status=${filter}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -61,7 +61,7 @@ export default function LeadsPage() {
             a.download = `leads-export-${Date.now()}.csv`;
             a.click();
         } catch (error) {
-            toast.error('Export failed');
+            toast.error(t('dashboard.leads.export_error'));
         }
     };
 
@@ -79,16 +79,16 @@ export default function LeadsPage() {
                 <div>
                     <h1 className="text-2xl font-black text-foreground flex items-center gap-3">
                         <Funnel size={32} className="text-primary" weight="duotone" />
-                        Sales Pipeline
+                        {t('dashboard.leads.title')}
                     </h1>
-                    <p className="text-muted mt-1">Track and manage your captured leads.</p>
+                    <p className="text-muted mt-1">{t('dashboard.leads.subtitle')}</p>
                 </div>
                 <button
                     onClick={handleExport}
                     className="theme-button-secondary flex items-center gap-2 px-6 py-3 rounded-2xl font-bold"
                 >
                     <Export size={20} />
-                    Export CSV
+                    {t('dashboard.leads.export_csv')}
                 </button>
             </div>
 
@@ -103,7 +103,7 @@ export default function LeadsPage() {
                             : 'bg-control text-muted border-border hover:bg-control-hover hover:text-foreground'
                             }`}
                     >
-                        {status}
+                        {status === 'All' ? t('admin.invoices.status_all') : t(`dashboard.leads.status_${status.toLowerCase()}`)}
                     </button>
                 ))}
             </div>
@@ -114,18 +114,18 @@ export default function LeadsPage() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b border-border bg-surface-soft">
-                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">Lead Name</th>
-                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">Intent</th>
-                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">Flexible Data</th>
-                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">Status</th>
-                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest text-right">Actions</th>
+                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">{t('dashboard.leads.table_name')}</th>
+                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">{t('dashboard.leads.table_intent')}</th>
+                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">{t('dashboard.leads.table_data')}</th>
+                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">{t('dashboard.leads.table_status')}</th>
+                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest text-right">{t('dashboard.leads.table_actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                             {loading ? (
-                                <tr><td colSpan={5} className="p-10 text-center text-muted animate-pulse">Scanning pipeline...</td></tr>
+                                <tr><td colSpan={5} className="p-10 text-center text-muted animate-pulse">{t('dashboard.leads.scanning')}</td></tr>
                             ) : leads.length === 0 ? (
-                                <tr><td colSpan={5} className="p-10 text-center text-muted">No leads found.</td></tr>
+                                <tr><td colSpan={5} className="p-10 text-center text-muted">{t('dashboard.leads.no_leads')}</td></tr>
                             ) : (
                                 leads.map((lead) => (
                                     <tr key={lead.id} className="hover:bg-surface-soft transition">
@@ -139,7 +139,7 @@ export default function LeadsPage() {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <p className="text-foreground font-bold">{lead.name || 'Unknown'}</p>
+                                                    <p className="text-foreground font-bold">{lead.name || t('dashboard.leads.unknown_customer')}</p>
                                                     <p className="text-xs text-muted">{lead.phone}</p>
                                                 </div>
                                             </div>
@@ -167,11 +167,11 @@ export default function LeadsPage() {
                                                 onChange={(e) => handleStatusUpdate(lead.id, e.target.value)}
                                                 className={`px-3 py-1 rounded-lg text-xs font-bold border bg-transparent focus:outline-none cursor-pointer ${statusColors[lead.status] || 'text-muted border-border'}`}
                                             >
-                                                <option className="bg-surface-dark text-foreground" value="New">New</option>
-                                                <option className="bg-surface-dark text-foreground" value="Contacted">Contacted</option>
-                                                <option className="bg-surface-dark text-foreground" value="Hot">Hot</option>
-                                                <option className="bg-surface-dark text-foreground" value="Closed">Closed</option>
-                                                <option className="bg-surface-dark text-foreground" value="Lost">Lost</option>
+                                                <option className="bg-surface-dark text-foreground" value="New">{t('dashboard.leads.status_new')}</option>
+                                                <option className="bg-surface-dark text-foreground" value="Contacted">{t('dashboard.leads.status_contacted')}</option>
+                                                <option className="bg-surface-dark text-foreground" value="Hot">{t('dashboard.leads.status_hot')}</option>
+                                                <option className="bg-surface-dark text-foreground" value="Closed">{t('dashboard.leads.status_closed')}</option>
+                                                <option className="bg-surface-dark text-foreground" value="Lost">{t('dashboard.leads.status_lost')}</option>
                                             </select>
                                         </td>
                                         <td className="p-6 text-right">
@@ -194,17 +194,17 @@ export default function LeadsPage() {
                             onClick={() => setPage(p => p - 1)}
                             className="theme-button-secondary px-4 py-2 rounded-xl disabled:opacity-50 font-bold text-sm"
                         >
-                            Prev
+                            {t('dashboard.orders.prev')}
                         </button>
                         <span className="px-4 py-2 text-muted text-sm flex items-center">
-                            Page {page} of {pagination.pages}
+                            {t('dashboard.leads.page_x_of_y', { page: page, pages: pagination.pages })}
                         </span>
                         <button
                             disabled={page === pagination.pages}
                             onClick={() => setPage(p => p + 1)}
                             className="theme-button-secondary px-4 py-2 rounded-xl disabled:opacity-50 font-bold text-sm"
                         >
-                            Next
+                            {t('dashboard.orders.next')}
                         </button>
                     </div>
                 )}

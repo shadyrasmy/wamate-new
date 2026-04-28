@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,12 +17,12 @@ import {
     CheckCircle,
     Gift
 } from '@phosphor-icons/react';
-
-import { Suspense } from 'react';
+import { useUI } from '@/context/UIContext';
 
 function RegisterContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { t } = useUI();
     const [formData, setFormData] = useState({ name: '', email: '', password: '', phone_number: '', referralCode: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -32,10 +32,9 @@ function RegisterContent() {
         const token = localStorage.getItem('token');
         if (token) router.push('/dashboard');
 
-        // Check for referral code
         const refParam = searchParams.get('ref');
         if (refParam) {
-            setFormData(prev => ({ ...prev, referralCode: refParam }));
+            setFormData((prev) => ({ ...prev, referralCode: refParam }));
         }
     }, [router, searchParams]);
 
@@ -52,9 +51,8 @@ function RegisterContent() {
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Registration failed');
+            if (!res.ok) throw new Error(data.message || t('auth.register.error_fallback'));
 
-            // Show success message - user needs to verify email before logging in
             setRegistrationSuccess(true);
         } catch (err: any) {
             setError(err.message);
@@ -72,7 +70,6 @@ function RegisterContent() {
             >
                 <div className="absolute top-0 left-0 w-32 h-32 bg-surface-soft rounded-br-[100px] pointer-events-none" />
 
-                {/* Success State - Check Your Email */}
                 {registrationSuccess ? (
                     <div className="flex flex-col items-center text-center">
                         <motion.div
@@ -83,13 +80,13 @@ function RegisterContent() {
                         >
                             <CheckCircle size={40} weight="fill" className="text-green-500" />
                         </motion.div>
-                        <h2 className="text-3xl font-black text-foreground tracking-tight mb-4">Check Your Email!</h2>
+                        <h2 className="text-3xl font-black text-foreground tracking-tight mb-4">{t('auth.register.success_title')}</h2>
                         <p className="theme-copy-strong font-medium text-sm mb-2">
-                            We've sent a verification link to:
+                            {t('auth.register.success_intro')}
                         </p>
                         <p className="text-primary font-bold text-lg mb-6">{formData.email}</p>
                         <p className="theme-copy font-medium text-xs mb-8">
-                            Click the link in your email to verify your account. If you don't see it, check your spam folder.
+                            {t('auth.register.success_body')}
                         </p>
                         <Link href="/login">
                             <motion.button
@@ -97,7 +94,7 @@ function RegisterContent() {
                                 whileTap={{ scale: 0.98 }}
                                 className="theme-button-primary px-8 py-4 font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition flex items-center gap-3 text-sm uppercase tracking-[0.2em]"
                             >
-                                Go to Login
+                                {t('auth.register.success_cta')}
                                 <ArrowRight size={18} weight="bold" />
                             </motion.button>
                         </Link>
@@ -113,8 +110,8 @@ function RegisterContent() {
                                     <ShieldCheck size={32} weight="fill" className="text-primary" />
                                 </motion.div>
                                 <div>
-                                    <h2 className="text-3xl font-black text-foreground tracking-tight">Create Account</h2>
-                                    <p className="theme-copy font-medium text-sm">Join the next-gen messaging platform.</p>
+                                    <h2 className="text-3xl font-black text-foreground tracking-tight">{t('auth.register.title')}</h2>
+                                    <p className="theme-copy font-medium text-sm">{t('auth.register.subtitle')}</p>
                                 </div>
                             </div>
                         </div>
@@ -138,19 +135,19 @@ function RegisterContent() {
                                 <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-2xl flex items-start gap-3">
                                     <Gift className="text-green-500 shrink-0 mt-0.5" size={20} weight="fill" />
                                     <div>
-                                        <p className="text-sm font-bold text-foreground">Referral Applied!</p>
-                                        <p className="text-xs text-muted">You are registering with code <span className="font-mono text-green-400">{formData.referralCode}</span>.</p>
+                                        <p className="text-sm font-bold text-foreground">{t('auth.register.referral_title')}</p>
+                                        <p className="text-xs text-muted">{t('auth.register.referral_body', { code: formData.referralCode })}</p>
                                     </div>
                                 </div>
                             )}
                             <div className="space-y-2">
-                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">Full Name</label>
+                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">{t('auth.register.name_label')}</label>
                                 <div className="relative group">
                                     <User className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition" size={20} />
                                     <input
                                         type="text"
                                         required
-                                        placeholder="Enter your name"
+                                        placeholder={t('auth.register.name_placeholder')}
                                         className="theme-input-solid w-full pl-14 pr-6 py-5 rounded-2xl font-bold focus:outline-none focus:border-primary/50 focus:bg-surface-soft transition"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -159,13 +156,13 @@ function RegisterContent() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">Email Address</label>
+                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">{t('auth.register.email_label')}</label>
                                 <div className="relative group">
                                     <EnvelopeSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition" size={20} />
                                     <input
                                         type="email"
                                         required
-                                        placeholder="your@email.com"
+                                        placeholder={t('auth.register.email_placeholder')}
                                         className="theme-input-solid w-full pl-14 pr-6 py-5 rounded-2xl font-bold focus:outline-none focus:border-primary/50 focus:bg-surface-soft transition"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -174,13 +171,13 @@ function RegisterContent() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">Phone Number</label>
+                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">{t('auth.register.phone_label')}</label>
                                 <div className="relative group">
                                     <WhatsappLogo className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition" size={20} />
                                     <input
                                         type="text"
                                         required
-                                        placeholder="+1 234 567 890"
+                                        placeholder={t('auth.register.phone_placeholder')}
                                         className="theme-input-solid w-full pl-14 pr-6 py-5 rounded-2xl font-bold focus:outline-none focus:border-primary/50 focus:bg-surface-soft transition"
                                         value={formData.phone_number}
                                         onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
@@ -189,13 +186,13 @@ function RegisterContent() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">Secure Password</label>
+                                <label className="theme-label text-[10px] uppercase tracking-[0.2em] ml-2">{t('auth.register.password_label')}</label>
                                 <div className="relative group">
                                     <LockSimple className="absolute left-5 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-primary transition" size={20} />
                                     <input
                                         type="password"
                                         required
-                                        placeholder="Enter your password"
+                                        placeholder={t('auth.register.password_placeholder')}
                                         className="theme-input-solid w-full pl-14 pr-6 py-5 rounded-2xl font-bold focus:outline-none focus:border-primary/50 focus:bg-surface-soft transition"
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -213,11 +210,11 @@ function RegisterContent() {
                                 {loading ? (
                                     <>
                                         <Spinner size={20} className="animate-spin" />
-                                        Creating Account...
+                                        {t('auth.register.submitting')}
                                     </>
                                 ) : (
                                     <>
-                                        Create My Account
+                                        {t('auth.register.submit')}
                                         <ArrowRight size={18} weight="bold" />
                                     </>
                                 )}
@@ -226,9 +223,9 @@ function RegisterContent() {
 
                         <div className="mt-12 flex flex-col items-center gap-6">
                             <p className="text-[11px] font-medium text-muted uppercase tracking-widest text-center">
-                                Already have an account? {' '}
+                                {t('auth.register.login_prompt')}{' '}
                                 <Link href="/login" className="text-primary font-black hover:text-primary-dark transition">
-                                    Login Here
+                                    {t('auth.register.login_link')}
                                 </Link>
                             </p>
                         </div>
@@ -237,7 +234,7 @@ function RegisterContent() {
             </motion.div>
 
             <p className="mt-10 text-center text-[10px] font-black text-muted uppercase tracking-[0.3em]">
-                End-to-End Encryption Enabled // No-Log Policy
+                {t('auth.register.footer')}
             </p>
         </div>
     );
@@ -246,7 +243,6 @@ function RegisterContent() {
 export default function RegisterPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden font-sans selection:bg-primary/30">
-            {/* Background elements */}
             <div className="absolute inset-0 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] opacity-[0.03] invert pointer-events-none" />
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/10 blur-[120px] rounded-full pointer-events-none" />

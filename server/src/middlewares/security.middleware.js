@@ -2,6 +2,19 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 
+const normalizeOrigin = (value) => {
+    if (!value) return value;
+
+    const trimmed = value.trim();
+    try {
+        const parsed = new URL(trimmed);
+        parsed.hostname = parsed.hostname.replace(/\.+$/, '').toLowerCase();
+        return parsed.origin;
+    } catch {
+        return trimmed.replace(/\.+$/, '').replace(/\/+$/, '').toLowerCase();
+    }
+};
+
 const setupSecurity = (app) => {
     // 1. Helmet for secure HTTP headers
     app.use(helmet());
@@ -21,7 +34,7 @@ const setupSecurity = (app) => {
         'https://apibeta.wamateai.online',
         ...envAllowedOrigins
     ];
-    const validAllowedOrigins = allowedOrigins.filter(Boolean);
+    const validAllowedOrigins = [...new Set(allowedOrigins.map(normalizeOrigin).filter(Boolean))];
     console.log('[Security] Initializing CORS with allowed origins:', validAllowedOrigins);
 
     const corsOptions = {
@@ -29,10 +42,12 @@ const setupSecurity = (app) => {
             // Allow requests with no origin (like mobile apps or curl requests)
             if (!origin) return callback(null, true);
 
-            if (validAllowedOrigins.indexOf(origin) !== -1) {
+            const normalizedOrigin = normalizeOrigin(origin);
+
+            if (validAllowedOrigins.indexOf(normalizedOrigin) !== -1) {
                 callback(null, true);
             } else {
-                console.warn(`[CORS] Blocked origin: ${origin}. Not in allowed list:`, validAllowedOrigins);
+                console.warn(`[CORS] Blocked origin: ${origin}. Normalized: ${normalizedOrigin}. Not in allowed list:`, validAllowedOrigins);
                 // Passing false instead of Error prevents Express from crashing the preflight response
                 // without headers, which leads to clearer "Blocked by CORS" messages in browser.
                 callback(null, false);

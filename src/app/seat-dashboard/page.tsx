@@ -3,43 +3,24 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api';
-import { SignOut, ChatCircleText, Spinner, User as UserIcon } from '@phosphor-icons/react';
+import { SignOut, ChatCircleText, Spinner } from '@phosphor-icons/react';
 import ChatWindow from '@/components/chat/ChatWindow';
+import { useUI } from '@/context/UIContext';
 
 export default function SeatDashboard() {
     const router = useRouter();
+    const { t } = useUI();
     const [chats, setChats] = useState<any[]>([]);
     const [selectedChat, setSelectedChat] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [seat, setSeat] = useState<any>(null);
 
     useEffect(() => {
-        // Load Seat Profile & Chats
         loadDashboard();
     }, []);
 
     const loadDashboard = async () => {
         try {
-            // Get Seat Profile? (/auth/me endpoint needs to be smart or separate)
-            // Currently our /auth/me uses protect middleware which now supports seats.
-            // But lets assume we call /seats/manage/ ... wait no, seat portal has different routes?
-            // Actually I didn't create a 'getMe' for seat in the public route.
-            // But auth middleware works now. so /auth/me might fail if it casts to User model specifically in controller?
-            // Let's check auth.controller.js ... it uses User.findByPk. So it will fail for Seat.
-            // We need a seat specific me or update getMe.
-            // For now, let's just fetch chats.
-
-            // Fetch Seat Profile
-            // We can use a new endpoint or inferred. For now, let's just use /seats/status (GET?) or assume we store it.
-            // Actually let's use /auth/me since we updated auth logic, but we need to know the endpoint.
-            // But wait, I didn't verify if /auth/me returns seat fields.
-            // Let's create a quick getMe in seat controller? yes I did export getMe but didn't route it cleanly.
-            // I'll assume /seats/status is also GET capable or I just add a fetch.
-            // Simpler: Just rely on status being offline initially or fetch from a dedicated route if needed.
-            // Let's fetch /seats/manage is for manager. 
-            // I'll skip fetching profile for now to save time and just default to 'online' or wait for user to toggle.
-            // Wait, I should show real status.
-            // I'll add GET /seats/me to seat routes.
             const seatRes = await fetchWithAuth('/seats/me');
             setSeat(seatRes.data.seat);
 
@@ -60,9 +41,9 @@ export default function SeatDashboard() {
 
     const toggleStatus = async () => {
         if (!seat) return;
-        const newStatus = seat.status === 'online' ? 'offline' : 'online'; // Simple toggle
+        const currentStatus = seat.status;
+        const newStatus = currentStatus === 'online' ? 'offline' : 'online';
         try {
-            // Optimistic
             setSeat({ ...seat, status: newStatus });
             await fetchWithAuth('/seats/status', {
                 method: 'PATCH',
@@ -70,29 +51,32 @@ export default function SeatDashboard() {
             });
         } catch (e) {
             console.error('Failed to update status');
-            setSeat({ ...seat, status: seat.status }); // Revert
+            setSeat({ ...seat, status: currentStatus });
         }
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><Spinner className="animate-spin text-wa-green" size={40} /></div>;
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center bg-background"><Spinner className="animate-spin text-wa-green" size={40} /></div>;
+    }
 
     return (
         <div className="flex h-screen bg-background overflow-hidden font-sans text-foreground">
-            {/* Sidebar (List of Assigned Chats) */}
             <aside className="w-80 bg-surface border-r border-border flex flex-col">
                 <div className="p-4 bg-surface-dark border-b border-border flex justify-between items-center">
                     <div>
                         <h1 className="font-bold text-foreground flex items-center gap-2">
                             <ChatCircleText size={24} className="text-wa-green" />
-                            My Chats
+                            {t('seat.dashboard.title')}
                         </h1>
                         <div className="flex items-center gap-2 mt-1 cursor-pointer" onClick={toggleStatus}>
                             <div className={`w-2 h-2 rounded-full ${seat?.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                            <span className="text-xs text-muted uppercase font-semibold">{seat?.status || 'Offline'}</span>
+                            <span className="text-xs text-muted uppercase font-semibold">
+                                {seat?.status === 'online' ? t('common.status_online') : t('common.status_offline')}
+                            </span>
                         </div>
                     </div>
 
-                    <button onClick={handleLogout} className="p-2 text-muted hover:text-red-500 hover:bg-red-500/10 rounded-full transition" title="Logout">
+                    <button onClick={handleLogout} className="p-2 text-muted hover:text-red-500 hover:bg-red-500/10 rounded-full transition" title={t('seat.dashboard.logout')}>
                         <SignOut size={20} />
                     </button>
                 </div>
@@ -100,16 +84,14 @@ export default function SeatDashboard() {
                 <div className="flex-1 overflow-y-auto">
                     {chats.length === 0 ? (
                         <div className="p-8 text-center text-muted text-sm">
-                            No chats assigned yet.
+                            {t('seat.dashboard.no_chats')}
                         </div>
                     ) : (
                         chats.map(chat => (
                             <div
                                 key={chat.jid}
                                 onClick={() => setSelectedChat(chat)}
-                                className={`px-4 py-3 cursor-pointer border-b border-border transition-colors hover:bg-control
-                                    ${selectedChat?.jid === chat.jid ? 'bg-primary/10' : ''}
-                                `}
+                                className={`px-4 py-3 cursor-pointer border-b border-border transition-colors hover:bg-control ${selectedChat?.jid === chat.jid ? 'bg-primary/10' : ''}`}
                             >
                                 <div className="flex justify-between items-center mb-1">
                                     <h3 className="font-semibold text-foreground truncate">{chat.name || chat.push_name || chat.jid}</h3>
@@ -118,7 +100,7 @@ export default function SeatDashboard() {
                                     </span>
                                 </div>
                                 <p className="text-sm text-muted truncate">
-                                    {chat.lastMessage?.content || 'No messages'}
+                                    {chat.lastMessage?.content || t('seat.dashboard.no_messages')}
                                 </p>
                             </div>
                         ))
@@ -126,7 +108,6 @@ export default function SeatDashboard() {
                 </div>
             </aside>
 
-            {/* Main Chat Area */}
             <div className="flex-1 flex flex-col h-full bg-background relative">
                 {selectedChat ? (
                     <ChatWindow
@@ -138,7 +119,7 @@ export default function SeatDashboard() {
                         <div className="w-24 h-24 bg-control rounded-full mb-4 flex items-center justify-center">
                             <ChatCircleText size={48} className="text-muted" opacity={0.5} />
                         </div>
-                        <p>Select a chat to start responding.</p>
+                        <p>{t('common.select_chat')}</p>
                     </div>
                 )}
             </div>

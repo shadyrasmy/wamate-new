@@ -20,14 +20,28 @@ const storage = multer.diskStorage({
     }
 });
 
+const allowedDocumentMimeTypes = new Set([
+    'application/pdf',
+    'application/msword',
+    'application/rtf',
+    'application/vnd.ms-excel',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.oasis.opendocument.presentation',
+    'application/vnd.oasis.opendocument.spreadsheet',
+    'application/vnd.oasis.opendocument.text',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+    'text/csv'
+]);
+
 const fileFilter = (req, file, cb) => {
     // Accept images, videos, audio, and documents
     if (file.mimetype.startsWith('image/') ||
         file.mimetype.startsWith('video/') ||
         file.mimetype.startsWith('audio/') ||
-        file.mimetype === 'application/pdf' ||
-        file.mimetype.includes('spreadsheet') ||
-        file.mimetype.includes('wordprocessing')
+        allowedDocumentMimeTypes.has(file.mimetype)
     ) {
         cb(null, true);
     } else {

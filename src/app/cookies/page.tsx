@@ -1,39 +1,29 @@
+'use client';
+
 import Footer from '@/components/layout/Footer';
+import { useUI } from '@/context/UIContext';
 
 export default function CookiesPage() {
+    const { t } = useUI();
+    const sections = [
+        { title: t('legal.cookies.section1_title'), body: t('legal.cookies.section1_body') },
+        { title: t('legal.cookies.section2_title'), body: t('legal.cookies.section2_body') },
+        { title: t('legal.cookies.section3_title'), body: t('legal.cookies.section3_body') },
+        { title: t('legal.cookies.section4_title'), body: t('legal.cookies.section4_body') }
+    ];
+
     return (
         <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
             <div className="container mx-auto px-6 py-32 max-w-4xl">
-                <h1 className="text-5xl font-black mb-12 tracking-tight">Cookie Parameters</h1>
+                <h1 className="text-5xl font-black mb-12 tracking-tight">{t('legal.cookies.title')}</h1>
 
                 <div className="space-y-12 theme-copy font-medium leading-relaxed">
-                    <section>
-                        <h2 className="theme-section-title mb-6 text-sm">01. Session Tracking</h2>
-                        <p>
-                            We use essential session cookies to maintain your connection to the dashboard and ensure your identity remains verified while navigating the grid. These cookies are mandatory for operational stability.
-                        </p>
-                    </section>
-
-                    <section>
-                        <h2 className="theme-section-title mb-6 text-sm">02. Optimization Cookies</h2>
-                        <p>
-                            Performance cookies allow us to monitor grid health and optimize signal speed. This includes tracking dashboard load times and identifying bottlenecks in neural transmission.
-                        </p>
-                    </section>
-
-                    <section>
-                        <h2 className="theme-section-title mb-6 text-sm">03. Pixel Alignment</h2>
-                        <p>
-                            We integrate tracking pixels (like Facebook Pixel) to analyze landing page interaction and signup flows. This helps us refine our communication magnitude and reach relevant node operators. You can opt-out of this tracking via your browser&apos;s global privacy settings.
-                        </p>
-                    </section>
-
-                    <section>
-                        <h2 className="theme-section-title mb-6 text-sm">04. Local Storage</h2>
-                        <p>
-                            Operational tokens and UI preferences are stored in your browser&apos;s local storage to ensure a seamless reconnect experience when you return to your workstation.
-                        </p>
-                    </section>
+                    {sections.map((section) => (
+                        <section key={section.title}>
+                            <h2 className="theme-section-title mb-6 text-sm">{section.title}</h2>
+                            <p>{section.body}</p>
+                        </section>
+                    ))}
                 </div>
             </div>
             <Footer />

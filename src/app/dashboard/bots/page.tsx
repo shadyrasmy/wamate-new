@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useUI } from '@/context/UIContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchWithAuth } from '@/lib/api';
 import {
@@ -10,6 +11,7 @@ import {
 } from '@phosphor-icons/react';
 
 export default function BotsPage() {
+    const { t } = useUI();
     const [bots, setBots] = useState<any[]>([]);
     const [instances, setInstances] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -44,7 +46,7 @@ export default function BotsPage() {
             setBots(botsRes.data.bots);
             setInstances(insRes.data.instances);
         } catch (error) {
-            console.error('Failed to load bots', error);
+            console.error(t('dashboard.bots.load_error'), error);
         } finally {
             setLoading(false);
         }
@@ -67,17 +69,17 @@ export default function BotsPage() {
             loadData();
         } catch (error) {
             console.error('Save failed', error);
-            alert('Operation failed. Check if you have select a node.');
+            alert(t('dashboard.bots.save_error'));
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to decommission this bot?')) return;
+        if (!confirm(t('dashboard.bots.delete_confirm'))) return;
         try {
             await fetchWithAuth(`/bots/${id}`, { method: 'DELETE' });
             loadData();
         } catch (error) {
-            console.error('Delete failed', error);
+            console.error(t('dashboard.bots.delete_error'), error);
         }
     };
 
@@ -89,7 +91,7 @@ export default function BotsPage() {
             });
             loadData();
         } catch (error) {
-            console.error('Toggle failed', error);
+            console.error(t('dashboard.bots.toggle_error'), error);
         }
     };
 
@@ -99,9 +101,9 @@ export default function BotsPage() {
                 <div>
                     <h1 className="text-4xl font-black tracking-tight mb-2 flex items-center gap-4">
                         <Robot size={44} weight="fill" className="text-primary" />
-                        Bot Forge
+                        {t('dashboard.bots.title')}
                     </h1>
-                    <p className="text-gray-500 font-medium">Create specialized AI agents for different departments or brands.</p>
+                    <p className="text-gray-500 font-medium">{t('dashboard.bots.subtitle')}</p>
                 </div>
                 <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -114,7 +116,7 @@ export default function BotsPage() {
                     className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 flex items-center gap-3 w-fit"
                 >
                     <Plus size={20} weight="bold" />
-                    New Agent
+                    {t('dashboard.bots.new_agent')}
                 </motion.button>
             </div>
 
@@ -125,8 +127,8 @@ export default function BotsPage() {
                     <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
                         <Robot size={40} className="text-gray-700" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-400 mb-2">No Bots Forged</h3>
-                    <p className="text-gray-600 text-sm max-w-sm text-center font-medium">Create specialized assistants linked to specific numbers to handle different business flows.</p>
+                    <h3 className="text-xl font-bold text-gray-400 mb-2">{t('dashboard.bots.empty_title')}</h3>
+                    <p className="text-gray-600 text-sm max-w-sm text-center font-medium">{t('dashboard.bots.empty_desc')}</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -144,7 +146,7 @@ export default function BotsPage() {
                                         <h3 className="font-black text-xl text-white uppercase tracking-tight">{bot.name}</h3>
                                         <div className="flex items-center gap-2 mt-1">
                                             <div className={`w-2 h-2 rounded-full ${bot.is_active ? 'bg-green-500 animate-pulse' : 'bg-gray-600'}`} />
-                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{bot.is_active ? 'Operational' : 'Hibernating'}</span>
+                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{bot.is_active ? t('dashboard.bots.operational') : t('dashboard.bots.hibernating')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -167,11 +169,11 @@ export default function BotsPage() {
                                 <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
                                     <DeviceMobile size={16} className="text-gray-500" />
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">
-                                        Linked to: {instances.find(ins => ins.id === bot.instance_id || ins.instance_id === bot.instance_id)?.name || 'Unknown Node'}
+                                        {t('dashboard.bots.linked_to', { name: instances.find(ins => ins.id === bot.instance_id || ins.instance_id === bot.instance_id)?.name || t('dashboard.bots.unknown_node') })}
                                     </span>
                                 </div>
                                 <p className="text-xs text-gray-500 font-medium leading-relaxed line-clamp-3 italic">
-                                    "{bot.system_instruction || 'No core directive defined...'}"
+                                    "{bot.system_instruction || t('dashboard.bots.no_directive')}"
                                 </p>
                             </div>
 
@@ -179,7 +181,7 @@ export default function BotsPage() {
                                 onClick={() => toggleStatus(bot)}
                                 className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${bot.is_active ? 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-primary text-white shadow-lg'}`}
                             >
-                                {bot.is_active ? 'Deactivate Protocol' : 'Initiate Operation'}
+                                {bot.is_active ? t('dashboard.bots.deactivate') : t('dashboard.bots.initiate')}
                             </button>
                         </motion.div>
                     ))}
@@ -206,34 +208,34 @@ export default function BotsPage() {
                             <div className="flex justify-between items-center mb-8">
                                 <h3 className="text-2xl font-black flex items-center gap-3 uppercase">
                                     <Robot size={32} className="text-primary" />
-                                    {editingBot ? 'Tune Agent' : 'Forge Entity'}
+                                    {editingBot ? t('dashboard.bots.tune_title') : t('dashboard.bots.forge_title')}
                                 </h3>
                                 <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white/5 rounded-full transition"><X size={24} /></button>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Agent Codename</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('dashboard.bots.agent_codename')}</label>
                                     <input
                                         autoFocus
                                         type="text"
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
-                                        placeholder="e.g. Sales Specialist, Support Hero..."
+                                        placeholder={t('dashboard.bots.codename_placeholder')}
                                         required
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Host Node</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('dashboard.bots.host_node')}</label>
                                     <select
                                         value={formData.instance_id}
                                         onChange={e => setFormData({ ...formData, instance_id: e.target.value })}
                                         className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 transition cursor-pointer appearance-none"
                                         required
                                     >
-                                        <option value="">Select Target Edge Node</option>
+                                        <option value="">{t('dashboard.bots.select_node')}</option>
                                         {instances.map(ins => (
                                             <option key={ins.instance_id} value={ins.instance_id}>{ins.name}</option>
                                         ))}
@@ -241,12 +243,12 @@ export default function BotsPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Core Behavioral Directives</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('dashboard.bots.directives_label')}</label>
                                     <textarea
                                         value={formData.system_instruction}
                                         onChange={e => setFormData({ ...formData, system_instruction: e.target.value })}
                                         className="w-full min-h-[200px] bg-white/5 border border-white/10 p-6 rounded-[2rem] text-white font-medium text-sm focus:outline-none focus:border-primary/50 transition resize-none custom-scroll"
-                                        placeholder="Define the bot's personality, goals, and constraints..."
+                                        placeholder={t('dashboard.bots.directives_placeholder')}
                                         required
                                     />
                                 </div>
@@ -254,7 +256,7 @@ export default function BotsPage() {
                                 <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex gap-4">
                                     <ShieldCheck size={24} className="text-primary flex-shrink-0" />
                                     <p className="text-[10px] text-gray-400 font-medium leading-relaxed uppercase tracking-widest">
-                                        Specialized bots operate at the highest neural priority for their assigned node. Use them to create unique brand experiences for different numbers.
+                                        {t('dashboard.bots.priority_info')}
                                     </p>
                                 </div>
 
@@ -264,13 +266,13 @@ export default function BotsPage() {
                                         onClick={() => setIsAdding(false)}
                                         className="flex-1 py-4 text-gray-500 font-bold text-xs uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition"
                                     >
-                                        Abort
+                                        {t('dashboard.instances.cancel')}
                                     </button>
                                     <button
                                         type="submit"
                                         className="flex-1 bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition"
                                     >
-                                        {editingBot ? 'Sync Neural Data' : 'Forge Protocol'}
+                                        {editingBot ? t('dashboard.bots.sync_neural') : t('dashboard.bots.forge_protocol')}
                                     </button>
                                 </div>
                             </form>
@@ -281,3 +283,4 @@ export default function BotsPage() {
         </div>
     );
 }
+

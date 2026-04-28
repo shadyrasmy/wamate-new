@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import { fetchWithAuth } from '@/lib/api';
 import { ShoppingCart, Export, MapPin, Package, CheckCircle, Clock, XCircle, Pencil, Trash, X } from '@phosphor-icons/react';
 import toast from 'react-hot-toast';
+import { useUI } from '@/context/UIContext';
 
 export default function OrdersPage() {
+    const { t } = useUI();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('All');
@@ -28,7 +30,7 @@ export default function OrdersPage() {
             setPagination(res.data.pagination);
         } catch (error) {
             console.error(error);
-            toast.error('Failed to load orders');
+            toast.error(t('dashboard.orders.load_error'));
         } finally {
             setLoading(false);
         }
@@ -46,28 +48,27 @@ export default function OrdersPage() {
                 })
             });
             setOrders(prev => prev.map(o => o.id === editingOrder.id ? editingOrder : o));
-            toast.success('Order updated successfully');
+            toast.success(t('dashboard.orders.update_success'));
             setIsEditOpen(false);
         } catch (error) {
-            toast.error('Update failed');
+            toast.error(t('dashboard.orders.update_error'));
         }
     };
 
     const handleDeleteOrder = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this order? This cannot be undone.')) return;
+        if (!confirm(t('dashboard.orders.delete_order') + '?')) return;
         try {
             await fetchWithAuth(`/orders/${id}`, { method: 'DELETE' });
             setOrders(prev => prev.filter(o => o.id !== id));
-            toast.success('Order deleted');
+            toast.success(t('dashboard.orders.delete_success'));
         } catch (error) {
-            toast.error('Delete failed');
+            toast.error(t('dashboard.orders.delete_error'));
         }
     };
 
     const handleExport = async () => {
         try {
             const token = localStorage.getItem('token');
-            // Use the centralized API_URL which handles the env var logic
             const { API_URL } = await import('@/lib/api');
             const res = await fetch(`${API_URL}/orders/export?status=${filter}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -79,15 +80,14 @@ export default function OrdersPage() {
             a.download = `orders-export-${Date.now()}.csv`;
             a.click();
         } catch (error) {
-            toast.error('Export failed');
+            toast.error(t('dashboard.orders.export_error'));
         }
     };
 
-    // Helper to parse items safely
     const renderItems = (itemsRaw: any) => {
         try {
             const items = typeof itemsRaw === 'string' ? JSON.parse(itemsRaw) : itemsRaw;
-            if (!Array.isArray(items)) return <span className="text-muted">Invalid items data</span>;
+            if (!Array.isArray(items)) return <span className="text-muted">{t('dashboard.orders.invalid_items')}</span>;
 
             return (
                 <div className="flex flex-col gap-2">
@@ -105,7 +105,7 @@ export default function OrdersPage() {
                 </div>
             );
         } catch (e) {
-            return <span className="text-red-400 text-xs">Error parsing items</span>;
+            return <span className="text-red-400 text-xs">{t('dashboard.orders.parse_error')}</span>;
         }
     };
 
@@ -123,16 +123,16 @@ export default function OrdersPage() {
                 <div>
                     <h1 className="text-2xl font-black text-foreground flex items-center gap-3">
                         <ShoppingCart size={32} className="text-green-500" weight="duotone" />
-                        Order Management
+                        {t('dashboard.orders.title')}
                     </h1>
-                    <p className="text-muted mt-1">Fulfill orders and track revenue.</p>
+                    <p className="text-muted mt-1">{t('dashboard.orders.subtitle')}</p>
                 </div>
                 <button
                     onClick={handleExport}
                     className="theme-button-secondary flex items-center gap-2 px-6 py-3 rounded-2xl font-bold"
                 >
                     <Export size={20} />
-                    Export CSV
+                    {t('dashboard.orders.export_csv')}
                 </button>
             </div>
 
@@ -147,7 +147,7 @@ export default function OrdersPage() {
                             : 'bg-control text-muted border-border hover:bg-control-hover hover:text-foreground'
                             }`}
                     >
-                        {status}
+                        {status === 'All' ? t('admin.invoices.status_all') : t(`dashboard.orders.status_${status.toLowerCase()}`, { defaultValue: status })}
                     </button>
                 ))}
             </div>
@@ -158,23 +158,23 @@ export default function OrdersPage() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b border-border bg-surface-soft">
-                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">Order ID / Customer</th>
-                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">Items</th>
-                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">Details</th>
-                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest text-right">Status & Actions</th>
+                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">{t('dashboard.orders.table_id_customer')}</th>
+                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">{t('dashboard.orders.table_items')}</th>
+                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest">{t('dashboard.orders.table_details')}</th>
+                                <th className="p-6 text-xs font-black text-muted uppercase tracking-widest text-right">{t('dashboard.orders.table_status_actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                             {loading ? (
-                                <tr><td colSpan={4} className="p-10 text-center text-muted animate-pulse">Scanning orders...</td></tr>
+                                <tr><td colSpan={4} className="p-10 text-center text-muted animate-pulse">{t('dashboard.orders.scanning')}</td></tr>
                             ) : orders.length === 0 ? (
-                                <tr><td colSpan={4} className="p-10 text-center text-muted">No orders found.</td></tr>
+                                <tr><td colSpan={4} className="p-10 text-center text-muted">{t('dashboard.orders.no_orders')}</td></tr>
                             ) : (
                                 orders.map((order) => (
                                     <tr key={order.id} className="hover:bg-surface-soft transition">
                                         <td className="p-6 align-top">
                                             <p className="text-muted font-mono text-[10px] mb-1">#{order.id.slice(0, 8)}</p>
-                                            <p className="text-foreground font-bold">{order.contact?.name || 'Unknown'}</p>
+                                            <p className="text-foreground font-bold">{order.contact?.name || t('dashboard.orders.unknown_customer')}</p>
                                             <p className="text-xs text-green-400 font-mono mt-1">{order.contact?.phone}</p>
                                             <p className="text-[10px] text-muted mt-2">
                                                 {new Date(order.createdAt).toLocaleDateString()}
@@ -192,16 +192,16 @@ export default function OrdersPage() {
                                                 {order.shipping_details && (
                                                     <div className="text-xs text-muted space-y-1">
                                                         {order.shipping_details.governorate && (
-                                                            <p><span className="text-muted">Gov:</span> {order.shipping_details.governorate}</p>
+                                                            <p><span className="text-muted">{t('dashboard.orders.gov_label')}</span> {order.shipping_details.governorate}</p>
                                                         )}
                                                         {order.shipping_details.city && (
-                                                            <p><span className="text-muted">City:</span> {order.shipping_details.city}</p>
+                                                            <p><span className="text-muted">{t('dashboard.orders.city_label')}</span> {order.shipping_details.city}</p>
                                                         )}
                                                         {order.shipping_details.address && (
-                                                            <p><span className="text-muted">Addr:</span> {order.shipping_details.address}</p>
+                                                            <p><span className="text-muted">{t('dashboard.orders.addr_label')}</span> {order.shipping_details.address}</p>
                                                         )}
                                                         {order.shipping_details.phone2 && (
-                                                            <p><span className="text-muted">Alt Ph:</span> {order.shipping_details.phone2}</p>
+                                                            <p><span className="text-muted">{t('dashboard.orders.alt_ph_label')}</span> {order.shipping_details.phone2}</p>
                                                         )}
                                                     </div>
                                                 )}
@@ -209,21 +209,21 @@ export default function OrdersPage() {
                                         </td>
                                         <td className="p-6 align-top text-right">
                                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border mb-3 ${statusConfig[order.status]?.color || 'text-muted border-border'}`}>
-                                                {order.status}
+                                                {t(`dashboard.orders.status_${order.status.toLowerCase()}`, { defaultValue: order.status })}
                                             </span>
 
                                             <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => { setEditingOrder({ ...order }); setIsEditOpen(true); }}
                                                     className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition"
-                                                    title="Edit Order"
+                                                    title={t('dashboard.orders.edit_order')}
                                                 >
                                                     <Pencil weight="bold" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteOrder(order.id)}
                                                     className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition"
-                                                    title="Delete Order"
+                                                    title={t('dashboard.orders.delete_order')}
                                                 >
                                                     <Trash weight="bold" />
                                                 </button>
@@ -243,17 +243,17 @@ export default function OrdersPage() {
                             onClick={() => setPage(p => p - 1)}
                             className="theme-button-secondary px-4 py-2 rounded-xl disabled:opacity-50 font-bold text-sm"
                         >
-                            Prev
+                            {t('dashboard.orders.prev')}
                         </button>
                         <span className="px-4 py-2 text-muted text-sm flex items-center">
-                            Page {page} of {pagination.pages}
+                            {t('dashboard.orders.page_x_of_y', { page: page, pages: pagination.pages })}
                         </span>
                         <button
                             disabled={page === pagination.pages}
                             onClick={() => setPage(p => p + 1)}
                             className="theme-button-secondary px-4 py-2 rounded-xl disabled:opacity-50 font-bold text-sm"
                         >
-                            Next
+                            {t('dashboard.orders.next')}
                         </button>
                     </div>
                 )}
@@ -272,13 +272,13 @@ export default function OrdersPage() {
 
                         <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                             <Pencil weight="duotone" className="text-blue-500" />
-                            Edit Order #{editingOrder.id.slice(0, 8)}
+                            {t('dashboard.orders.edit_title', { id: editingOrder.id.slice(0, 8) })}
                         </h2>
 
                         <div className="space-y-4">
                             {/* Status */}
                             <div>
-                                <label className="text-xs font-bold text-muted uppercase tracking-wider block mb-2">Status</label>
+                                <label className="text-xs font-bold text-muted uppercase tracking-wider block mb-2">{t('dashboard.orders.status_label')}</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {Object.keys(statusConfig).map(s => (
                                         <button
@@ -289,7 +289,7 @@ export default function OrdersPage() {
                                                 : 'bg-control text-muted border-border hover:bg-control-hover hover:text-foreground'
                                                 }`}
                                         >
-                                            {s}
+                                            {t(`dashboard.orders.status_${s.toLowerCase()}`, { defaultValue: s })}
                                         </button>
                                     ))}
                                 </div>
@@ -297,7 +297,7 @@ export default function OrdersPage() {
 
                             {/* Price */}
                             <div>
-                                <label className="text-xs font-bold text-muted uppercase tracking-wider block mb-2">Total Price ({editingOrder.currency})</label>
+                                <label className="text-xs font-bold text-muted uppercase tracking-wider block mb-2">{t('dashboard.orders.price_label', { currency: editingOrder.currency })}</label>
                                 <input
                                     type="number"
                                     value={editingOrder.total_price}
@@ -308,11 +308,11 @@ export default function OrdersPage() {
 
                             {/* Shipping Details */}
                             <div>
-                                <label className="text-xs font-bold text-muted uppercase tracking-wider block mb-2">Shipping Details</label>
+                                <label className="text-xs font-bold text-muted uppercase tracking-wider block mb-2">{t('dashboard.orders.shipping_label')}</label>
                                 <div className="space-y-2">
                                     <div className="grid grid-cols-2 gap-2">
                                         <input
-                                            placeholder="Governorate"
+                                            placeholder={t('dashboard.orders.gov_placeholder')}
                                             value={editingOrder.shipping_details?.governorate || ''}
                                             onChange={(e) => setEditingOrder({
                                                 ...editingOrder,
@@ -321,7 +321,7 @@ export default function OrdersPage() {
                                             className="theme-input-solid rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                                         />
                                         <input
-                                            placeholder="City"
+                                            placeholder={t('dashboard.orders.city_placeholder')}
                                             value={editingOrder.shipping_details?.city || ''}
                                             onChange={(e) => setEditingOrder({
                                                 ...editingOrder,
@@ -331,7 +331,7 @@ export default function OrdersPage() {
                                         />
                                     </div>
                                     <input
-                                        placeholder="Full Address"
+                                        placeholder={t('dashboard.orders.addr_placeholder')}
                                         value={editingOrder.shipping_details?.address || ''}
                                         onChange={(e) => setEditingOrder({
                                             ...editingOrder,
@@ -340,7 +340,7 @@ export default function OrdersPage() {
                                         className="theme-input-solid w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                                     />
                                     <input
-                                        placeholder="Alternative Phone"
+                                        placeholder={t('dashboard.orders.alt_ph_placeholder')}
                                         value={editingOrder.shipping_details?.phone2 || ''}
                                         onChange={(e) => setEditingOrder({
                                             ...editingOrder,
@@ -357,13 +357,13 @@ export default function OrdersPage() {
                                 onClick={() => setIsEditOpen(false)}
                                 className="theme-button-secondary flex-1 py-3 font-bold rounded-xl"
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </button>
                             <button
                                 onClick={handleSaveOrder}
                                 className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow-lg shadow-blue-500/20"
                             >
-                                Save Changes
+                                {t('admin.settings.save_changes')}
                             </button>
                         </div>
                     </div>

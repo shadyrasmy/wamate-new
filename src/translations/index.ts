@@ -1,82 +1,29 @@
-export type Language = 'en' | 'ar';
+import { enLabels, labels, type TranslationKey } from './labels';
 
-export const translations: Record<Language, Record<string, string>> = {
-    en: {
-        dashboard: "Overview",
-        chat_center: "Chat Center",
-        instances: "Instances",
-        team_seats: "Team Seats",
-        settings: "Settings",
-        sign_out: "Sign Out",
-        upgrade: "Upgrade Plan",
-        api_center: "API Center",
-        search: "Search...",
-        connected: "Connected",
-        disconnected: "Disconnected",
-        connecting: "Connecting",
-        traffic_pulse: "Traffic Pulse",
-        system_quota: "System Quota",
-        active_channels: "Active Channels",
-        outbound_traffic: "Outbound Traffic",
-        agent_seats: "Agent Seats",
-        theme_toggle: "Theme Mode",
-        language_toggle: "Language",
-        system_engine: "System Engine",
-        baileys_multi: "Baileys Multi",
-        socket_cluster: "Socket Cluster",
-        queue_manager: "Queue Manager",
-        optimal: "Optimal",
-        standby: "Standby",
-        outbound_msg_vol: "Real-time outbound message volume.",
-        need_more_credits: "Need more message credits?",
-        view_logs: "VIEW FULL LOGS",
-        live_system: "Live System",
-        local_identity: "Local Identity",
-        enterprise_admin: "Enterprise Admin",
-        free_tier: "Free Tier",
-        retry: "RETRY",
-        delete: "DELETE",
-        abort: "ABORT",
-        update: "UPDATE",
-        provision_node: "Provision Node"
-    },
-    ar: {
-        dashboard: "نظرة عامة",
-        chat_center: "مركز الدردشة",
-        instances: "القنوات",
-        team_seats: "مقاعد الفريق",
-        settings: "الإعدادات",
-        sign_out: "تسجيل الخروج",
-        upgrade: "ترقية الباقة",
-        api_center: "مركز API",
-        search: "بحث...",
-        connected: "متصل",
-        disconnected: "غير متصل",
-        connecting: "جاري الاتصال",
-        traffic_pulse: "نبض الرسائل",
-        system_quota: "حصة النظام",
-        active_channels: "القنوات النشطة",
-        outbound_traffic: "الرسائل الصادرة",
-        agent_seats: "مقاعد الوكلاء",
-        theme_toggle: "المظهر",
-        language_toggle: "اللغة",
-        system_engine: "محرك النظام",
-        baileys_multi: "بيليز المتعدد",
-        socket_cluster: "عنقود السوكت",
-        queue_manager: "مدير الطابور",
-        optimal: "مثالي",
-        standby: "استعداد",
-        outbound_msg_vol: "حجم الرسائل الصادرة في الوقت الفعلي.",
-        need_more_credits: "هل تحتاج إلى المزيد من الرصيد؟",
-        view_logs: "عرض السجلات الكاملة",
-        live_system: "النظام حي",
-        local_identity: "الهوية المحلية",
-        enterprise_admin: "مسؤول المؤسسة",
-        free_tier: "الفئة المجانية",
-        retry: "إعادة المحاولة",
-        delete: "حذف",
-        abort: "إلغاء",
-        update: "تحديث",
-        provision_node: "إنشاء قناة"
+export type Language = 'en' | 'ar';
+export type TranslationParams = Record<string, string | number | undefined | null>;
+
+export { labels, type TranslationKey };
+
+export const defaultLanguage: Language = 'en';
+
+export const hasTranslationKey = (key: string): key is TranslationKey => key in enLabels;
+
+export const interpolateLabel = (template: string, params?: TranslationParams) => {
+    if (!params) return template;
+
+    return template.replace(/\{(\w+)\}/g, (_, token: string) => {
+        const value = params[token];
+        return value === undefined || value === null ? `{${token}}` : String(value);
+    });
+};
+
+export const getLabel = (language: Language, key: string, params?: TranslationParams) => {
+    const dictionary = labels[language] ?? labels[defaultLanguage];
+
+    if (hasTranslationKey(key)) {
+        return interpolateLabel(dictionary[key] ?? labels[defaultLanguage][key], params);
     }
+
+    return interpolateLabel(key, params);
 };

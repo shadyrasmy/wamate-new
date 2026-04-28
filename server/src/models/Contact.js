@@ -57,15 +57,15 @@ const Contact = sequelize.define('Contact', {
     indexes: [
         {
             unique: true,
-            fields: ['user_id', 'instance_id', 'jid']
+            fields: ['user_id', 'jid']
         },
         {
             // Optimization: Fast LID lookup for JID-LID resolution
             fields: ['lid']
         },
         {
-            // Optimization: Composite lookup for contacts by LID within an instance
-            fields: ['user_id', 'instance_id', 'lid']
+            // Optimization: Composite lookup for contacts by LID within a user's contact graph
+            fields: ['user_id', 'lid']
         }
     ]
 });

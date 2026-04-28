@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     PaperPlaneRight, Smiley, Paperclip, Microphone,
-    DotsThreeVertical, Phone, VideoCamera, Spinner,
+    DotsThreeVertical, Spinner,
     UserCircle, Circle, X, CaretLeft, Target, ShoppingCart, Robot, Package
 } from '@phosphor-icons/react';
 import MessageBubble from './MessageBubble';
@@ -69,7 +69,7 @@ const dedupeMessages = (messages: ChatMessageLike[]) => {
 };
 
 export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps) {
-    const { theme: uiTheme } = useUI();
+    const { theme: uiTheme, t } = useUI();
     const [messages, setMessages] = useState<any[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -115,7 +115,10 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
 
     useEffect(() => {
         setAiRepliesEnabled(chat?.ai_replies_enabled ?? true);
-    }, [chat?.jid, chat?.ai_replies_enabled]);
+        if (chat?.name) {
+            setLeadForm(prev => ({ ...prev, name: chat.name }));
+        }
+    }, [chat?.jid, chat?.ai_replies_enabled, chat?.name]);
 
     const canUseAI = user?.role === 'admin' || user?.ai_enabled || user?.plan?.ai_enabled;
 
@@ -149,7 +152,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                 })
             });
             setShowLeadModal(false);
-            alert('Contact converted to Lead.');
+            alert(t('chat.window.lead_success'));
         } catch (error) {
             console.error('Lead conversion failed', error);
         }
@@ -167,7 +170,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                 })
             });
             setShowOrderModal(false);
-            alert('Order created successfully.');
+            alert(t('chat.window.order_success'));
         } catch (error) {
             console.error('Order creation failed', error);
         }
@@ -180,41 +183,22 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
         s.emit('join_instance', instanceId);
 
         s.on('new_message', (parsedMsg: any) => {
-            // 0. Filter by JID to prevent cross-talk
-            // The message must belong to the current chat (either from them or from me to them)
-            // parsedMsg.key.remoteJid is the standard field for the chat JID in detailed objects, 
-            // but we need to check how the backend sends it. 
-            // Based on sidebar logic: `msg.senderJid` seems to be the one.
-            // Let's rely on checking if the message is intended for this chat.
-
-            // If it's a group, the jid is the group jid.
-            // If it's a DM, the jid is the user's jid.
-
-            // 0. Filter by JID to prevent cross-talk
-            // We need to match the message to the current active chat.
-            // The backend sends 'chatJid' which is the remote JID for both incoming and outgoing messages.
             const msgJid = parsedMsg.chatJid || parsedMsg.jid || parsedMsg.senderJid || parsedMsg.key?.remoteJid;
 
-            // Normalize JIDs (handle @s.whatsapp.net vs @g.us consistency if needed, but simple include check usually works)
             if (msgJid !== chat?.jid && parsedMsg.param !== 'chat') {
-                // If the message is not for this chat, ignore it.
                 return;
             }
 
             setMessages(prev => {
-                // 1. Check if ID exists (exact match)
                 if (prev.some(m => m.id === parsedMsg.id)) return prev;
 
-                // 2. If it's from me, check for a matching optimistic message (temp ID)
-                // We match by content and a very close timestamp (within 5 seconds)
                 if (parsedMsg.isMe) {
                     const optimisticMsg = prev.find(m =>
                         m.isMe &&
                         m.content === parsedMsg.content &&
-                        m.id.length > 20 // optimistic IDs are usually short timestamps, real IDs are long
+                        m.id.length > 20
                     );
                     if (optimisticMsg) {
-                        // Replace the temp message with the real one
                         return dedupeMessages(prev.map(m => m.id === optimisticMsg.id ? parsedMsg : m));
                     }
                 }
@@ -306,12 +290,9 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
             if (res.status === 'success' && res.data?.key?.id) {
                 const realId = res.data.key.id;
                 setMessages(prev => {
-                    // If the socket already arrived and added/replaced this message, do nothing
                     if (prev.some(m => m.id === realId)) {
-                        // But we still need to remove the temp one if it's still there
                         return dedupeMessages(prev.filter(m => m.id !== tempId));
                     }
-                    // Otherwise, upgrade the temp message to real
                     return dedupeMessages(prev.map(m => m.id === tempId ? { ...m, id: realId, status: 'read' } : m));
                 });
             }
@@ -346,7 +327,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                 setUploadProgress(percent);
             });
 
-            setUploadProgress(null); // Clear progress when done
+            setUploadProgress(null);
 
             let type = 'document';
             if (file.type.startsWith('image/')) type = 'image';
@@ -360,13 +341,15 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                     jid: chat.jid,
                     content: '',
                     type,
-                    mediaUrl: uploadRes.data.url
+                    mediaUrl: uploadRes.data.url,
+                    mimeType: file.type || uploadRes.data.mimetype,
+                    fileName: file.name || uploadRes.data.originalName || uploadRes.data.filename
                 })
             });
 
             setMessages(prev => dedupeMessages([...prev, {
                 id: Date.now().toString(),
-                content: type === 'image' ? '📷 Image' : (type === 'video' ? '🎥 Video' : '📎 Document'),
+                content: type === 'image' ? t('chat.window.image_label') : (type === 'video' ? t('chat.window.video_label') : t('chat.window.document_label')),
                 isMe: true,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 status: 'grey'
@@ -374,7 +357,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
         } catch (error) {
             console.error('Upload failed', error);
             setUploadProgress(null);
-            alert('Failed to send media. Please try again.');
+            alert(t('chat.window.media_error'));
         }
 
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -388,8 +371,8 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                     <div className="w-32 h-32 bg-primary/10 rounded-[3rem] mx-auto mb-10 flex items-center justify-center border border-primary/20 shadow-2xl">
                         <PaperPlaneRight size={48} weight="fill" className="text-primary opacity-50" />
                     </div>
-                    <h2 className="text-4xl font-black mb-4 tracking-tight">Active Pulse.</h2>
-                    <p className="max-w-xs mx-auto text-muted font-medium leading-relaxed">Select a conversation to begin broadcasting messages across the global edge.</p>
+                    <h2 className="text-4xl font-black mb-4 tracking-tight">{t('chat.window.empty_title')}</h2>
+                    <p className="max-w-xs mx-auto text-muted font-medium leading-relaxed">{t('chat.window.empty_body')}</p>
                 </div>
             </div>
         );
@@ -431,7 +414,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                         {canUseAI && (
                             <button
                                 onClick={handleToggleAI}
-                                title={aiRepliesEnabled ? 'Silence AI' : 'Active AI'}
+                                title={aiRepliesEnabled ? t('chat.window.toggle_ai_disable') : t('chat.window.toggle_ai_enable')}
                                 className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-xl transition-all border ${aiRepliesEnabled ? 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20' : 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'}`}
                             >
                                 <Robot size={22} weight={aiRepliesEnabled ? "fill" : "bold"} />
@@ -440,7 +423,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
 
                         <button
                             onClick={() => setShowLeadModal(true)}
-                            title="Create Lead"
+                            title={t('chat.window.create_lead')}
                             className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl transition-all border bg-orange-500/15 hover:bg-orange-500/25 text-orange-500 border-orange-500/25 shadow-sm shadow-orange-500/10"
                         >
                             <Target size={20} weight="bold" />
@@ -448,7 +431,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
 
                         <button
                             onClick={() => setShowOrderModal(true)}
-                            title="Create Order"
+                            title={t('chat.window.create_order')}
                             className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl transition-all border bg-green-500/15 hover:bg-green-500/25 text-green-500 border-green-500/25 shadow-sm shadow-green-500/10"
                         >
                             <ShoppingCart size={20} weight="bold" />
@@ -456,7 +439,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
 
                         <button
                             onClick={() => setShowOrderPanel(!showOrderPanel)}
-                            title="Open CRM / Orders"
+                            title={t('chat.window.open_crm')}
                             className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-xl transition-all border ${showOrderPanel ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-control hover:bg-control-hover text-muted hover:text-foreground border-control-border'}`}
                         >
                             <Package size={20} weight={showOrderPanel ? "fill" : "bold"} />
@@ -508,7 +491,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                 <div className="flex items-center gap-3 overflow-hidden">
                                     <div className="w-1 bg-primary h-8 rounded-full shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
                                     <div className="overflow-hidden">
-                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Replying to</p>
+                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">{t('chat.window.replying_to')}</p>
                                         <p className="text-sm text-muted truncate font-medium italic">&quot;{replyingTo.content}&quot;</p>
                                     </div>
                                 </div>
@@ -540,7 +523,13 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                 <Smiley size={24} weight="bold" />
                             </button>
 
-                            <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.rtf,.odt,.ods,.odp"
+                                onChange={handleFileChange}
+                            />
                             <button
                                 onClick={handleAttach}
                                 className="w-10 h-10 flex items-center justify-center rounded-xl text-muted hover:text-foreground transition"
@@ -553,7 +542,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                             <input
                                 type="text"
                                 className="flex-1 focus:outline-none text-foreground bg-transparent font-medium py-3 placeholder:text-muted"
-                                placeholder="Compose encrypted message..."
+                                placeholder={t('chat.window.compose')}
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
@@ -589,11 +578,11 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                             >
                                 <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
                                     <Target size={28} className="text-orange-500" />
-                                    Convert to Lead
+                                    {t('chat.window.convert_to_lead')}
                                 </h3>
                                 <form onSubmit={handleLeadSubmit} className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Contact Name</label>
+                                        <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.contact_name')}</label>
                                         <input
                                             type="text"
                                             value={leadForm.name}
@@ -603,18 +592,17 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Governorate / State</label>
+                                        <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.governorate_state')}</label>
                                         <input
                                             type="text"
                                             value={leadForm.governorate}
                                             onChange={e => setLeadForm({ ...leadForm, governorate: e.target.value })}
                                             className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
-                                            placeholder="e.g. Cairo"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">City</label>
+                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.city')}</label>
                                             <input
                                                 type="text"
                                                 value={leadForm.city}
@@ -623,7 +611,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Alt Phone</label>
+                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.alt_phone')}</label>
                                             <input
                                                 type="text"
                                                 value={leadForm.phone2}
@@ -633,20 +621,20 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Intent</label>
+                                        <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.intent')}</label>
                                         <select
                                             value={leadForm.intent}
                                             onChange={e => setLeadForm({ ...leadForm, intent: e.target.value })}
                                             className="w-full bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold focus:outline-none"
                                         >
-                                            <option value="sales">Sales Opportunity</option>
-                                            <option value="inquiry">General Inquiry</option>
-                                            <option value="support">Technical Support</option>
+                                            <option value="sales">{t('chat.window.intent_sales')}</option>
+                                            <option value="inquiry">{t('chat.window.intent_inquiry')}</option>
+                                            <option value="support">{t('chat.window.intent_support')}</option>
                                         </select>
                                     </div>
                                     <div className="pt-6 flex gap-4">
-                                        <button type="button" onClick={() => setShowLeadModal(false)} className="flex-1 py-4 text-muted font-bold text-xs uppercase bg-control rounded-2xl">Abort</button>
-                                        <button type="submit" className="flex-1 bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Save Lead</button>
+                                        <button type="button" onClick={() => setShowLeadModal(false)} className="flex-1 py-4 text-muted font-bold text-xs uppercase bg-control rounded-2xl">{t('common.abort')}</button>
+                                        <button type="submit" className="flex-1 bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase">{t('chat.window.save_lead')}</button>
                                     </div>
                                 </form>
                             </motion.div>
@@ -665,22 +653,22 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                 >
                                     <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
                                         <ShoppingCart size={28} className="text-green-500" />
-                                        Create Order
+                                        {t('chat.window.create_order')}
                                     </h3>
                                     <form onSubmit={handleOrderSubmit} className="space-y-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Order Items</label>
+                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.order_items')}</label>
                                             <textarea
                                                 value={orderForm.items}
                                                 onChange={e => setOrderForm({ ...orderForm, items: e.target.value })}
                                                 className="w-full h-32 bg-input border border-input-border p-4 rounded-2xl text-foreground font-bold"
-                                                placeholder="e.g. 2x Nitro Coffee, 1x Bagel"
+                                                placeholder={t('chat.window.order_items_placeholder')}
                                                 required
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Governorate</label>
+                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.governorate')}</label>
                                                 <input
                                                     type="text"
                                                     value={orderForm.governorate}
@@ -689,7 +677,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">City</label>
+                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.city')}</label>
                                                 <input
                                                     type="text"
                                                     value={orderForm.city}
@@ -699,7 +687,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Full Address</label>
+                                            <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.full_address')}</label>
                                             <input
                                                 type="text"
                                                 value={orderForm.address}
@@ -709,7 +697,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Alt Phone</label>
+                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.alt_phone')}</label>
                                                 <input
                                                     type="text"
                                                     value={orderForm.phone2}
@@ -718,7 +706,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Total Price</label>
+                                                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">{t('chat.window.total_price')}</label>
                                                 <input
                                                     type="number"
                                                     value={orderForm.total_price}
@@ -729,8 +717,8 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
                                             </div>
                                         </div>
                                         <div className="pt-6 flex gap-4">
-                                            <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 py-4 text-muted font-bold text-xs uppercase bg-control rounded-2xl">Abort</button>
-                                            <button type="submit" className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Create Order</button>
+                                            <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 py-4 text-muted font-bold text-xs uppercase bg-control rounded-2xl">{t('common.abort')}</button>
+                                            <button type="submit" className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-black text-xs uppercase">{t('chat.window.create_order_cta')}</button>
                                         </div>
                                     </form>
                                 </motion.div>

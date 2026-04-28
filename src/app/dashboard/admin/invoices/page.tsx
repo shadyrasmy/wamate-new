@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useUI } from '@/context/UIContext';
 import { motion } from 'framer-motion';
 import { fetchWithAuth } from '@/lib/api';
 import {
@@ -11,6 +12,7 @@ import {
 type InvoiceStatus = 'all' | 'pending' | 'paid' | 'failed' | 'cancelled';
 
 export default function AdminInvoicesPage() {
+    const { t } = useUI();
     const [invoices, setInvoices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -37,50 +39,50 @@ export default function AdminInvoicesPage() {
     };
 
     const handleApprove = async (invoiceId: string) => {
-        if (!confirm('Approve this payment and upgrade the user\'s plan?')) return;
+        if (!confirm(t('admin.invoices.approve_confirm'))) return;
 
         setActionLoading(invoiceId);
         try {
             await fetchWithAuth(`/admin/invoices/${invoiceId}/approve`, { method: 'POST' });
             loadInvoices();
         } catch (error: any) {
-            alert(error.message || 'Failed to approve payment');
+            alert(error.message || t('admin.invoices.approve_error'));
         } finally {
             setActionLoading(null);
         }
     };
 
     const handleReject = async (invoiceId: string) => {
-        if (!confirm('Reject this payment? This cannot be undone.')) return;
+        if (!confirm(t('admin.invoices.reject_confirm'))) return;
 
         setActionLoading(invoiceId);
         try {
             await fetchWithAuth(`/admin/invoices/${invoiceId}/reject`, { method: 'POST' });
             loadInvoices();
         } catch (error: any) {
-            alert(error.message || 'Failed to reject payment');
+            alert(error.message || t('admin.invoices.reject_error'));
         } finally {
             setActionLoading(null);
         }
     };
 
     const statusTabs: { value: InvoiceStatus; label: string; color: string }[] = [
-        { value: 'all', label: 'All', color: 'bg-white/10' },
-        { value: 'pending', label: 'Pending', color: 'bg-yellow-500/20 text-yellow-400' },
-        { value: 'paid', label: 'Paid', color: 'bg-green-500/20 text-green-400' },
-        { value: 'failed', label: 'Failed', color: 'bg-red-500/20 text-red-400' },
-        { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-500/20 text-gray-400' },
+        { value: 'all', label: t('admin.invoices.status_all'), color: 'bg-white/10' },
+        { value: 'pending', label: t('admin.invoices.status_pending'), color: 'bg-yellow-500/20 text-yellow-400' },
+        { value: 'paid', label: t('admin.invoices.status_paid'), color: 'bg-green-500/20 text-green-400' },
+        { value: 'failed', label: t('admin.invoices.status_failed'), color: 'bg-red-500/20 text-red-400' },
+        { value: 'cancelled', label: t('admin.invoices.status_cancelled'), color: 'bg-gray-500/20 text-gray-400' },
     ];
 
     return (
         <div className="space-y-10 pb-20">
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tight mb-2">Billing Ledger</h1>
-                    <p className="text-gray-500 font-medium">Audit trail of all financial transactions across the network.</p>
+                    <h1 className="text-4xl font-black tracking-tight mb-2">{t('admin.invoices.title')}</h1>
+                    <p className="text-gray-500 font-medium">{t('admin.invoices.subtitle')}</p>
                 </div>
                 <div className="px-4 py-2 bg-primary/10 rounded-xl border border-primary/20 text-[10px] font-black text-primary uppercase tracking-widest">
-                    Financial Oversight
+                    {t('admin.invoices.oversight')}
                 </div>
             </div>
 
@@ -117,13 +119,13 @@ export default function AdminInvoicesPage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-white/5 text-[10px] font-black uppercase text-gray-500 tracking-widest">
-                                    <th className="p-6">Invoice #</th>
-                                    <th className="p-6">Operator</th>
-                                    <th className="p-6">Descriptor</th>
-                                    <th className="p-6">Magnitude</th>
-                                    <th className="p-6">State</th>
-                                    <th className="p-6">Timestamp</th>
-                                    <th className="p-6 text-right">Actions</th>
+                                    <th className="p-6">{t('admin.invoices.table_id')}</th>
+                                    <th className="p-6">{t('admin.invoices.table_operator')}</th>
+                                    <th className="p-6">{t('admin.invoices.table_descriptor')}</th>
+                                    <th className="p-6">{t('admin.invoices.table_magnitude')}</th>
+                                    <th className="p-6">{t('admin.invoices.table_state')}</th>
+                                    <th className="p-6">{t('admin.invoices.table_timestamp')}</th>
+                                    <th className="p-6 text-right">{t('admin.invoices.table_actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -150,19 +152,19 @@ export default function AdminInvoicesPage() {
                                         <td className="p-6">
                                             {inv.status === 'paid' ? (
                                                 <div className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-widest">
-                                                    <CheckCircle size={14} weight="fill" /> Finalized
+                                                    <CheckCircle size={14} weight="fill" /> {t('admin.invoices.status_finalized')}
                                                 </div>
                                             ) : inv.status === 'pending' ? (
                                                 <div className="flex items-center gap-2 text-yellow-500 text-[10px] font-black uppercase tracking-widest">
-                                                    <Clock size={14} weight="fill" /> Transit
+                                                    <Clock size={14} weight="fill" /> {t('admin.invoices.status_transit')}
                                                 </div>
                                             ) : inv.status === 'cancelled' ? (
                                                 <div className="flex items-center gap-2 text-gray-500 text-[10px] font-black uppercase tracking-widest">
-                                                    <XCircle size={14} weight="fill" /> Cancelled
+                                                    <XCircle size={14} weight="fill" /> {t('admin.invoices.status_cancelled')}
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-widest">
-                                                    <XCircle size={14} weight="fill" /> Dropped
+                                                    <XCircle size={14} weight="fill" /> {t('admin.invoices.status_dropped')}
                                                 </div>
                                             )}
                                         </td>
@@ -176,7 +178,7 @@ export default function AdminInvoicesPage() {
                                                         onClick={() => handleApprove(inv.id)}
                                                         disabled={actionLoading === inv.id}
                                                         className="w-8 h-8 flex items-center justify-center rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 transition-colors disabled:opacity-50"
-                                                        title="Approve Payment"
+                                                        title={t('admin.invoices.approve_payment')}
                                                     >
                                                         {actionLoading === inv.id ? (
                                                             <Spinner size={14} className="animate-spin" />
@@ -188,7 +190,7 @@ export default function AdminInvoicesPage() {
                                                         onClick={() => handleReject(inv.id)}
                                                         disabled={actionLoading === inv.id}
                                                         className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
-                                                        title="Reject Payment"
+                                                        title={t('admin.invoices.reject_payment')}
                                                     >
                                                         <X size={16} weight="bold" />
                                                     </button>
@@ -215,7 +217,7 @@ export default function AdminInvoicesPage() {
                     {/* Pagination */}
                     <div className="p-6 bg-white/[0.01] border-t border-white/5 flex justify-between items-center">
                         <div className="text-[10px] font-black uppercase text-gray-500 tracking-widest">
-                            Page <span className="text-white">{page}</span> of <span className="text-white">{totalPages}</span>
+                            {t('admin.invoices.page_x_of_y', { page: page, pages: totalPages })}
                         </div>
                         <div className="flex gap-2">
                             <button

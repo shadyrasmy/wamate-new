@@ -11,13 +11,15 @@ import {
     Spinner,
     ArrowRight
 } from '@phosphor-icons/react';
+import { useUI } from '@/context/UIContext';
 
 function VerifyEmailContent() {
     const searchParams = useSearchParams();
+    const { t } = useUI();
     const token = searchParams.get('token');
 
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>(token ? 'loading' : 'error');
-    const [message, setMessage] = useState(token ? '' : 'Verification token is missing. Please check your email link.');
+    const [message, setMessage] = useState(token ? '' : t('auth.verify.missing_token'));
 
     useEffect(() => {
         if (!token) return;
@@ -29,23 +31,22 @@ function VerifyEmailContent() {
 
                 if (res.ok) {
                     setStatus('success');
-                    setMessage(data.message || 'Email verified successfully!');
+                    setMessage(data.message || t('auth.verify.success_fallback'));
                 } else {
                     setStatus('error');
-                    setMessage(data.message || 'Verification failed. The link may be invalid or expired.');
+                    setMessage(data.message || t('auth.verify.error_fallback'));
                 }
             } catch {
                 setStatus('error');
-                setMessage('An error occurred while verifying your email. Please try again.');
+                setMessage(t('auth.verify.error_general'));
             }
         };
 
         verifyEmail();
-    }, [token]);
+    }, [token, t]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden font-sans selection:bg-primary/30">
-            {/* Background elements */}
             <div className="absolute inset-0 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] opacity-[0.03] invert pointer-events-none" />
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/10 blur-[120px] rounded-full pointer-events-none" />
@@ -68,8 +69,8 @@ function VerifyEmailContent() {
                                 <Spinner size={40} className="text-primary" />
                             </motion.div>
                             <div>
-                                <h2 className="text-2xl font-black text-foreground mb-2">Verifying Email</h2>
-                                <p className="theme-copy font-medium text-sm">Please wait while we verify your account...</p>
+                                <h2 className="text-2xl font-black text-foreground mb-2">{t('auth.verify.loading_title')}</h2>
+                                <p className="theme-copy font-medium text-sm">{t('auth.verify.loading_body')}</p>
                             </div>
                         </div>
                     )}
@@ -85,7 +86,7 @@ function VerifyEmailContent() {
                                 <CheckCircle size={40} weight="fill" className="text-green-500" />
                             </motion.div>
                             <div>
-                                <h2 className="text-2xl font-black text-foreground mb-2">Email Verified!</h2>
+                                <h2 className="text-2xl font-black text-foreground mb-2">{t('auth.verify.success_title')}</h2>
                                 <p className="theme-copy font-medium text-sm">{message}</p>
                             </div>
                             <Link href="/login">
@@ -94,7 +95,7 @@ function VerifyEmailContent() {
                                     whileTap={{ scale: 0.98 }}
                                     className="theme-button-primary mt-4 px-8 py-4 font-black rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition flex items-center gap-3 text-sm uppercase tracking-[0.2em]"
                                 >
-                                    Continue to Login
+                                    {t('common.continue_to_login')}
                                     <ArrowRight size={18} weight="bold" />
                                 </motion.button>
                             </Link>
@@ -112,7 +113,7 @@ function VerifyEmailContent() {
                                 <XCircle size={40} weight="fill" className="text-red-500" />
                             </motion.div>
                             <div>
-                                <h2 className="text-2xl font-black text-foreground mb-2">Verification Failed</h2>
+                                <h2 className="text-2xl font-black text-foreground mb-2">{t('auth.verify.error_title')}</h2>
                                 <p className="theme-copy font-medium text-sm">{message}</p>
                             </div>
                             <div className="flex flex-col gap-3 mt-4">
@@ -122,7 +123,7 @@ function VerifyEmailContent() {
                                         whileTap={{ scale: 0.98 }}
                                         className="theme-button-secondary px-8 py-4 font-bold rounded-2xl flex items-center gap-3 text-sm uppercase tracking-widest"
                                     >
-                                        Go to Login
+                                        {t('common.go_to_login')}
                                     </motion.button>
                                 </Link>
                                 <Link href="/register">
@@ -131,7 +132,7 @@ function VerifyEmailContent() {
                                         whileTap={{ scale: 0.98 }}
                                         className="theme-button-primary px-8 py-4 font-black rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 transition flex items-center gap-3 text-sm uppercase tracking-[0.2em]"
                                     >
-                                        Register Again
+                                        {t('auth.verify.register_again')}
                                         <ArrowRight size={18} weight="bold" />
                                     </motion.button>
                                 </Link>
@@ -141,7 +142,7 @@ function VerifyEmailContent() {
                 </motion.div>
 
                 <p className="mt-10 text-center text-[10px] font-black text-muted uppercase tracking-[0.3em]">
-                    Secure Email Verification // WaMate
+                    {t('auth.verify.footer')}
                 </p>
             </div>
         </div>

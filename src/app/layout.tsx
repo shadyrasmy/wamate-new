@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "WaMate - Next Gen WhatsApp Automation",
-  description: "Automate your customer communication with WaMate.",
+  title: "WaMate | واميت",
+  description: "WhatsApp automation and customer communication platform | منصة أتمتة واتساب وإدارة تواصل العملاء",
   icons: {
     icon: '/favicon.ico',
   },
 };
 import { Outfit, El_Messiri } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
-import { UIProvider, useUI } from "@/context/UIContext";
+import { UIProvider } from "@/context/UIContext";
 import HeaderScripts from "@/components/layout/HeaderScripts";
 import "./globals.css";
 
@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <AuthProvider>
       <UIProvider>
-        <html lang="en">
+        <html lang="en" dir="ltr">
           <body
             suppressHydrationWarning={true}
             className={`${outfit.variable} ${elMessiri.variable} font-sans antialiased`}

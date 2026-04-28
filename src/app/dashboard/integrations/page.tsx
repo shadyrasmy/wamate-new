@@ -1,20 +1,20 @@
 'use client';
 
 import { ArrowRight, ShoppingBag, Basket, Storefront, Spinner, PuzzlePiece } from '@phosphor-icons/react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useUI } from '@/context/UIContext';
 
 export default function IntegrationsPage() {
+    const { t } = useUI();
+
     return (
         <div className="space-y-10 pb-20">
             <div>
-                <h1 className="text-4xl font-black tracking-tight mb-2">Integrations Marketplace</h1>
-                <p className="text-gray-500 font-medium">Connect WaMate with your favorite e-commerce platforms.</p>
+                <h1 className="text-4xl font-black tracking-tight mb-2">{t('dashboard.integrations.title')}</h1>
+                <p className="text-gray-500 font-medium">{t('dashboard.integrations.subtitle')}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-
-                {/* EasyOrders (Active) */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -30,7 +30,7 @@ export default function IntegrationsPage() {
                     <div className="mb-8 flex-1">
                         <h3 className="text-2xl font-black mb-2">EasyOrders</h3>
                         <p className="text-gray-400 text-sm font-medium leading-relaxed">
-                            Seamlessly sync orders, updates, and customer data directly. The native CRM solution for WaMate.
+                            {t('dashboard.integrations.easymate_description')}
                         </p>
                     </div>
 
@@ -40,11 +40,10 @@ export default function IntegrationsPage() {
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 w-full py-4 bg-white text-black rounded-xl font-black uppercase tracking-wider text-xs hover:bg-blue-50 hover:scale-[1.02] transition shadow-xl mt-auto"
                     >
-                        Use Now <ArrowRight weight="bold" />
+                        {t('dashboard.integrations.use_now')} <ArrowRight weight="bold" />
                     </a>
                 </motion.div>
 
-                {/* Shopify (Active) */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -60,7 +59,7 @@ export default function IntegrationsPage() {
                     <div className="mb-8 flex-1">
                         <h3 className="text-2xl font-black mb-2">Shopify</h3>
                         <p className="text-gray-400 text-sm font-medium leading-relaxed">
-                            Automated abandoned cart recovery and order notifications for your Shopify store.
+                            {t('dashboard.integrations.shopify_description')}
                         </p>
                     </div>
 
@@ -70,11 +69,10 @@ export default function IntegrationsPage() {
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 w-full py-4 bg-white text-black rounded-xl font-black uppercase tracking-wider text-xs hover:bg-green-50 hover:scale-[1.02] transition shadow-xl mt-auto"
                     >
-                        Use Now <ArrowRight weight="bold" />
+                        {t('dashboard.integrations.use_now')} <ArrowRight weight="bold" />
                     </a>
                 </motion.div>
 
-                {/* WooCommerce (Active) */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -90,7 +88,7 @@ export default function IntegrationsPage() {
                     <div className="mb-8 flex-1">
                         <h3 className="text-2xl font-black mb-2">WooCommerce</h3>
                         <p className="text-gray-400 text-sm font-medium leading-relaxed">
-                            Connect your WordPress store to send seamless order updates and promotional campaigns.
+                            {t('dashboard.integrations.woocommerce_description')}
                         </p>
                     </div>
 
@@ -100,11 +98,10 @@ export default function IntegrationsPage() {
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 w-full py-4 bg-white text-black rounded-xl font-black uppercase tracking-wider text-xs hover:bg-purple-50 hover:scale-[1.02] transition shadow-xl mt-auto"
                     >
-                        Use Now <ArrowRight weight="bold" />
+                        {t('dashboard.integrations.use_now')} <ArrowRight weight="bold" />
                     </a>
                 </motion.div>
 
-                {/* WordPress Plugin (New) */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -118,9 +115,9 @@ export default function IntegrationsPage() {
                     </div>
 
                     <div className="mb-8 flex-1">
-                        <h3 className="text-2xl font-black mb-2">WordPress Plugin</h3>
+                        <h3 className="text-2xl font-black mb-2">{t('dashboard.integrations.wordpress_title')}</h3>
                         <p className="text-gray-400 text-sm font-medium leading-relaxed">
-                            Official companion plugin for Order Confirmation and Status updates.
+                            {t('dashboard.integrations.wordpress_description')}
                         </p>
                     </div>
 
@@ -130,11 +127,10 @@ export default function IntegrationsPage() {
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 w-full py-4 bg-white text-black rounded-xl font-black uppercase tracking-wider text-xs hover:bg-blue-50 hover:scale-[1.02] transition shadow-xl mt-auto"
                     >
-                        Get Plugin <ArrowRight weight="bold" />
+                        {t('dashboard.integrations.get_plugin')} <ArrowRight weight="bold" />
                     </a>
                 </motion.div>
 
-                {/* Coming Soon */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -147,19 +143,18 @@ export default function IntegrationsPage() {
 
                     <div className="mb-8 flex-1">
                         <div className="flex justify-between items-start">
-                            <h3 className="text-2xl font-black mb-2">More...</h3>
-                            <span className="bg-white/5 text-gray-400 text-[10px] font-black px-2 py-1 rounded uppercase tracking-widest border border-white/5">Soon</span>
+                            <h3 className="text-2xl font-black mb-2">{t('dashboard.integrations.more_title')}</h3>
+                            <span className="bg-white/5 text-gray-400 text-[10px] font-black px-2 py-1 rounded uppercase tracking-widest border border-white/5">{t('dashboard.integrations.soon')}</span>
                         </div>
                         <p className="text-gray-500 text-sm font-medium leading-relaxed">
-                            We are constantly working on new integrations. Stay tuned for Zapier, Magento, and more.
+                            {t('dashboard.integrations.more_description')}
                         </p>
                     </div>
 
                     <button disabled className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 text-gray-500 rounded-xl font-black uppercase tracking-wider text-xs cursor-not-allowed border border-white/5 mt-auto">
-                        In Development
+                        {t('dashboard.integrations.in_development')}
                     </button>
                 </motion.div>
-
             </div>
         </div>
     );

@@ -1,27 +1,22 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { OrderRepository } from "@/lib/OrderRepository";
+import { useUI } from "@/context/UIContext";
+
 import { supabase } from "@/lib/supabase";
-import type { Order, CartItem, ProductVariant } from "@/lib/types/order";
+import type { Order } from "@/lib/types/order";
 import {
     ArrowLeft,
     ArrowsClockwise,
     Package,
-    Clock,
     CreditCard,
-    Truck,
     ChatCircleText,
     Note,
-    Tag,
     ShoppingCart,
     CaretRight,
     MapPin,
     Phone,
     User,
     Pencil,
-    Plus,
-    MagnifyingGlass,
-    X,
-    FloppyDisk,
     PaperPlaneRight,
     Spinner,
     Warning
@@ -126,24 +121,9 @@ const Select = ({ value, onChange, options, placeholder = "Select...", disabled 
     );
 };
 
-// ... Mock statuses for now, as they used to come from API metadata
-const DEFAULT_STATUSES = [
-    { value: "new", label: "New", color: "#3b82f6" },
-    { value: "confirmed", label: "Confirmed", color: "#10b981" },
-    { value: "processing", label: "Processing", color: "#8b5cf6" },
-    { value: "sent to delivery", label: "Sent to Delivery", color: "#f59e0b" },
-    { value: "delivered", label: "Delivered", color: "#059669" },
-    { value: "cancelled", label: "Cancelled", color: "#ef4444" },
-    { value: "returned", label: "Returned", color: "#991b1b" }
-];
-
-const DELIVERY_PROVIDERS = [
-    { value: "bosta", label: "Bosta" },
-    { value: "turbo", label: "Turbo Delivery" },
-    { value: "qpexpress", label: "QP Express" },
-];
-
 export function OrderPanel({ contactPhone, contactName }: { contactPhone: string; contactName: string }) {
+    const { t } = useUI();
+
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -154,6 +134,22 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
     const [noteText, setNoteText] = useState("");
     const [commentText, setCommentText] = useState("");
 
+    const DEFAULT_STATUSES = useMemo(() => [
+        { value: "new", label: t('dashboard.orders.status_new'), color: "#3b82f6" },
+        { value: "confirmed", label: t('dashboard.orders.status_confirmed', { defaultValue: 'Confirmed' }), color: "#10b981" },
+        { value: "processing", label: t('dashboard.orders.status_processing'), color: "#8b5cf6" },
+        { value: "sent to delivery", label: t('dashboard.orders.status_shipped'), color: "#f59e0b" },
+        { value: "delivered", label: t('dashboard.orders.status_delivered'), color: "#059669" },
+        { value: "cancelled", label: t('dashboard.orders.status_cancelled'), color: "#ef4444" },
+        { value: "returned", label: t('dashboard.orders.status_returned', { defaultValue: 'Returned' }), color: "#991b1b" }
+    ], [t]);
+
+    const DELIVERY_PROVIDERS = useMemo(() => [
+        { value: "bosta", label: "Bosta" },
+        { value: "turbo", label: "Turbo Delivery" },
+        { value: "qpexpress", label: "QP Express" },
+    ], []);
+
     const fetchOrders = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -161,11 +157,11 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
             const data = await OrderRepository.fetchOrdersByPhone(contactPhone);
             setOrders(data);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to fetch orders");
+            setError(err instanceof Error ? err.message : t('chat.order_panel.error_load'));
         } finally {
             setIsLoading(false);
         }
-    }, [contactPhone]);
+    }, [contactPhone, t]);
 
     useEffect(() => {
         fetchOrders();
@@ -339,7 +335,7 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                     <div className="min-w-0 flex-1">
                         <h4 className="font-bold text-sm flex items-center gap-2 text-foreground">
                             <ShoppingCart size={18} weight="fill" className="text-primary" />
-                            Orders
+                            {t('chat.order_panel.title')}
                         </h4>
                         <p className="text-[11px] text-muted truncate mt-0.5">{contactName || contactPhone}</p>
                     </div>
@@ -358,15 +354,15 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                     ) : error ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center h-full">
                             <Warning size={40} weight="duotone" className="text-red-500 mb-3 opacity-80" />
-                            <p className="text-sm font-bold text-red-400">Failed to load CRM</p>
+                            <p className="text-sm font-bold text-red-400">{t('chat.order_panel.error_load')}</p>
                             <p className="text-xs text-muted mt-1">{error}</p>
-                            <Button variant="outline" size="sm" className="mt-4" onClick={fetchOrders}>Retry</Button>
+                            <Button variant="outline" size="sm" className="mt-4" onClick={fetchOrders}>{t('common.retry')}</Button>
                         </div>
                     ) : orders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center h-full opacity-60">
                             <Package size={48} weight="duotone" className="text-muted mb-4" />
-                            <p className="text-sm font-bold text-muted-soft">No History Found</p>
-                            <p className="text-xs text-muted mt-1">No orders match this phone number in the database.</p>
+                            <p className="text-sm font-bold text-muted-soft">{t('chat.order_panel.no_history')}</p>
+                            <p className="text-xs text-muted mt-1">{t('chat.order_panel.no_orders_matched')}</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -375,7 +371,7 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="min-w-0">
                                             <span className="font-bold text-sm text-foreground truncate block">
-                                                {order.full_name || "Unknown Customer"}
+                                                {order.full_name || t('chat.order_panel.unknown_customer')}
                                             </span>
                                             <span className="text-[10px] text-muted uppercase font-black tracking-widest mt-0.5 block">
                                                 {new Date(order.created_at).toLocaleDateString()}
@@ -394,7 +390,7 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm font-black text-primary">{formatCurrency(order.total_cost)}</span>
                                             <Badge color={getPaymentBadgeColor(order.payment_status)}>
-                                                {order.payment_status || "unpaid"}
+                                                {t(`common.payment_${order.payment_status || 'unpaid'}`, { defaultValue: order.payment_status || "unpaid" })}
                                             </Badge>
                                         </div>
 
@@ -429,7 +425,7 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                     <ArrowLeft size={16} weight="bold" />
                 </Button>
                 <div className="min-w-0 flex-1">
-                    <h4 className="font-bold text-sm text-foreground truncate">Order Details</h4>
+                    <h4 className="font-bold text-sm text-foreground truncate">{t('chat.order_panel.order_details')}</h4>
                     <p className="text-[11px] text-muted font-medium truncate uppercase tracking-widest mt-0.5">
                         {order.full_name || contactName}
                     </p>
@@ -443,7 +439,7 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
 
                 {/* Customer Info */}
                 <CarbonCard className="space-y-3">
-                    <Label className="flex items-center gap-1.5"><User size={12} weight="bold" /> Customer</Label>
+                    <Label className="flex items-center gap-1.5"><User size={12} weight="bold" /> {t('admin.users.filter_all')}</Label>
                     <div className="space-y-2">
                         <div className="flex items-start gap-2 text-sm text-foreground">
                             <User size={16} weight="duotone" className="text-muted shrink-0 mt-0.5" />
@@ -466,25 +462,25 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
 
                 {/* Financials */}
                 <CarbonCard className="space-y-3">
-                    <Label className="flex items-center gap-1.5"><CreditCard size={12} weight="bold" /> Financials</Label>
+                    <Label className="flex items-center gap-1.5"><CreditCard size={12} weight="bold" /> {t('chat.order_panel.financials')}</Label>
                     <div className="grid grid-cols-2 gap-y-2 text-sm border-b border-border pb-3 mb-3">
-                        <div className="text-muted">Subtotal:</div>
+                        <div className="text-muted">{t('chat.order_panel.subtotal')}</div>
                         <div className="text-right text-foreground font-medium">{formatCurrency(order.cost)}</div>
-                        <div className="text-muted">Shipping:</div>
+                        <div className="text-muted">{t('chat.order_panel.shipping')}</div>
                         <div className="text-right text-foreground font-medium">{formatCurrency(order.shipping_cost)}</div>
-                        <div className="text-muted font-bold mt-1">Total:</div>
+                        <div className="text-muted font-bold mt-1">{t('chat.order_panel.total')}</div>
                         <div className="text-right text-primary font-black text-base mt-1">{formatCurrency(order.total_cost)}</div>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted font-bold uppercase tracking-wider">Payment Status</span>
-                        <Badge color={getPaymentBadgeColor(order.payment_status)}>{order.payment_status || "unpaid"}</Badge>
+                        <span className="text-xs text-muted font-bold uppercase tracking-wider">{t('chat.order_panel.payment_status')}</span>
+                        <Badge color={getPaymentBadgeColor(order.payment_status)}>{t(`common.payment_${order.payment_status || 'unpaid'}`, { defaultValue: order.payment_status || t('common.unpaid') })}</Badge>
                     </div>
                 </CarbonCard>
 
                 {/* Cart Items */}
                 {order.cart_items && order.cart_items.length > 0 && (
                     <CarbonCard className="space-y-3">
-                        <Label className="flex items-center gap-1.5"><Package size={12} weight="bold" /> Items ({order.cart_items.length})</Label>
+                        <Label className="flex items-center gap-1.5"><Package size={12} weight="bold" /> {t('chat.order_panel.items')} ({order.cart_items.length})</Label>
                         <div className="space-y-3">
                             {order.cart_items.map((item, idx) => (
                                 <div key={item.id || idx} className="flex justify-between items-start pt-3 border-t border-border first:border-t-0 first:pt-0">
@@ -508,16 +504,16 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                 {/* Notes */}
                 {(order.notes || order.internal_notes) && (
                     <CarbonCard className="space-y-3">
-                        <Label className="flex items-center gap-1.5"><Note size={12} weight="bold" /> Notes</Label>
+                        <Label className="flex items-center gap-1.5"><Note size={12} weight="bold" /> {t('dashboard.orders.shipping_label')}</Label>
                         {order.notes && (
                             <div className="bg-control rounded-lg p-2 text-sm text-muted-soft">
-                                <span className="text-[10px] text-muted font-bold uppercase tracking-widest block mb-1">Customer Notes</span>
+                                <span className="text-[10px] text-muted font-bold uppercase tracking-widest block mb-1">{t('chat.order_panel.customer_notes')}</span>
                                 {order.notes}
                             </div>
                         )}
                         {order.internal_notes && (
                             <div className="bg-primary/10 border border-primary/20 rounded-lg p-2 text-sm text-primary-light">
-                                <span className="text-[10px] text-primary/60 font-bold uppercase tracking-widest block mb-1">Internal Notes</span>
+                                <span className="text-[10px] text-primary/60 font-bold uppercase tracking-widest block mb-1">{t('chat.order_panel.internal_notes')}</span>
                                 {order.internal_notes}
                             </div>
                         )}
@@ -526,12 +522,12 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
 
                 {/* Actions & Notes Placeholder */}
                 <CarbonCard className="space-y-4">
-                    <Label>Actions</Label>
+                    <Label>{t('admin.users.table_actions')}</Label>
                     <div className="space-y-3">
                         {/* Status Change */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <span className="text-xs text-muted">Order Status</span>
+                                <span className="text-xs text-muted">{t('chat.order_panel.order_status')}</span>
                                 <Select
                                     value={order.custom_status || order.status}
                                     onChange={(val: string) => handleStatusChange(order.id, val)}
@@ -540,32 +536,32 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
                                 />
                             </div>
                             <div className="space-y-1">
-                                <span className="text-xs text-muted">Delivery Status</span>
+                                <span className="text-xs text-muted">{t('chat.order_panel.delivery_status')}</span>
                                 <Select
                                     value={order.delivery_status || ""}
                                     onChange={(val: string) => handleDeliveryChange(order.id, val)}
                                     options={[
-                                        { value: "pending", label: "Pending" },
-                                        { value: "shipped", label: "Shipped" },
-                                        { value: "delivered", label: "Delivered" },
-                                        { value: "returned", label: "Returned" },
+                                        { value: "pending", label: t('dashboard.orders.status_pending') },
+                                        { value: "shipped", label: t('dashboard.orders.status_shipped') },
+                                        { value: "delivered", label: t('dashboard.orders.status_delivered') },
+                                        { value: "returned", label: t('dashboard.orders.status_returned', { defaultValue: 'Returned' }) },
                                     ]}
                                     disabled={actionLoading === `delivery-${order.id}`}
-                                    placeholder="Set delivery..."
+                                    placeholder={t('chat.order_panel.choose_provider')}
                                 />
                             </div>
                         </div>
 
                         {/* Send to Delivery */}
                         <div className="space-y-1 pt-2 border-t border-border">
-                            <span className="text-xs text-muted flex items-center gap-1"><PaperPlaneRight size={14} /> Send to Delivery</span>
+                            <span className="text-xs text-muted flex items-center gap-1"><PaperPlaneRight size={14} /> {t('chat.order_panel.send_to_delivery')}</span>
                             <div className="flex gap-2">
                                 <Select
                                     value=""
                                     onChange={(val: string) => handleSendToDelivery(order.id, val)}
                                     options={DELIVERY_PROVIDERS}
                                     disabled={!!actionLoading}
-                                    placeholder="Choose provider..."
+                                    placeholder={t('chat.order_panel.choose_provider')}
                                     className="flex-1"
                                 />
                                 {actionLoading?.startsWith('send-delivery') && (
@@ -578,32 +574,32 @@ export function OrderPanel({ contactPhone, contactName }: { contactPhone: string
 
                         {/* Add Note */}
                         <div className="space-y-1">
-                            <span className="text-xs text-muted">Add Customer Note</span>
+                            <span className="text-xs text-muted">{t('chat.order_panel.add_customer_note')}</span>
                             <div className="flex gap-2">
                                 <Input
                                     value={noteText}
                                     onChange={(e: any) => setNoteText(e.target.value)}
-                                    placeholder="Type note..."
+                                    placeholder={t('chat.order_panel.type_note')}
                                     onKeyDown={(e: any) => e.key === "Enter" && handleAddNote(order.id)}
                                 />
                                 <Button size="sm" onClick={() => handleAddNote(order.id)} disabled={!noteText.trim() || !!actionLoading}>
-                                    Save
+                                    {t('admin.settings.save_changes')}
                                 </Button>
                             </div>
                         </div>
 
                         {/* Add Internal Comment */}
                         <div className="space-y-1">
-                            <span className="text-xs text-muted">Add Internal Comment</span>
+                            <span className="text-xs text-muted">{t('chat.order_panel.add_internal_comment')}</span>
                             <div className="flex gap-2">
                                 <Input
                                     value={commentText}
                                     onChange={(e: any) => setCommentText(e.target.value)}
-                                    placeholder="Internal comment..."
+                                    placeholder={t('chat.order_panel.type_comment')}
                                     onKeyDown={(e: any) => e.key === "Enter" && handleAddComment(order.id)}
                                 />
                                 <Button size="sm" variant="outline" onClick={() => handleAddComment(order.id)} disabled={!commentText.trim() || !!actionLoading}>
-                                    Save
+                                    {t('admin.settings.save_changes')}
                                 </Button>
                             </div>
                         </div>

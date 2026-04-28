@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useUI } from '@/context/UIContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchWithAuth } from '@/lib/api';
 import {
@@ -10,6 +11,7 @@ import {
 } from '@phosphor-icons/react';
 
 export default function KnowledgeBase() {
+    const { t } = useUI();
     const [knowledge, setKnowledge] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
@@ -75,7 +77,7 @@ export default function KnowledgeBase() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this knowledge piece?')) return;
+        if (!confirm(t('dashboard.knowledge.delete_confirm'))) return;
         try {
             await fetchWithAuth(`/user/knowledge/${id}`, { method: 'DELETE' });
             loadKnowledge();
@@ -95,9 +97,9 @@ export default function KnowledgeBase() {
                 <div>
                     <h1 className="text-4xl font-black tracking-tight mb-2 flex items-center gap-3">
                         <Brain size={40} weight="fill" className="text-primary" />
-                        AI Brain
+                        {t('dashboard.knowledge.title')}
                     </h1>
-                    <p className="text-gray-500 font-medium">Train your assistant with expert business knowledge and specific FAQs.</p>
+                    <p className="text-gray-500 font-medium">{t('dashboard.knowledge.subtitle')}</p>
                 </div>
                 <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -110,7 +112,7 @@ export default function KnowledgeBase() {
                     className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 flex items-center gap-3 w-fit"
                 >
                     <Plus size={20} weight="bold" />
-                    Expand Intel
+                    {t('dashboard.knowledge.expand_intel')}
                 </motion.button>
             </div>
 
@@ -119,18 +121,18 @@ export default function KnowledgeBase() {
                     <div className="glass-card p-6 rounded-[2rem] border-white/5 space-y-4">
                         <div className="flex items-center gap-3 text-primary">
                             <Database size={20} weight="bold" />
-                            <span className="font-black text-xs uppercase tracking-widest">Neural Stats</span>
+                            <span className="font-black text-xs uppercase tracking-widest">{t('dashboard.knowledge.stats_title')}</span>
                         </div>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500 font-bold uppercase tracking-tighter">Capacity</span>
+                                <span className="text-gray-500 font-bold uppercase tracking-tighter">{t('dashboard.knowledge.capacity')}</span>
                                 <span className="text-white font-black">{knowledge.length}/{user?.ai_knowledge_limit || user?.plan?.ai_knowledge_limit || 0}</span>
                             </div>
                             <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                                 <div className="h-full bg-primary" style={{ width: `${(knowledge.length / (user?.ai_knowledge_limit || user?.plan?.ai_knowledge_limit || 1)) * 100}%` }} />
                             </div>
                             <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
-                                Your assistant's cognitive depth is determined by the quality of context provided here.
+                                {t('dashboard.knowledge.depth_desc')}
                             </p>
                         </div>
                     </div>
@@ -139,7 +141,7 @@ export default function KnowledgeBase() {
                         <MagnifyingGlass size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition" />
                         <input
                             type="text"
-                            placeholder="Search Brain..."
+                            placeholder={t('dashboard.knowledge.search_placeholder')}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 p-4 pl-12 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 transition"
@@ -155,8 +157,8 @@ export default function KnowledgeBase() {
                             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
                                 <Brain size={40} className="text-gray-700" />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-500 mb-2">The Brain is Blank</h3>
-                            <p className="text-gray-600 text-sm max-w-sm text-center">Add context, product details, or FAQs to help your AI provide accurate and professional responses.</p>
+                            <h3 className="text-xl font-bold text-gray-500 mb-2">{t('dashboard.knowledge.empty_title')}</h3>
+                            <p className="text-gray-600 text-sm max-w-sm text-center">{t('dashboard.knowledge.empty_desc')}</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -200,7 +202,7 @@ export default function KnowledgeBase() {
                                         <div className="flex items-center gap-2 pt-4 border-t border-white/5">
                                             <CheckCircle size={14} weight="fill" className="text-green-500" />
                                             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest italic">
-                                                {item.instance_id ? `Active for: ${instances.find(i => i.id === item.instance_id || i.instance_id === item.instance_id)?.name || 'Specific Node'}` : 'Universal Knowledge'}
+                                                {item.instance_id ? t('dashboard.knowledge.active_for', { name: instances.find(i => i.id === item.instance_id || i.instance_id === item.instance_id)?.name || t('dashboard.knowledge.specific_node') }) : t('dashboard.knowledge.universal_knowledge')}
                                             </span>
                                         </div>
                                     </motion.div>
@@ -231,14 +233,14 @@ export default function KnowledgeBase() {
                             <div className="flex justify-between items-center mb-8">
                                 <h3 className="text-2xl font-black flex items-center gap-3">
                                     <Brain size={28} className="text-primary" />
-                                    {editingItem ? 'Edit Intel' : 'Inject Context'}
+                                    {editingItem ? t('dashboard.knowledge.edit_intel') : t('dashboard.knowledge.inject_context')}
                                 </h3>
                                 <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white/5 rounded-full transition"><X size={24} /></button>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Title / Identifier</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('dashboard.knowledge.item_title')}</label>
                                     <input
                                         autoFocus
                                         type="text"
@@ -251,22 +253,22 @@ export default function KnowledgeBase() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Target Node (Context Scope)</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('dashboard.knowledge.target_node')}</label>
                                     <select
                                         value={formData.instance_id}
                                         onChange={e => setFormData({ ...formData, instance_id: e.target.value })}
                                         className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white font-bold focus:outline-none focus:border-primary/50 transition appearance-none cursor-pointer"
                                     >
-                                        <option value="">Universal (All Nodes)</option>
+                                        <option value="">{t('dashboard.knowledge.universal_all')}</option>
                                         {instances.map(ins => (
                                             <option key={ins.instance_id} value={ins.id || ins.instance_id}>{ins.name}</option>
                                         ))}
                                     </select>
-                                    <p className="text-[9px] text-gray-500 font-medium ml-1">UNIVERSAL context is used by all your numbers. SPECIFIC context only affects the chosen number.</p>
+                                    <p className="text-[9px] text-gray-500 font-medium ml-1">{t('dashboard.knowledge.scope_desc')}</p>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Knowledge Content</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('dashboard.knowledge.content_label')}</label>
                                     <textarea
                                         value={formData.content}
                                         onChange={e => setFormData({ ...formData, content: e.target.value })}
@@ -295,7 +297,7 @@ export default function KnowledgeBase() {
                                         type="submit"
                                         className="flex-1 bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition"
                                     >
-                                        {editingItem ? 'Sync Intel' : 'Store Context'}
+                                        {editingItem ? t('dashboard.knowledge.sync_intel') : t('dashboard.knowledge.store_context')}
                                     </button>
                                 </div>
                             </form>
@@ -306,3 +308,5 @@ export default function KnowledgeBase() {
         </div>
     );
 }
+
+
