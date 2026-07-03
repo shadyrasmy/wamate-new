@@ -2,6 +2,7 @@ const { Message, WhatsAppInstance, Contact, User, Lead, Order, LidMapping } = re
 const whatsappService = require('../services/whatsapp.service');
 const { AppError } = require('../middlewares/error.middleware');
 const { Op } = require('sequelize');
+const { inferMimeType, getPublicUploadUrl } = require('../utils/media');
 
 const buildMessageFingerprint = (message) => {
     const timestamp = message.timestamp ? new Date(message.timestamp).getTime() : '';
@@ -18,6 +19,14 @@ const buildMessageFingerprint = (message) => {
 
 const getManagerId = (user) => {
     return user.role === 'seat' ? user.user_id : user.id;
+};
+
+const normalizeUploadUrl = (url) => {
+    if (!url || typeof url !== 'string') return url || null;
+    if (!url.includes('/public/uploads/')) return url;
+
+    const fileName = url.split('/public/uploads/').pop();
+    return fileName ? getPublicUploadUrl(fileName) : url;
 };
 
 exports.getRecentChats = async (req, res, next) => {
@@ -134,7 +143,7 @@ exports.getRecentChats = async (req, res, next) => {
                 // Get contact info
                 const contactInfo = contactNameMap[jid] || contactNameMap[canonicalJid] || {};
                 const displayName = contactInfo.name || chat.name;
-                const displayPic = contactInfo.profile_pic || chat.profilePicUrl;
+                const displayPic = normalizeUploadUrl(contactInfo.profile_pic || chat.profilePicUrl);
 
                 // Check if we already have this canonical JID in merged map
                 const existing = mergedMap.get(canonicalJid);
@@ -245,8 +254,8 @@ exports.getMessages = async (req, res, next) => {
                 }
             });
             contacts.forEach(c => {
-                contactMap[c.jid] = c.profile_pic;
-                if (c.lid) contactMap[c.lid] = c.profile_pic;
+                contactMap[c.jid] = normalizeUploadUrl(c.profile_pic);
+                if (c.lid) contactMap[c.lid] = normalizeUploadUrl(c.profile_pic);
             });
         }
 
@@ -271,7 +280,7 @@ exports.getMessages = async (req, res, next) => {
                     content: m.content,
                     isMe: m.from_me,
                     type: m.type,
-                    mediaUrl: m.media_url,
+                    mediaUrl: normalizeUploadUrl(m.media_url),
                     senderName: m.sender_name,
                     senderJid: m.sender_jid,
                     senderProfilePic: contactMap[m.sender_jid] || null,
@@ -392,10 +401,11 @@ exports.sendMessage = async (req, res, next) => {
         } else if (type === 'audio' && mediaUrl) {
             messagePayload = { audio: { url: mediaUrl }, ptt: true }; // Treat as voice note by default
         } else if (type === 'document' && mediaUrl) {
+            const resolvedFileName = fileName || mediaUrl.split('/').pop() || 'document';
             messagePayload = {
                 document: { url: mediaUrl },
-                mimetype: mimeType || 'application/octet-stream',
-                fileName: fileName || mediaUrl.split('/').pop() || 'document'
+                mimetype: inferMimeType(resolvedFileName, mimeType),
+                fileName: resolvedFileName
             };
         } else {
             messagePayload = { text: content || '' };
@@ -444,7 +454,8 @@ exports.uploadMedia = async (req, res, next) => {
 
         // Construct public URL - Dynamic fallback if PUBLIC_URL is missing
         const baseUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
-        const fileUrl = `${baseUrl}/public/uploads/${req.file.filename}`;
+        const fileUrl = getPublicUploadUrl(req.file.filename, baseUrl);
+        const mimetype = inferMimeType(req.file.originalname, req.file.mimetype);
 
         res.status(200).json({
             status: 'success',
@@ -452,7 +463,7 @@ exports.uploadMedia = async (req, res, next) => {
                 url: fileUrl,
                 filename: req.file.filename,
                 originalName: req.file.originalname,
-                mimetype: req.file.mimetype,
+                mimetype,
                 size: req.file.size
             }
         });

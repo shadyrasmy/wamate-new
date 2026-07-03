@@ -1,5 +1,4 @@
 const { User, Plan, Invoice, ReferralTransaction, SiteConfig } = require('../models');
-const { sequelize } = require('../config/db');
 const { AppError } = require('../middlewares/error.middleware');
 const emailService = require('../services/email.service');
 const { fetchWithRetry } = require('../utils/http');
@@ -31,6 +30,172 @@ const generateInvoiceNumber = () => {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `INV-${timestamp}-${random}`;
+};
+
+const getEnv = (...names) => names.map(name => process.env[name]).find(Boolean);
+
+const getFawaterkBaseUrl = () => (
+    getEnv('FAWATERAK_BASE_URL', 'FAWATERK_BASE_URL') || 'https://app.fawaterk.com'
+).replace(/\/$/, '');
+
+const getFawaterkClientId = () => getEnv('FAWATERAK_CLIENT_ID', 'FAWATERK_CLIENT_ID');
+const getFawaterkClientSecret = () => getEnv('FAWATERAK_CLIENT_SECRET', 'FAWATERK_CLIENT_SECRET');
+const getFawaterkApiKey = () => getEnv('FAWATERAK_API_KEY', 'FAWATERK_API_KEY');
+
+const usesFawaterkV3 = () => Boolean(getFawaterkClientId() && getFawaterkClientSecret());
+
+let fawaterkTokenCache = {
+    accessToken: null,
+    expiresAt: 0
+};
+
+const getServerBaseUrl = (req) => (
+    getEnv('PUBLIC_URL', 'API_PUBLIC_URL') || `${req.protocol}://${req.get('host')}`
+).replace(/\/$/, '');
+
+const parseJsonResponse = async (response) => {
+    const text = await response.text();
+    if (!text) return {};
+
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        return { raw: text };
+    }
+};
+
+const getFawaterkAccessToken = async () => {
+    const clientId = getFawaterkClientId();
+    const clientSecret = getFawaterkClientSecret();
+
+    if (!clientId || !clientSecret) {
+        throw new AppError('Fawaterk OAuth credentials are not configured', 500);
+    }
+
+    if (fawaterkTokenCache.accessToken && Date.now() < fawaterkTokenCache.expiresAt) {
+        return fawaterkTokenCache.accessToken;
+    }
+
+    const response = await fetchWithRetry(`${getFawaterkBaseUrl()}/oauth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            grant_type: 'client_credentials',
+            client_id: clientId,
+            client_secret: clientSecret
+        })
+    });
+    const data = await parseJsonResponse(response);
+
+    if (!response.ok || !data.access_token) {
+        throw new AppError(`Failed to authenticate with Fawaterk: ${JSON.stringify(data)}`, 502);
+    }
+
+    const expiresInSeconds = Number(data.expires_in || 3600);
+    fawaterkTokenCache = {
+        accessToken: data.access_token,
+        expiresAt: Date.now() + Math.max(expiresInSeconds - 60, 60) * 1000
+    };
+
+    return data.access_token;
+};
+
+const getFawaterkAuthHeaders = async () => {
+    if (usesFawaterkV3()) {
+        const accessToken = await getFawaterkAccessToken();
+        return { Authorization: `Bearer ${accessToken}` };
+    }
+
+    const apiKey = getFawaterkApiKey();
+    if (!apiKey) {
+        throw new AppError('Payment gateway not configured', 500);
+    }
+
+    return { Authorization: `Bearer ${apiKey}` };
+};
+
+const callFawaterk = async (path, options = {}) => {
+    const response = await fetchWithRetry(`${getFawaterkBaseUrl()}${path}`, {
+        ...options,
+        headers: {
+            ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+            ...await getFawaterkAuthHeaders(),
+            ...options.headers
+        }
+    });
+    const data = await parseJsonResponse(response);
+
+    if (!response.ok) {
+        throw new AppError(`Fawaterk request failed: ${JSON.stringify(data)}`, response.status || 502);
+    }
+
+    return data;
+};
+
+const getProviderReferenceFromWebhook = (body) => (
+    body.transaction_key ||
+    body.transactionKey ||
+    body.intent_key ||
+    body.invoice_id ||
+    body.invoiceId
+);
+
+const getWebhookStatus = (body) => String(
+    body.status ||
+    body.invoice_status ||
+    body.payment_status ||
+    (body.errorMessage ? 'failed' : '') ||
+    ''
+).toLowerCase();
+
+const parsePayLoad = (payLoad) => {
+    if (!payLoad) return {};
+    if (typeof payLoad === 'object') return payLoad;
+
+    try {
+        return JSON.parse(payLoad);
+    } catch (error) {
+        return {};
+    }
+};
+
+const findInvoiceFromWebhook = async (body) => {
+    const providerReference = getProviderReferenceFromWebhook(body);
+    if (providerReference) {
+        const invoice = await Invoice.findOne({
+            where: { fawaterak_invoice_id: providerReference.toString() }
+        });
+        if (invoice) return invoice;
+    }
+
+    const payload = parsePayLoad(body.pay_load || body.payLoad);
+    if (payload.invoice_number) {
+        return Invoice.findOne({ where: { invoice_number: payload.invoice_number } });
+    }
+
+    if (payload.invoice_id) {
+        return Invoice.findByPk(payload.invoice_id);
+    }
+
+    return null;
+};
+
+const getFawaterkTransactionData = async (intentKey) => {
+    if (!usesFawaterkV3()) return null;
+
+    return callFawaterk('/api/v3/getTransactionData', {
+        method: 'POST',
+        body: JSON.stringify({ intent_key: intentKey })
+    });
+};
+
+const normalizeVerifiedStatus = (providerData) => {
+    const data = providerData?.data || providerData;
+    if (!data) return 'pending';
+    if (data.paid === 1 || data.paid === true) return 'paid';
+    if (typeof data.status_text === 'string') return data.status_text.toLowerCase();
+    if (typeof data.status === 'string') return data.status.toLowerCase();
+    return 'pending';
 };
 
 // Helper: Upgrade user plan
@@ -68,6 +233,59 @@ const upgradeUserPlan = async (userId, planId) => {
     return { user, plan, endDate };
 };
 
+const processReferralCommission = async (invoice) => {
+    try {
+        const user = await User.findByPk(invoice.user_id);
+        if (!user || !user.referred_by) return;
+
+        const referrer = await User.findByPk(user.referred_by);
+        if (!referrer) return;
+
+        const config = await SiteConfig.findOne();
+        const percentage = config ? config.referral_commission_percentage : 20;
+        const commissionAmount = (Number(invoice.amount) * percentage) / 100;
+
+        if (commissionAmount <= 0) return;
+
+        await referrer.increment('referral_balance', { by: commissionAmount });
+
+        await ReferralTransaction.create({
+            referrer_id: referrer.id,
+            referred_user_id: user.id,
+            amount: commissionAmount,
+            percentage,
+            type: 'commission',
+            status: 'completed',
+            note: `Commission for invoice ${invoice.invoice_number}`
+        });
+
+        try {
+            await emailService.sendTemplate(referrer.email, 'referral_earned', {
+                name: referrer.name,
+                amount: `$${commissionAmount.toFixed(2)}`,
+                plan_name: invoice.plan_name
+            });
+        } catch (emailErr) {
+            console.warn('Failed to send referral email:', emailErr.message);
+        }
+
+        console.log(`Commission of $${commissionAmount} added to referrer ${referrer.id}`);
+    } catch (referralError) {
+        console.error('Error processing referral commission:', referralError);
+    }
+};
+
+const markInvoicePaid = async (invoice) => {
+    await upgradeUserPlan(invoice.user_id, invoice.plan_id);
+    await invoice.update({
+        status: 'paid',
+        paid_at: new Date()
+    });
+
+    console.log(`Payment successful for invoice ${invoice.invoice_number}`);
+    await processReferralCommission(invoice);
+};
+
 /**
  * Create a Fawaterak invoice for plan upgrade
  * POST /api/payment/create-invoice
@@ -81,8 +299,7 @@ exports.createInvoice = async (req, res, next) => {
             return next(new AppError('Plan ID is required', 400));
         }
 
-        const FAWATERAK_API_KEY = process.env.FAWATERAK_API_KEY;
-        if (!FAWATERAK_API_KEY) {
+        if (!usesFawaterkV3() && !getFawaterkApiKey()) {
             return next(new AppError('Payment gateway not configured', 500));
         }
 
@@ -113,42 +330,85 @@ exports.createInvoice = async (req, res, next) => {
         };
 
         const baseUrl = process.env.FRONTEND_URL || req.headers.origin || 'http://localhost:3000';
+        const serverBaseUrl = getServerBaseUrl(req);
         const redirectUrl = success_url || `${baseUrl}/payment/success`;
         const failureUrl = fail_url || `${baseUrl}/payment/failed`;
+        const invoiceNumber = generateInvoiceNumber();
+        const currency = process.env.FAWATERAK_CURRENCY || process.env.FAWATERK_CURRENCY || 'USD';
 
-        // Create Fawaterak invoice
-        const fawaterakResponse = await fetchWithRetry('https://app.fawaterk.com/api/v2/invoiceInitPay', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${FAWATERAK_API_KEY}`
-            },
-            body: JSON.stringify({
-                payment_method_id: 2,
-                cartItems,
-                customer,
-                redirectionUrls: {
-                    successUrl: redirectUrl,
-                    failUrl: failureUrl,
-                    pendingUrl: redirectUrl
+        let fawaterakData;
+
+        if (usesFawaterkV3()) {
+            fawaterakData = await callFawaterk('/api/v3/createTransaction', {
+                method: 'POST',
+                body: JSON.stringify({
+                    cartItems,
+                    customer: {
+                        ...customer,
+                        customer_unique_id: user.id
+                    },
+                    redirectionUrls: {
+                        successUrl: redirectUrl,
+                        failUrl: failureUrl,
+                        pendingUrl: redirectUrl,
+                        webhookUrl: `${serverBaseUrl}/api/payment/webhook_json`
+                    },
+                    pay_load: {
+                        invoice_number: invoiceNumber,
+                        user_id: userId,
+                        plan_id: plan.id
+                    },
+                    tr_number: invoiceNumber,
+                    cartTotal: Number(plan.price),
+                    currency,
+                    list_style: process.env.FAWATERAK_LIST_STYLE || 'h'
+                })
+            });
+        } else {
+            const fawaterakResponse = await fetchWithRetry(`${getFawaterkBaseUrl()}/api/v2/invoiceInitPay`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getFawaterkApiKey()}`
                 },
-                cartTotal: Number(plan.price),
-                currency: 'USD'
-            })
-        });
+                body: JSON.stringify({
+                    payment_method_id: 2,
+                    cartItems,
+                    customer,
+                    redirectionUrls: {
+                        successUrl: redirectUrl,
+                        failUrl: failureUrl,
+                        pendingUrl: redirectUrl
+                    },
+                    cartTotal: Number(plan.price),
+                    currency
+                })
+            });
+            fawaterakData = await fawaterakResponse.json();
+        }
 
-        const fawaterakData = await fawaterakResponse.json();
         console.log('Fawaterak response:', fawaterakData);
 
         if (fawaterakData.status !== 'success') {
             return next(new AppError('Failed to create payment invoice: ' + JSON.stringify(fawaterakData), 400));
         }
 
-        const paymentUrl = (fawaterakData.data?.invoice_id && fawaterakData.data?.invoice_key)
-            ? `https://app.fawaterk.com/invoice/${fawaterakData.data.invoice_id}/${fawaterakData.data.invoice_key}`
-            : (fawaterakData.data?.payment_data?.redirectTo || fawaterakData.data?.url);
+        const paymentUrl = fawaterakData.data?.url ||
+            fawaterakData.data?.short_url ||
+            fawaterakData.data?.payment_data?.redirectTo ||
+            (fawaterakData.data?.invoice_id && fawaterakData.data?.invoice_key
+            ? `${getFawaterkBaseUrl()}/invoice/${fawaterakData.data.invoice_id}/${fawaterakData.data.invoice_key}`
+            : null);
 
-        const fawaterakInvoiceId = fawaterakData.data?.invoice_id?.toString();
+        const fawaterakInvoiceId = (
+            fawaterakData.data?.intent_key ||
+            fawaterakData.data?.transaction_key ||
+            fawaterakData.data?.invoice_id
+        )?.toString();
+
+        if (!paymentUrl || !fawaterakInvoiceId) {
+            return next(new AppError('Payment gateway response missing checkout URL or reference', 502));
+        }
 
         // Calculate billing period
         const startDate = new Date();
@@ -157,9 +417,9 @@ exports.createInvoice = async (req, res, next) => {
         // Create pending invoice in database
         const invoice = await Invoice.create({
             user_id: userId,
-            invoice_number: generateInvoiceNumber(),
+            invoice_number: invoiceNumber,
             amount: plan.price,
-            currency: 'USD',
+            currency,
             status: 'pending',
             plan_name: plan.name,
             plan_id: plan.id,
@@ -190,30 +450,49 @@ exports.webhook = async (req, res, next) => {
     try {
         console.log('Fawaterak webhook received:', JSON.stringify(req.body, null, 2));
 
-        const { invoice_id, invoice_status, payment_method } = req.body;
-
-        if (!invoice_id) {
-            return res.status(400).json({ status: 'error', message: 'Missing invoice_id' });
+        const providerReference = getProviderReferenceFromWebhook(req.body);
+        const webhookStatus = getWebhookStatus(req.body);
+        if (!providerReference) {
+            return res.status(400).json({ status: 'error', message: 'Missing provider transaction reference' });
         }
 
-        // Find invoice by Fawaterak invoice ID
-        const invoice = await Invoice.findOne({
-            where: { fawaterak_invoice_id: invoice_id.toString() }
-        });
+        const invoice = await findInvoiceFromWebhook(req.body);
 
         if (!invoice) {
-            console.warn(`Invoice not found for Fawaterak ID: ${invoice_id}`);
+            console.warn(`Invoice not found for Fawaterk reference: ${providerReference}`);
             return res.status(404).json({ status: 'error', message: 'Invoice not found' });
         }
 
+        const invoice_id = providerReference.toString();
+        const invoice_status = webhookStatus;
+
+        if (usesFawaterkV3()) {
+            try {
+                const verifyData = await getFawaterkTransactionData(invoice_id);
+                const actualStatus = normalizeVerifiedStatus(verifyData);
+
+                if (actualStatus !== 'paid' && ['paid', 'success'].includes(webhookStatus)) {
+                    console.warn(`Potential webhook spoofing: payload says paid, provider says ${actualStatus}. Invoice: ${invoice.invoice_number}`);
+                    return res.status(400).json({ status: 'error', message: 'Verification failed' });
+                }
+            } catch (verifyErr) {
+                console.error('Error verifying invoice with provider:', verifyErr);
+                if (['paid', 'success'].includes(webhookStatus)) {
+                    return res.status(502).json({ status: 'error', message: 'Unable to verify paid webhook with provider' });
+                }
+            }
+        }
+
         // Verify with Fawaterak API to prevent spoofing
-        const FAWATERAK_API_KEY = process.env.FAWATERAK_API_KEY;
-        if (!FAWATERAK_API_KEY) {
+        const FAWATERAK_API_KEY = getFawaterkApiKey();
+        if (usesFawaterkV3()) {
+            // OAuth v3 verification already ran above.
+        } else if (!FAWATERAK_API_KEY) {
             console.error('FAWATERAK_API_KEY mismatch or missing during webhook verification');
             // We might choose to return 500 or just log checking configuration
         } else {
             try {
-                const verifyRes = await fetchWithRetry(`https://app.fawaterk.com/api/v2/getInvoiceData/${invoice_id}`, {
+                const verifyRes = await fetchWithRetry(`${getFawaterkBaseUrl()}/api/v2/getInvoiceData/${invoice_id}`, {
                     headers: { 'Authorization': `Bearer ${FAWATERAK_API_KEY}` }
                 });
                 const verifyData = await verifyRes.json();
@@ -234,75 +513,18 @@ exports.webhook = async (req, res, next) => {
         }
 
         // Check if payment was successful
-        const isPaid = invoice_status === 'paid' || invoice_status === 'PAID';
+        const isPaid = invoice_status === 'paid' || invoice_status === 'success';
 
         if (isPaid && invoice.status !== 'paid') {
-            // Upgrade user plan
             try {
-                await upgradeUserPlan(invoice.user_id, invoice.plan_id);
-
-                // Update invoice
-                await invoice.update({
-                    status: 'paid',
-                    paid_at: new Date()
-                });
-
-                console.log(`✅ Payment successful for invoice ${invoice.invoice_number}`);
-
-                // --- REFERRAL COMMISSION LOGIC ---
-                try {
-                    const user = await User.findByPk(invoice.user_id);
-                    if (user && user.referred_by) {
-                        const referrer = await User.findByPk(user.referred_by);
-                        if (referrer) {
-                            // Get Commission Config
-                            const config = await SiteConfig.findOne();
-                            const percentage = config ? config.referral_commission_percentage : 20;
-
-                            // Calculate Commission
-                            const commissionAmount = (Number(invoice.amount) * percentage) / 100;
-
-                            if (commissionAmount > 0) {
-                                // Update Referrer Balance
-                                await referrer.increment('referral_balance', { by: commissionAmount });
-
-                                // Log Transaction
-                                await ReferralTransaction.create({
-                                    referrer_id: referrer.id,
-                                    referred_user_id: user.id,
-                                    amount: commissionAmount,
-                                    percentage: percentage,
-                                    type: 'commission',
-                                    status: 'completed',
-                                    note: `Commission for invoice ${invoice.invoice_number}`
-                                });
-
-                                // Send Email to Referrer
-                                try {
-                                    await emailService.sendTemplate(referrer.email, 'referral_earned', {
-                                        name: referrer.name,
-                                        amount: `$${commissionAmount.toFixed(2)}`,
-                                        plan_name: invoice.plan_name
-                                    });
-                                } catch (emailErr) {
-                                    console.warn('Failed to send referral email:', emailErr.message);
-                                }
-
-                                console.log(`💰 Commission of $${commissionAmount} added to referrer ${referrer.id}`);
-                            }
-                        }
-                    }
-                } catch (referralError) {
-                    console.error('Error processing referral commission:', referralError);
-                    // Do not fail the webhook request just because referral failed
-                }
-                // ---------------------------------
+                await markInvoicePaid(invoice);
+                return res.status(200).json({ status: 'success', message: 'Webhook processed' });
             } catch (upgradeError) {
                 console.error('Failed to upgrade user:', upgradeError);
                 await invoice.update({ status: 'failed' });
                 return res.status(500).json({ status: 'error', message: 'Failed to process upgrade' });
             }
-        } else if (invoice_status === 'failed' || invoice_status === 'FAILED') {
+        } else if (['failed', 'fail', 'cancelled', 'canceled', 'expired'].includes(invoice_status)) {
             await invoice.update({ status: 'failed' });
             console.log(`❌ Payment failed for invoice ${invoice.invoice_number}`);
         }
@@ -322,11 +544,6 @@ exports.verifyPayment = async (req, res, next) => {
     try {
         const { invoiceId } = req.params;
 
-        const FAWATERAK_API_KEY = process.env.FAWATERAK_API_KEY;
-        if (!FAWATERAK_API_KEY) {
-            return next(new AppError('Payment gateway not configured', 500));
-        }
-
         // Get invoice from database
         const invoice = await Invoice.findByPk(invoiceId);
         if (!invoice) return next(new AppError('Invoice not found', 404));
@@ -342,14 +559,21 @@ exports.verifyPayment = async (req, res, next) => {
             });
         }
 
-        // Verify with Fawaterak
-        const response = await fetchWithRetry(`https://app.fawaterk.com/api/v2/getInvoiceData/${invoice.fawaterak_invoice_id}`, {
-            headers: {
-                'Authorization': `Bearer ${FAWATERAK_API_KEY}`
-            }
-        });
+        if (!usesFawaterkV3() && !getFawaterkApiKey()) {
+            return next(new AppError('Payment gateway not configured', 500));
+        }
 
-        const data = await response.json();
+        // Verify with Fawaterak
+        const data = usesFawaterkV3()
+            ? await getFawaterkTransactionData(invoice.fawaterak_invoice_id)
+            : await (async () => {
+                const response = await fetchWithRetry(`${getFawaterkBaseUrl()}/api/v2/getInvoiceData/${invoice.fawaterak_invoice_id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${getFawaterkApiKey()}`
+                    }
+                });
+                return response.json();
+            })();
 
         res.status(200).json({
             status: 'success',

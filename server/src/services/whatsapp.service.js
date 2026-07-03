@@ -14,6 +14,15 @@ const { User, WhatsAppInstance, SiteConfig, Contact, Message, Lead, Order, LidMa
 const { Op } = require('sequelize');
 const QueueService = require('./queue.service');
 const aiService = require('./ai.service');
+const {
+    MAX_VIDEO_BYTES,
+    PROFILE_IMAGE_MAX_BYTES,
+    byteLengthToNumber,
+    getExtension,
+    getPublicUploadUrl,
+    isLocalUploadUrl,
+    safeFileStem
+} = require('../utils/media');
 
 // Store active sockets and retry counts
 const sessions = new Map();
@@ -399,6 +408,48 @@ class WhatsAppService {
         if (global.io) global.io.to(instanceId).emit(event, data);
     }
 
+    async mirrorProfilePicture(url, targetJid) {
+        if (!url || isLocalUploadUrl(url)) return url || null;
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
+        try {
+            const response = await fetch(url, { signal: controller.signal });
+            if (!response.ok) return null;
+
+            const mimeType = response.headers.get('content-type') || 'image/jpeg';
+            if (!mimeType.startsWith('image/')) return null;
+
+            const buffer = Buffer.from(await response.arrayBuffer());
+            if (!buffer.length || buffer.length > PROFILE_IMAGE_MAX_BYTES) return null;
+
+            const extension = mimeType.includes('png')
+                ? 'png'
+                : (mimeType.includes('webp') ? 'webp' : 'jpg');
+            const fileName = `profile-${safeFileStem(targetJid)}-${Date.now()}.${extension}`;
+            await fs.promises.writeFile(path.join(this.uploadDir, fileName), buffer);
+
+            return getPublicUploadUrl(fileName);
+        } catch (error) {
+            console.warn(`[WA] Failed to mirror profile picture for ${targetJid}: ${error.message}`);
+            return null;
+        } finally {
+            clearTimeout(timeout);
+        }
+    }
+
+    async getPersistentProfilePic(instanceId, targetJid) {
+        try {
+            const remoteUrl = await sessions.get(instanceId)?.profilePictureUrl(targetJid, 'image').catch(() => null);
+            if (!remoteUrl) return null;
+
+            return await this.mirrorProfilePicture(remoteUrl, targetJid);
+        } catch (e) {
+            return null;
+        }
+    }
+
     async saveMessage(instanceId, msg) {
         try {
             const fromMe = msg.key.fromMe;
@@ -502,7 +553,13 @@ class WhatsAppService {
                 msg.mimeType = m.imageMessage.mimetype;
             } else if (m.videoMessage) {
                 textContent = m.videoMessage.caption || '🎥 Video';
-                mediaUrl = await this.downloadMedia(instanceId, m.videoMessage, 'video', false, msg);
+                const videoLength = byteLengthToNumber(m.videoMessage.fileLength);
+                if (videoLength && videoLength > MAX_VIDEO_BYTES) {
+                    textContent = 'Video rejected: file is larger than 10MB';
+                    console.warn(`[WA] Rejected inbound video larger than 10MB (${videoLength} bytes)`);
+                } else {
+                    mediaUrl = await this.downloadMedia(instanceId, m.videoMessage, 'video', false, msg);
+                }
             } else if (m.audioMessage) {
                 textContent = '🎤 Audio';
                 const mediaData = await this.downloadMedia(instanceId, m.audioMessage, 'audio', true, msg);
@@ -569,9 +626,7 @@ class WhatsAppService {
             try {
                 // Helper to fetch profile pic safely
                 const getProfilePic = async (targetJid) => {
-                    try {
-                        return await sessions.get(instanceId)?.profilePictureUrl(targetJid, 'image').catch(() => null);
-                    } catch (e) { return null; }
+                    return this.getPersistentProfilePic(instanceId, targetJid);
                 };
 
                 // NEW: If this is an LID, check if we have a persistent mapping to a Phone JID
@@ -659,8 +714,9 @@ class WhatsAppService {
 
                 // Only fetch profile pic if it's new or we don't have it
                 let profilePicUrl = existingContact?.profile_pic;
-                if (!profilePicUrl) {
-                    profilePicUrl = await getProfilePic(jid);
+                if (!profilePicUrl || !isLocalUploadUrl(profilePicUrl)) {
+                    const freshProfilePic = await getProfilePic(jid);
+                    profilePicUrl = freshProfilePic || (isLocalUploadUrl(profilePicUrl) ? profilePicUrl : null);
                 }
 
                 // FIX: If fromMe is true, DO NOT update the contact name to the pushName
@@ -731,7 +787,10 @@ class WhatsAppService {
                         where: { user_id: instance.user_id, jid: participant }
                     });
                     let pPic = existingParticipant?.profile_pic;
-                    if (!pPic) pPic = await getProfilePic(participant);
+                    if (!pPic || !isLocalUploadUrl(pPic)) {
+                        const freshParticipantPic = await getProfilePic(participant);
+                        pPic = freshParticipantPic || (isLocalUploadUrl(pPic) ? pPic : null);
+                    }
 
                     await Contact.upsert({
                         jid: participant,
@@ -888,6 +947,12 @@ class WhatsAppService {
                 return returnBuffer ? { url: null, buffer: null } : null;
             }
 
+            const declaredFileLength = byteLengthToNumber(message.fileLength);
+            if (type === 'video' && declaredFileLength && declaredFileLength > MAX_VIDEO_BYTES) {
+                console.warn(`[WA] Skipping video larger than 10MB (${declaredFileLength} bytes) before download`);
+                return returnBuffer ? { url: null, buffer: null } : null;
+            }
+
             let stream;
             try {
                 stream = await downloadContentFromMessage(message, type);
@@ -912,16 +977,23 @@ class WhatsAppService {
 
             let buffer = Buffer.from([]);
             for await (const chunk of stream) {
+                if (type === 'video' && buffer.length + chunk.length > MAX_VIDEO_BYTES) {
+                    console.warn('[WA] Stopped video download after it exceeded 10MB');
+                    return returnBuffer ? { url: null, buffer: null } : null;
+                }
                 buffer = Buffer.concat([buffer, chunk]);
             }
 
             // Determine file extension based on type
-            const ext = type === 'image' ? 'jpg' : (type === 'video' ? 'mp4' : (type === 'sticker' ? 'webp' : (type === 'audio' ? 'ogg' : (type === 'document' ? (message.fileName?.split('.').pop() || 'pdf') : 'bin'))));
+            const originalExt = getExtension(message.fileName);
+            const ext = originalExt
+                ? originalExt.slice(1)
+                : (type === 'image' ? 'jpg' : (type === 'video' ? 'mp4' : (type === 'sticker' ? 'webp' : (type === 'audio' ? 'ogg' : 'bin'))));
             const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${ext}`;
             const filePath = path.join(this.uploadDir, fileName);
             await fs.promises.writeFile(filePath, buffer);
 
-            const publicUrl = `${process.env.PUBLIC_URL || ''}/public/uploads/${fileName}`;
+            const publicUrl = getPublicUploadUrl(fileName);
             return returnBuffer ? { url: publicUrl, buffer } : publicUrl;
         } catch (error) {
             console.error('[WA] Media download failed:', error);

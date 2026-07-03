@@ -5,6 +5,7 @@ const { protect } = require('../middlewares/auth.middleware');
 
 // Public webhook endpoint (Fawaterak will call this)
 router.post('/webhook', paymentController.webhook);
+router.post('/webhook_json', paymentController.webhook);
 
 // Protected routes
 router.use(protect);

@@ -1,4 +1,12 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+const MAX_VIDEO_BYTES = 10 * 1024 * 1024;
+
+function assertUploadAllowed(file: File) {
+    const isVideoUpload = file.type.startsWith('video/') || /\.(mp4|mov|webm|mkv)$/i.test(file.name);
+    if (isVideoUpload && file.size > MAX_VIDEO_BYTES) {
+        throw new Error('Videos larger than 10MB are not allowed.');
+    }
+}
 
 // Socket URL logic:
 // 1. Use NEXT_PUBLIC_SOCKET_URL if provided
@@ -38,6 +46,8 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
 }
 
 export async function uploadFile(file: File) {
+    assertUploadAllowed(file);
+
     const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('file', file);
@@ -56,6 +66,8 @@ export async function uploadFile(file: File) {
 }
 
 export async function uploadFileWithProgress(file: File, onProgress: (percent: number) => void) {
+    assertUploadAllowed(file);
+
     const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('file', file);

@@ -15,6 +15,15 @@ class AppError extends Error {
 
 // Global Error Handler
 const errorHandler = (err, req, res, next) => {
+    if (err.name === 'MulterError') {
+        err.statusCode = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+        err.status = 'fail';
+        err.message = err.code === 'LIMIT_FILE_SIZE'
+            ? 'File larger than the allowed upload limit'
+            : err.message;
+        err.isOperational = true;
+    }
+
     err.statusCode = err.statusCode || 500;
     err.status = err.status || 'error';
 

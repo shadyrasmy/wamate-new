@@ -36,6 +36,8 @@ interface ChatMessageLike {
     time?: string;
 }
 
+const MAX_VIDEO_BYTES = 10 * 1024 * 1024;
+
 const getMessageFingerprint = (message: ChatMessageLike) => {
     const rawTimestamp = message?.timestamp ? new Date(message.timestamp).getTime() : '';
     return [
@@ -320,6 +322,13 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
         const file = e.target.files?.[0];
         if (!file) return;
 
+        const isVideoUpload = file.type.startsWith('video/') || /\.(mp4|mov|webm|mkv)$/i.test(file.name);
+        if (isVideoUpload && file.size > MAX_VIDEO_BYTES) {
+            alert('Videos larger than 10MB are not allowed.');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
         try {
             setUploadProgress(0);
             const { uploadFileWithProgress } = await import('@/lib/api');
@@ -357,7 +366,7 @@ export default function ChatWindow({ chat, instanceId, onBack }: ChatWindowProps
         } catch (error) {
             console.error('Upload failed', error);
             setUploadProgress(null);
-            alert(t('chat.window.media_error'));
+            alert(error instanceof Error ? error.message : t('chat.window.media_error'));
         }
 
         if (fileInputRef.current) fileInputRef.current.value = '';
